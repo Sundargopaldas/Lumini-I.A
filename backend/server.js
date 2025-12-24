@@ -19,10 +19,12 @@ require('./models/Transaction');
 const authRoutes = require('./routes/auth');
 const transactionRoutes = require('./routes/transactions');
 const dashboardRoutes = require('./routes/dashboard');
+const integrationRoutes = require('./routes/integrations');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/integrations', integrationRoutes);
 
 app.get('/', (req, res) => {
   res.send('Lumini I.A Backend is running');
@@ -37,7 +39,7 @@ const startServer = async () => {
     // Sync models with database (alter: true updates tables without dropping)
     // Note: Since you have existing tables, be careful with sync. 
     // 'alter: true' tries to match the model to the table.
-    await sequelize.sync({ alter: true });
+    await sequelize.sync();
     console.log('Database synchronized.');
 
     app.listen(PORT, () => {

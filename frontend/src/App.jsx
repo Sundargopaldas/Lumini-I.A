@@ -1,39 +1,47 @@
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import Login from './pages/Login';
-import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Reports from './pages/Reports';
+import Plans from './pages/Plans';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Integrations from './pages/Integrations';
 
-const Layout = ({ children }) => {
-  const location = useLocation();
-  const hideNavbarPaths = ['/login', '/register'];
-  const showNavbar = !hideNavbarPaths.includes(location.pathname);
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {showNavbar && <Navbar />}
-      <div className={showNavbar ? "container mx-auto px-4 py-8" : ""}>
-        {children}
-      </div>
-    </div>
-  );
+const PrivateRoute = ({ children }) => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user ? children : <Navigate to="/login" />;
 };
+
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   return (
     <Router>
-      <Layout>
+      <div className="min-h-screen bg-slate-900 text-white">
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          
+          <Route path="/*" element={
+            <PrivateRoute>
+              <Navbar />
+              <div className="container mx-auto px-4 py-8">
+                <ErrorBoundary>
+                  <Routes>
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/transactions" element={<Transactions />} />
+                    <Route path="/reports" element={<Reports />} />
+                    <Route path="/plans" element={<Plans />} />
+                    <Route path="/integrations" element={<Integrations />} />
+                  </Routes>
+                </ErrorBoundary>
+              </div>
+            </PrivateRoute>
+          } />
         </Routes>
-      </Layout>
+      </div>
     </Router>
   );
 }

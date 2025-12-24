@@ -16,6 +16,15 @@ const Transaction = sequelize.define('Transaction', {
   description: {
     type: DataTypes.STRING,
   },
+  source: {
+    type: DataTypes.STRING,
+    allowNull: true, // e.g., 'Hotmart', 'YouTube', 'Client'
+  },
+  type: {
+    type: DataTypes.STRING, // 'income' or 'expense'
+    allowNull: false,
+    defaultValue: 'expense'
+  },
   date: {
     type: DataTypes.DATEONLY,
     allowNull: true,

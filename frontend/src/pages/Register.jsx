@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 const Register = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -9,9 +11,26 @@ const Register = () => {
     confirmPassword: '',
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Register attempt', formData);
+    
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    try {
+      await api.post('/auth/register', {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password
+      });
+      alert('Registration successful! Please login.');
+      navigate('/login');
+    } catch (error) {
+      console.error('Registration failed:', error);
+      alert(error.response?.data?.message || 'Registration failed');
+    }
   };
 
   return (
@@ -19,10 +38,10 @@ const Register = () => {
       <div className="max-w-md w-full space-y-8 bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-white/20">
         <div>
           <h2 className="mt-6 text-center text-4xl font-extrabold text-white tracking-tight">
-            Create Account
+            Join ✨ Lumini AI
           </h2>
           <p className="mt-2 text-center text-sm text-gray-300">
-            Join Lumini I.A and manage your finances
+            Financial clarity for creators.
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

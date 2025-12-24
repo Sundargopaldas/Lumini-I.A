@@ -1,15 +1,32 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 const Login = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Login attempt', formData);
+    try {
+      const response = await api.post('/auth/login', {
+        email: formData.email,
+        password: formData.password
+      });
+
+      // Save token to localStorage
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+
+      // Redirect to dashboard
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Login failed:', error);
+      alert(error.response?.data?.message || 'Login failed');
+    }
   };
 
   return (
@@ -17,10 +34,10 @@ const Login = () => {
       <div className="max-w-md w-full space-y-8 bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-white/20">
         <div>
           <h2 className="mt-6 text-center text-4xl font-extrabold text-white tracking-tight">
-            Lumini I.A
+            ✨ Lumini AI
           </h2>
           <p className="mt-2 text-center text-sm text-gray-300">
-            Sign in to access your financial dashboard
+            Financial clarity for creators.
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
