@@ -1,0 +1,51 @@
+const express = require('express');
+const cors = require('cors');
+const sequelize = require('./config/database');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Import Models to ensure they are registered
+require('./models/User');
+require('./models/Category');
+require('./models/Transaction');
+
+// Routes Placeholder
+const authRoutes = require('./routes/auth');
+const transactionRoutes = require('./routes/transactions');
+const dashboardRoutes = require('./routes/dashboard');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+
+app.get('/', (req, res) => {
+  res.send('Lumini I.A Backend is running');
+});
+
+// Database Connection and Server Start
+const startServer = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('Database connection has been established successfully.');
+    
+    // Sync models with database (alter: true updates tables without dropping)
+    // Note: Since you have existing tables, be careful with sync. 
+    // 'alter: true' tries to match the model to the table.
+    await sequelize.sync({ alter: true });
+    console.log('Database synchronized.');
+
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+  }
+};
+
+startServer();
