@@ -28,6 +28,8 @@ ChartJS.register(
 const Reports = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -45,34 +47,68 @@ const Reports = () => {
   }, []);
 
   // Process data for charts
-  const { incomeData, expenseData, monthlyData } = useMemo(() => {
+  const { incomeData, expenseData, monthlyData, summary, filteredTransactions } = useMemo(() => {
     const incomeMap = {};
     const expenseMap = {};
     const monthlyMap = {};
+    const filteredList = [];
+    
+    let totalIncome = 0;
+    let totalExpense = 0;
 
     transactions.forEach(t => {
       const amount = parseFloat(t.amount);
-      const date = new Date(t.date);
-      const monthYear = date.toLocaleString('default', { month: 'short', year: 'numeric' });
-
-      // Monthly totals
-      if (!monthlyMap[monthYear]) monthlyMap[monthYear] = { income: 0, expense: 0 };
-      if (t.type === 'income') {
-        monthlyMap[monthYear].income += amount;
+      
+      // Safe Date Parsing
+      let date;
+      if (typeof t.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(t.date)) {
+          const [year, month, day] = t.date.split('-').map(Number);
+          date = new Date(year, month - 1, day);
       } else {
-        monthlyMap[monthYear].expense += Math.abs(amount);
+          date = new Date(t.date);
       }
 
-      // Source totals
-      const source = t.source || 'Uncategorized';
-      if (t.type === 'income') {
-        incomeMap[source] = (incomeMap[source] || 0) + amount;
-      } else {
-        expenseMap[source] = (expenseMap[source] || 0) + Math.abs(amount);
+      const tMonth = date.getMonth();
+      const tYear = date.getFullYear();
+      const monthYearKey = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+
+      // Monthly totals (Filter by Selected Year for the trend chart)
+      if (tYear === parseInt(selectedYear)) {
+        if (!monthlyMap[monthYearKey]) monthlyMap[monthYearKey] = { income: 0, expense: 0 };
+        if (t.type === 'income') {
+            monthlyMap[monthYearKey].income += amount;
+        } else {
+            monthlyMap[monthYearKey].expense += Math.abs(amount);
+        }
+      }
+
+      // Filter for specific breakdown charts and summary
+      const isMonthMatch = selectedMonth === 'all' || tMonth === parseInt(selectedMonth);
+      const isYearMatch = tYear === parseInt(selectedYear);
+
+      if (isYearMatch && isMonthMatch) {
+          filteredList.push(t);
+          // Summary Totals
+          if (t.type === 'income') totalIncome += amount;
+          else totalExpense += Math.abs(amount);
+
+          // Source/Category totals
+          const source = t.source || 'Uncategorized';
+          if (t.type === 'income') {
+            incomeMap[source] = (incomeMap[source] || 0) + amount;
+          } else {
+            expenseMap[source] = (expenseMap[source] || 0) + Math.abs(amount);
+          }
       }
     });
 
     return {
+      filteredTransactions: filteredList,
+      summary: {
+          income: totalIncome,
+          expense: totalExpense,
+          balance: totalIncome - totalExpense
+      },
       incomeData: {
         labels: Object.keys(incomeMap),
         datasets: [{
@@ -113,7 +149,7 @@ const Reports = () => {
         ]
       }
     };
-  }, [transactions]);
+  }, [transactions, selectedMonth, selectedYear]);
 
   const generatePDF = () => {
     const doc = new jsPDF();
@@ -204,15 +240,56 @@ const Reports = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
         <h1 className="text-3xl font-bold text-white">Financial Reports</h1>
-        <button 
-          onClick={generatePDF}
-          className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors shadow-lg shadow-purple-500/30 flex items-center justify-center gap-2 w-full sm:w-auto"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          Export PDF
-        </button>
+        <div className="flex gap-2">
+            <select 
+                value={selectedMonth} 
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="bg-slate-700 text-white rounded-lg px-3 py-2 border border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none"
+            >
+                <option value="all">All Months</option>
+                {Array.from({ length: 12 }, (_, i) => (
+                    <option key={i} value={i}>
+                        {new Date(0, i).toLocaleString('default', { month: 'long' })}
+                    </option>
+                ))}
+            </select>
+            <select 
+                value={selectedYear} 
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="bg-slate-700 text-white rounded-lg px-3 py-2 border border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none"
+            >
+                <option value={2023}>2023</option>
+                <option value={2024}>2024</option>
+                <option value={2025}>2025</option>
+            </select>
+            <button 
+            onClick={generatePDF}
+            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors shadow-lg shadow-purple-500/30 flex items-center justify-center gap-2"
+            >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export PDF
+            </button>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-xl">
+            <h3 className="text-slate-400 text-sm font-medium mb-1">Total Income</h3>
+            <p className="text-2xl font-bold text-green-400">R$ {summary.income.toFixed(2)}</p>
+        </div>
+        <div className="bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-xl">
+            <h3 className="text-slate-400 text-sm font-medium mb-1">Total Expenses</h3>
+            <p className="text-2xl font-bold text-red-400">R$ {summary.expense.toFixed(2)}</p>
+        </div>
+        <div className="bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-xl">
+            <h3 className="text-slate-400 text-sm font-medium mb-1">Net Balance</h3>
+            <p className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                R$ {summary.balance.toFixed(2)}
+            </p>
+        </div>
       </div>
       
       {/* Monthly Overview */}
