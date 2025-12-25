@@ -14,17 +14,20 @@ app.use(express.json());
 require('./models/User');
 require('./models/Category');
 require('./models/Transaction');
+require('./models/Goal');
 
 // Routes Placeholder
 const authRoutes = require('./routes/auth');
 const transactionRoutes = require('./routes/transactions');
 const dashboardRoutes = require('./routes/dashboard');
 const integrationRoutes = require('./routes/integrations');
+const goalRoutes = require('./routes/goals');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api/goals', goalRoutes);
 
 app.get('/', (req, res) => {
   res.send('Lumini I.A Backend is running');

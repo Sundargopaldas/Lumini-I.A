@@ -48,11 +48,9 @@ const Integrations = () => {
       alert(`✅ Success! ${response.data.message}`);
     } catch (error) {
         console.error('Sync error:', error);
-        if (error.response && error.response.status === 403) {
-            alert("🔒 This feature is for PRO users only. Please upgrade your plan.");
-        } else {
-            alert("❌ Failed to sync. Don't worry, your data is safe.");
-        }
+        // Pro users have unlimited access, so we don't block them.
+        // If we wanted to block free users, we'd check here.
+        alert("❌ Failed to sync. Don't worry, your data is safe.");
     } finally {
       setLoading(prev => ({ ...prev, [id]: false }));
     }
@@ -62,12 +60,12 @@ const Integrations = () => {
 
   return (
     <div className="space-y-8">
-      <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-xl flex items-start gap-3">
-        <div className="text-2xl">🛡️</div>
+      <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/30 p-4 rounded-xl flex items-start gap-3">
+        <div className="text-2xl">⚡</div>
         <div>
-            <h3 className="text-blue-200 font-bold text-sm">Safe Integration Mode</h3>
-            <p className="text-blue-200/70 text-xs mt-1">
-                You can test integrations safely here. Syncing will add simulated transactions to your dashboard without affecting your real bank accounts.
+            <h3 className="text-purple-200 font-bold text-sm">PRO Plan Active: Unlimited Integrations</h3>
+            <p className="text-purple-200/70 text-xs mt-1">
+                You have access to all integrations with no limits. Connect as many accounts as you need.
             </p>
         </div>
       </div>

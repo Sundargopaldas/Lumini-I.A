@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../services/api';
 
 const incomeSources = ['Hotmart', 'YouTube', 'TikTok', 'Eduzz', 'Monetizze', 'Twitch', 'Patreon', 'Client', 'Other'];
 const expenseSources = ['Equipment', 'Software', 'Ads', 'Freelancers', 'Office', 'Education', 'Travel', 'Other'];
@@ -9,12 +10,17 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
     amount: '',
     date: new Date().toISOString().split('T')[0],
     type: 'income',
-    source: ''
+    source: '',
+    goalId: ''
   });
   const [customSource, setCustomSource] = useState('');
+  const [goals, setGoals] = useState([]);
 
   useEffect(() => {
     if (isOpen) {
+      // Fetch goals to populate dropdown
+      api.get('/goals').then(res => setGoals(res.data)).catch(console.error);
+
       if (transactionToEdit) {
         const isIncome = transactionToEdit.type === 'income';
         const sources = isIncome ? incomeSources : expenseSources;
@@ -25,7 +31,8 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
           amount: transactionToEdit.amount,
           date: transactionToEdit.date ? transactionToEdit.date.split('T')[0] : new Date().toISOString().split('T')[0],
           type: transactionToEdit.type,
-          source: isCustom ? 'Other' : transactionToEdit.source
+          source: isCustom ? 'Other' : transactionToEdit.source,
+          goalId: transactionToEdit.goalId || ''
         });
         
         if (isCustom) {
@@ -39,7 +46,8 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
           amount: '',
           date: new Date().toISOString().split('T')[0],
           type: 'income',
-          source: ''
+          source: '',
+          goalId: ''
         });
         setCustomSource('');
       }
@@ -65,11 +73,12 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
         return;
     }
 
-    onSave({ ...formData, source: finalSource });
+    onSave({ 
+      ...formData, 
+      source: finalSource,
+      goalId: formData.goalId || null
+    });
     
-    // Reset form is handled by useEffect when modal opens/closes or by parent, 
-    // but good to clear here if we want to add multiple? No, modal closes.
-    // We can just close.
     onClose();
   };
 
@@ -98,7 +107,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
                   value="income" 
                   checked={formData.type === 'income'} 
                   onChange={handleChange}
-                  className="form-radio text-purple-600 focus:ring-purple-600 bg-white/10 border-white/20"
+                  className="form-radio text-purple-600 focus:ring-purple-500"
                 />
                 <span className="text-white">Income</span>
               </label>
@@ -109,7 +118,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
                   value="expense" 
                   checked={formData.type === 'expense'} 
                   onChange={handleChange}
-                  className="form-radio text-red-500 focus:ring-red-500 bg-white/10 border-white/20"
+                  className="form-radio text-red-500 focus:ring-red-500"
                 />
                 <span className="text-white">Expense</span>
               </label>
@@ -124,80 +133,98 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
               value={formData.description} 
               onChange={handleChange}
               required
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all placeholder-gray-500"
-              placeholder="e.g. AdSense Payment"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Amount (R$)</label>
-              <input 
-                type="number" 
-                name="amount" 
-                value={formData.amount} 
-                onChange={handleChange}
-                required
-                step="0.01"
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all placeholder-gray-500"
-                placeholder="0.00"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Date</label>
-              <input 
-                type="date" 
-                name="date" 
-                value={formData.date} 
-                onChange={handleChange}
-                required
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all [color-scheme:dark]"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Amount (R$)</label>
+            <input 
+              type="number" 
+              name="amount" 
+              value={formData.amount} 
+              onChange={handleChange}
+              required
+              min="0.01"
+              step="0.01"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Date</label>
+            <input 
+              type="date" 
+              name="date" 
+              value={formData.date} 
+              onChange={handleChange}
+              required
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-                {formData.type === 'income' ? 'Income Source' : 'Expense Category'}
+              {formData.type === 'income' ? 'Source' : 'Category'}
             </label>
             <select 
               name="source" 
               value={formData.source} 
               onChange={handleChange}
               required
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all mb-2"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
-              <option value="" disabled className="bg-slate-800">
-                  Select {formData.type === 'income' ? 'Source' : 'Category'}
-              </option>
-              {formData.type === 'income' ? (
-                incomeSources.map(source => (
-                  <option key={source} value={source} className="bg-slate-800">{source}</option>
-                ))
-              ) : (
-                expenseSources.map(source => (
-                  <option key={source} value={source} className="bg-slate-800">{source}</option>
-                ))
-              )}
+              <option value="">Select...</option>
+              {(formData.type === 'income' ? incomeSources : expenseSources).map(source => (
+                <option key={source} value={source}>{source}</option>
+              ))}
+              <option value="Other">Other (Custom)</option>
             </select>
-            
-            {formData.source === 'Other' && (
-                <input 
-                  type="text" 
-                  value={customSource}
-                  onChange={(e) => setCustomSource(e.target.value)}
-                  placeholder={formData.type === 'income' ? "Enter custom source..." : "Enter custom category..."}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all placeholder-gray-500 animate-fadeIn"
-                  required
-                />
-            )}
           </div>
+
+          {formData.source === 'Other' && (
+            <div>
+               <label className="block text-sm font-medium text-gray-300 mb-1">Custom Name</label>
+               <input 
+                  type="text" 
+                  value={customSource} 
+                  onChange={(e) => setCustomSource(e.target.value)}
+                  required
+                  placeholder="e.g. Dividendos, Uber, etc."
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+            </div>
+          )}
+
+          {goals.length > 0 && (
+            <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Link to Goal (Optional)
+                </label>
+                <select 
+                    name="goalId" 
+                    value={formData.goalId} 
+                    onChange={handleChange}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                    <option value="">None</option>
+                    {goals.map(goal => (
+                        <option key={goal.id} value={goal.id}>
+                            {goal.name} (Current: R$ {parseFloat(goal.currentAmount).toLocaleString()})
+                        </option>
+                    ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                    If selected, this amount will be added to the goal's progress.
+                </p>
+            </div>
+          )}
 
           <button 
             type="submit" 
-            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg shadow-purple-500/30 mt-4"
+            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-3 rounded-lg hover:shadow-lg hover:shadow-purple-500/30 transition-all mt-4"
           >
-            {transactionToEdit ? 'Update Transaction' : 'Save Transaction'}
+            Save Transaction
           </button>
         </form>
       </div>

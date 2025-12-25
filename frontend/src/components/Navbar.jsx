@@ -37,9 +37,15 @@ const Navbar = () => {
           </div>
           
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/plans" className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold hover:shadow-lg hover:scale-105 transition-all">
-              UPGRADE
-            </Link>
+            <button 
+                onClick={() => alert("👨‍💻 Priority Support\n\nAs a PRO user, you have direct access to our engineering team via WhatsApp.\n\nStart Chat: +55 (11) 99999-9999")}
+                className="text-gray-300 hover:text-white text-sm font-medium transition-colors"
+            >
+                💬 Support
+            </button>
+            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+              PRO PLAN
+            </div>
             <span className="text-gray-300 text-sm">Hello, {user.username}</span>
             <button 
               onClick={handleLogout}

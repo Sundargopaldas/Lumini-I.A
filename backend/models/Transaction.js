@@ -2,6 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 const User = require('./User');
 const Category = require('./Category');
+const Goal = require('./Goal');
 
 const Transaction = sequelize.define('Transaction', {
   id: {
@@ -44,6 +45,14 @@ const Transaction = sequelize.define('Transaction', {
       key: 'id',
     },
   },
+  goalId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: Goal,
+      key: 'id',
+    },
+  },
   createdAt: {
     type: DataTypes.DATE,
     allowNull: true,
@@ -61,5 +70,8 @@ Transaction.belongsTo(User, { foreignKey: 'userId' });
 
 Category.hasMany(Transaction, { foreignKey: 'categoryId' });
 Transaction.belongsTo(Category, { foreignKey: 'categoryId' });
+
+Goal.hasMany(Transaction, { foreignKey: 'goalId' });
+Transaction.belongsTo(Goal, { foreignKey: 'goalId' });
 
 module.exports = Transaction;

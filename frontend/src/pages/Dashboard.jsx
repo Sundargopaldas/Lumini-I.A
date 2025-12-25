@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import Chart from '../components/Chart';
+import TrendChart from '../components/TrendChart';
 import TransactionCard from '../components/TransactionCard';
+import GoalsWidget from '../components/GoalsWidget';
 import TaxSimulatorModal from '../components/TaxSimulatorModal';
 import api from '../services/api';
 
@@ -108,38 +109,83 @@ const Dashboard = () => {
     };
   }, [transactions]);
 
-  // Prepare Chart Data (Monthly Income vs Expense)
-  const chartData = useMemo(() => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const incomeData = new Array(12).fill(0);
-    const expenseData = new Array(12).fill(0);
+  // Balance Trend Data (Last 6 Months)
+  const trendData = useMemo(() => {
+    if (!transactions.length) return null;
 
+    // 1. Generate last 6 month labels and range
+    const months = [];
+    const today = new Date();
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        months.push({
+            date: d,
+            label: d.toLocaleString('default', { month: 'short' }),
+        });
+    }
+
+    // 2. Calculate initial balance (transactions before the 6-month window)
+    const startOfPeriod = months[0].date;
+    let runningBalance = 0;
+
+    // First pass: Calculate pre-period balance
     transactions.forEach(t => {
-      const date = new Date(t.date);
-      const monthIndex = date.getMonth();
-      // Only for current year or last 12 months? Let's do current year for simplicity
-      if (date.getFullYear() === new Date().getFullYear()) {
-         if (t.type === 'income') incomeData[monthIndex] += parseFloat(t.amount);
-         else expenseData[monthIndex] += Math.abs(parseFloat(t.amount));
-      }
+        const amount = parseFloat(t.amount) || 0;
+        let tDate;
+        if (typeof t.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(t.date)) {
+            const [y, m, d] = t.date.split('-').map(Number);
+            tDate = new Date(y, m - 1, d);
+        } else {
+            tDate = new Date(t.date);
+        }
+
+        if (tDate < startOfPeriod) {
+            if (t.type === 'income') runningBalance += amount;
+            else runningBalance -= Math.abs(amount);
+        }
+    });
+
+    // 3. Calculate month-end balances
+    const dataPoints = months.map(month => {
+        const nextMonth = new Date(month.date.getFullYear(), month.date.getMonth() + 1, 1);
+        
+        // Sum transactions within this month
+        transactions.forEach(t => {
+            const amount = parseFloat(t.amount) || 0;
+            let tDate;
+            if (typeof t.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(t.date)) {
+                const [y, m, d] = t.date.split('-').map(Number);
+                tDate = new Date(y, m - 1, d);
+            } else {
+                tDate = new Date(t.date);
+            }
+
+            if (tDate >= month.date && tDate < nextMonth) {
+                 if (t.type === 'income') runningBalance += amount;
+                 else runningBalance -= Math.abs(amount);
+            }
+        });
+
+        return runningBalance;
     });
 
     return {
-      labels: months,
-      datasets: [
-        {
-          label: 'Income',
-          data: incomeData,
-          backgroundColor: 'rgba(168, 85, 247, 0.6)', // Purple
-          borderRadius: 4,
-        },
-        {
-          label: 'Expense',
-          data: expenseData,
-          backgroundColor: 'rgba(239, 68, 68, 0.6)', // Red
-          borderRadius: 4,
-        },
-      ],
+        labels: months.map(m => m.label),
+        datasets: [
+            {
+                label: 'Balance Evolution',
+                data: dataPoints,
+                borderColor: '#8b5cf6', // Violet-500
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#8b5cf6',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+            }
+        ]
     };
   }, [transactions]);
 
@@ -215,30 +261,35 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl">
-          <h2 className="text-xl font-bold text-white mb-4">Revenue Overview</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl">
+          <h2 className="text-xl font-bold text-white mb-4">Balance Evolution (6 Months)</h2>
           <div className="h-64">
-             {chartData && chartData.datasets ? (
-                 <Chart data={chartData} />
+             {trendData ? (
+                 <TrendChart data={trendData} />
              ) : (
                  <p className="text-gray-400 text-center mt-10">No data for chart</p>
              )}
           </div>
         </div>
-        <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl">
-          <div className="flex justify-between items-center mb-4">
-             <h2 className="text-xl font-bold text-white">Recent Transactions</h2>
-             <Link to="/transactions" className="text-sm text-purple-400 hover:text-purple-300">View All</Link>
-          </div>
-          <div className="space-y-4">
-            {transactions.length > 0 ? (
-              transactions.slice(0, 5).map((transaction) => (
-                <TransactionCard key={transaction.id} transaction={transaction} />
-              ))
-            ) : (
-              <p className="text-gray-400">No transactions yet.</p>
-            )}
+        
+        <div className="space-y-6">
+          <GoalsWidget />
+
+          <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl">
+            <div className="flex justify-between items-center mb-4">
+               <h2 className="text-xl font-bold text-white">Recent Transactions</h2>
+               <Link to="/transactions" className="text-sm text-purple-400 hover:text-purple-300">View All</Link>
+            </div>
+            <div className="space-y-4">
+              {transactions.length > 0 ? (
+                transactions.slice(0, 3).map((transaction) => (
+                  <TransactionCard key={transaction.id} transaction={transaction} />
+                ))
+              ) : (
+                <p className="text-gray-400">No transactions yet.</p>
+              )}
+            </div>
           </div>
         </div>
       </div>

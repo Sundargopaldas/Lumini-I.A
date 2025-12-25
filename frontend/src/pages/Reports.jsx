@@ -151,52 +151,52 @@ const Reports = () => {
     };
   }, [transactions, selectedMonth, selectedYear]);
 
-  const generatePDF = () => {
+  const exportPDF = () => {
     const doc = new jsPDF();
-    const date = new Date().toLocaleDateString();
-
-    // Title
+    
+    // Header
     doc.setFontSize(20);
+    doc.setTextColor(128, 90, 213); // Purple
     doc.text('Lumini I.A - Financial Report', 14, 22);
-    doc.setFontSize(10);
-    doc.text(`Generated on: ${date}`, 14, 28);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 32);
+    doc.text(`Period: ${selectedMonth === 'all' ? 'All Months' : new Date(0, selectedMonth).toLocaleString('default', { month: 'long' })} ${selectedYear}`, 14, 38);
 
     // Summary Section
-    let totalIncome = 0;
-    let totalExpense = 0;
-    transactions.forEach(t => {
-        if(t.type === 'income') totalIncome += parseFloat(t.amount);
-        else totalExpense += Math.abs(parseFloat(t.amount));
+    doc.autoTable({
+        startY: 45,
+        head: [['Total Income', 'Total Expenses', 'Net Balance']],
+        body: [[
+            `R$ ${summary.income.toFixed(2)}`,
+            `R$ ${summary.expense.toFixed(2)}`,
+            `R$ ${summary.balance.toFixed(2)}`
+        ]],
+        theme: 'grid',
+        headStyles: { fillColor: [128, 90, 213] }
     });
-
-    doc.setFontSize(14);
-    doc.text('Summary', 14, 40);
-    doc.setFontSize(12);
-    doc.text(`Total Income: R$ ${totalIncome.toFixed(2)}`, 14, 50);
-    doc.text(`Total Expenses: R$ ${totalExpense.toFixed(2)}`, 14, 58);
-    doc.text(`Net Balance: R$ ${(totalIncome - totalExpense).toFixed(2)}`, 14, 66);
 
     // Transactions Table
-    doc.setFontSize(14);
-    doc.text('Transaction History', 14, 80);
-
-    const tableData = transactions.map(t => [
-        t.date,
+    doc.text('Detailed Transactions', 14, doc.lastAutoTable.finalY + 15);
+    
+    const tableData = filteredTransactions.map(t => [
+        new Date(t.date).toLocaleDateString(),
         t.description,
         t.source || '-',
-        t.type === 'income' ? 'Income' : 'Expense',
-        `R$ ${Math.abs(t.amount).toFixed(2)}`
+        t.type === 'income' ? `+ R$ ${parseFloat(t.amount).toFixed(2)}` : `- R$ ${Math.abs(parseFloat(t.amount)).toFixed(2)}`
     ]);
 
-    autoTable(doc, {
-        startY: 85,
-        head: [['Date', 'Description', 'Source', 'Type', 'Amount']],
+    doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [['Date', 'Description', 'Source/Category', 'Amount']],
         body: tableData,
-        theme: 'grid',
-        headStyles: { fillColor: [147, 51, 234] }, // Purple header
+        theme: 'striped',
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [75, 85, 99] }
     });
 
-    doc.save(`Lumini_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save('lumini-report.pdf');
   };
 
   const chartOptions = {
@@ -234,12 +234,50 @@ const Reports = () => {
     borderWidth: 0
   };
 
-  if (loading) return <div className="text-white text-center mt-10">Loading reports...</div>;
+  const exportCSV = () => {
+    // CSV Header
+    const headers = ['Date,Description,Type,Source,Amount,Goal'];
+    
+    // CSV Rows
+    const rows = filteredTransactions.map(t => {
+        const date = new Date(t.date).toLocaleDateString();
+        const amount = t.type === 'expense' ? -Math.abs(t.amount) : t.amount;
+        // Escape commas in description to prevent CSV breakage
+        const safeDesc = `"${t.description.replace(/"/g, '""')}"`; 
+        const safeSource = t.source || 'Uncategorized';
+        const safeGoal = t.Goal ? t.Goal.name : '';
+        
+        return `${date},${safeDesc},${t.type},${safeSource},${amount},${safeGoal}`;
+    });
+
+    const csvContent = [headers, ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `lumini_report_${selectedYear}_${selectedMonth}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
-        <h1 className="text-3xl font-bold text-white">Financial Reports</h1>
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Advanced Reports</h1>
+            <p className="text-gray-400">Deep dive into your financial analytics.</p>
+        </div>
         <div className="flex gap-2">
             <select 
                 value={selectedMonth} 
@@ -263,13 +301,16 @@ const Reports = () => {
                 <option value={2025}>2025</option>
             </select>
             <button 
-            onClick={generatePDF}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors shadow-lg shadow-purple-500/30 flex items-center justify-center gap-2"
+                onClick={exportCSV}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
             >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Export PDF
+                <span>📊</span> Export CSV
+            </button>
+            <button 
+                onClick={exportPDF}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+            >
+                <span>📄</span> Export PDF
             </button>
         </div>
       </div>
