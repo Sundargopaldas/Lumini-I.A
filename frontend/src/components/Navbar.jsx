@@ -1,14 +1,46 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import CustomAlert from './CustomAlert';
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isPro = ['pro', 'premium', 'agency'].includes(user.plan);
-  const isPremium = ['premium', 'agency'].includes(user.plan);
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
+  
+  // Fetch latest user data on mount and route change to ensure plan is up to date
+  useEffect(() => {
+    const fetchUser = async () => {
+        try {
+            const response = await api.get('/auth/me');
+            const freshUser = response.data;
+            
+            // If plan changed, update state and localStorage
+            if (freshUser.plan !== user.plan) {
+                // PROTECTION: Don't downgrade UI if local says Premium/Pro but server says Free (likely server lag/error)
+                const localIsPaid = ['pro', 'premium', 'agency'].includes(user.plan?.toLowerCase());
+                const serverIsFree = freshUser.plan === 'free';
+
+                if (localIsPaid && serverIsFree) {
+                    console.warn('Backend returned Free but Local is Paid. Ignoring backend to preserve UX.');
+                    return; 
+                }
+
+                console.log('Syncing user plan:', freshUser.plan);
+                setUser(freshUser);
+                const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+                localStorage.setItem('user', JSON.stringify({ ...currentUser, ...freshUser }));
+            }
+        } catch (error) {
+            console.error('Failed to sync user data:', error);
+        }
+    };
+    fetchUser();
+  }, [location.pathname]); // Run on mount and route change
+  const userPlan = user.plan?.toLowerCase() || 'free';
+  const isPro = ['pro', 'premium', 'agency'].includes(userPlan);
+  const isPremium = ['premium', 'agency'].includes(userPlan);
 
   // Custom Alert State
   const [alertState, setAlertState] = useState({
@@ -96,7 +128,7 @@ const Navbar = () => {
                     : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 }`}
             >
-                {isPro ? `${user.plan.toUpperCase()} PLAN` : 'FREE PLAN'}
+                {isPro ? `PLANO ${user.plan.toUpperCase()}` : 'PLANO GRÁTIS'}
             </Link>
             <span className="text-gray-300 text-sm">Hello, {user.username}</span>
             <button 

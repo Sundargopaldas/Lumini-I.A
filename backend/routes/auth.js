@@ -88,4 +88,17 @@ router.put('/plan', auth, async (req, res) => {
   }
 });
 
+// Get Current User
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: ['id', 'username', 'email', 'plan']
+    });
+    res.json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

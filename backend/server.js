@@ -24,6 +24,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const integrationRoutes = require('./routes/integrations');
 const goalRoutes = require('./routes/goals');
 const webhookRoutes = require('./routes/webhooks');
+const paymentRoutes = require('./routes/payments');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
@@ -31,6 +32,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/webhooks', webhookRoutes);
+app.use('/api/payments', paymentRoutes);
 
 app.get('/', (req, res) => {
   res.send('Lumini I.A Backend is running');

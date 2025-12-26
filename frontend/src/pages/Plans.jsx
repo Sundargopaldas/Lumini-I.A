@@ -1,25 +1,15 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const Plans = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const currentPlan = user.plan || 'free';
 
-  const handleUpgrade = async (planName) => {
-    setLoading(true);
-    try {
-        const response = await api.put('/auth/plan', { plan: planName.toLowerCase() });
-        const updatedUser = { ...user, plan: planName.toLowerCase() };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        window.location.reload(); // Refresh to reflect changes
-    } catch (error) {
-        console.error('Upgrade failed:', error);
-        alert('Failed to upgrade plan. Please try again.');
-    } finally {
-        setLoading(false);
-    }
+  const handleUpgrade = (plan) => {
+    navigate('/checkout', { state: { plan } });
   };
 
   const plans = [
@@ -125,7 +115,7 @@ const Plans = () => {
             </ul>
 
             <button 
-                onClick={() => !isCurrent && handleUpgrade(plan.name)}
+                onClick={() => !isCurrent && handleUpgrade(plan)}
                 disabled={isCurrent || loading}
                 className={`w-full py-3 rounded-lg font-bold transition-all ${
                     isCurrent 
