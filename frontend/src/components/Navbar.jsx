@@ -7,7 +7,8 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isPro = user.plan === 'pro';
+  const isPro = ['pro', 'premium', 'agency'].includes(user.plan);
+  const isPremium = ['premium', 'agency'].includes(user.plan);
 
   // Custom Alert State
   const [alertState, setAlertState] = useState({
@@ -29,21 +30,6 @@ const Navbar = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/login');
-  };
-
-  const handleTogglePlan = async () => {
-    const newPlan = user.plan === 'pro' ? 'free' : 'pro';
-    try {
-      const response = await api.put('/auth/plan', { plan: newPlan });
-      if (response.status === 200) {
-        const updatedUser = { ...user, plan: newPlan };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        window.location.reload();
-      }
-    } catch (error) {
-      console.error('Failed to update plan:', error);
-      showAlert('Error', 'Failed to toggle plan. Check console.', 'error');
-    }
   };
 
   return (
@@ -71,6 +57,9 @@ const Navbar = () => {
               <Link to="/reports" className="text-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-400 transition-colors">
                 Reports
               </Link>
+              <Link to="/invoices" className="text-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-400 transition-colors">
+                Invoices (NFS-e)
+              </Link>
               <Link to="/integrations" className="text-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-400 transition-colors">
                 Integrations
               </Link>
@@ -80,27 +69,35 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             <button 
                 onClick={() => {
-                    if (isPro) {
-                        showAlert('Priority Support', 'As a PRO user, you have direct access to our engineering team via WhatsApp.\n\nStart Chat: +55 (11) 99999-9999', 'success');
+                    if (isPremium) {
+                        showAlert(
+                            '🌟 Atendimento Premium',
+                            'Seu Gerente Dedicado: **Sofia Martins**\n\n' +
+                            '📞 WhatsApp Direto: (11) 99999-8888\n' +
+                            '📧 Email: sofia.martins@luminia.com\n\n' +
+                            '📅 Consultoria Mensal: Sua próxima reunião está disponível para agendamento.',
+                            'success'
+                        );
+                    } else if (isPro) {
+                        showAlert('Suporte Prioritário', 'Como assinante PRO, você tem acesso direto ao nosso time via WhatsApp.\n\nIniciar Chat: +55 (11) 99999-9999', 'success');
                     } else {
-                        showAlert('Premium Feature', 'Priority WhatsApp Support is available for PRO users only. Upgrade to unlock!', 'locked');
+                        showAlert('Recurso Premium', 'O Gerente de Conta Dedicado e Consultoria Mensal são exclusivos do plano Premium. Faça o upgrade!', 'locked');
                     }
                 }}
                 className="text-gray-300 hover:text-white text-sm font-medium transition-colors"
             >
                 💬 Support {!isPro && '🔒'}
             </button>
-            <button 
-                onClick={handleTogglePlan}
+            <Link 
+                to="/plans"
                 className={`px-3 py-1 rounded-full text-xs font-bold shadow-lg transition-all ${
-                  user.plan === 'pro' 
+                  isPro 
                     ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:shadow-purple-500/50' 
                     : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 }`}
-                title="Click to toggle plan (Debug)"
             >
-              {user.plan === 'pro' ? 'PRO PLAN' : 'FREE PLAN'}
-            </button>
+                {isPro ? `${user.plan.toUpperCase()} PLAN` : 'FREE PLAN'}
+            </Link>
             <span className="text-gray-300 text-sm">Hello, {user.username}</span>
             <button 
               onClick={handleLogout}

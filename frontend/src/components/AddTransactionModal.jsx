@@ -36,7 +36,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
 
   // User Plan Check
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isPro = user.plan === 'pro';
+  const isPro = ['pro', 'premium', 'agency'].includes(user.plan);
 
   useEffect(() => {
     if (isOpen) {

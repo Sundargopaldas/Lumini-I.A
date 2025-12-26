@@ -73,24 +73,7 @@ const Plans = () => {
       buttonText: 'Obter Premium',
       buttonStyle: 'bg-white text-purple-900 hover:bg-gray-100',
       highlight: false
-    },
-    {
-        name: 'Agency',
-        displayName: 'Agência',
-        price: 'R$ 299',
-        period: '/mês',
-        description: 'Gerencie múltiplos criadores em um só lugar.',
-        features: [
-          'Dashboard Multi-contas',
-          'Acesso de Equipe & Funções',
-          'Relatórios White-label',
-          'Acesso à API',
-          'Ações em Massa'
-        ],
-        buttonText: 'Falar com Vendas',
-        buttonStyle: 'bg-slate-800 text-white hover:bg-slate-700 border border-white/10',
-        highlight: false
-      }
+    }
   ];
 
   return (
@@ -103,7 +86,7 @@ const Plans = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {plans.map((plan) => {
             const isCurrent = currentPlan === plan.name.toLowerCase();
             return (

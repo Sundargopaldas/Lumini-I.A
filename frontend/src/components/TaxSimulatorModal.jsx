@@ -26,7 +26,7 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
   
   // User Plan Check
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isPro = user.plan === 'pro';
+  const isPro = ['pro', 'premium', 'agency'].includes(user.plan);
 
   if (!isOpen) return null;
 

@@ -14,6 +14,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import api from '../services/api';
 import CustomAlert from '../components/CustomAlert';
+import FinancialPlanningModal from '../components/FinancialPlanningModal';
 
 // Register ChartJS components
 ChartJS.register(
@@ -31,6 +32,7 @@ const Reports = () => {
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [isPlanningModalOpen, setIsPlanningModalOpen] = useState(false);
 
   // Custom Alert State
   const [alertState, setAlertState] = useState({
@@ -50,7 +52,8 @@ const Reports = () => {
 
   // User Plan Check
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isPro = user.plan === 'pro';
+  const isPro = ['pro', 'premium', 'agency'].includes(user.plan);
+  const isPremium = ['premium', 'agency'].includes(user.plan);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -309,6 +312,10 @@ const Reports = () => {
         message={alertState.message}
         type={alertState.type}
       />
+      <FinancialPlanningModal
+        isOpen={isPlanningModalOpen}
+        onClose={() => setIsPlanningModalOpen(false)}
+      />
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
             <h1 className="text-3xl font-bold text-white mb-2">Advanced Reports</h1>
@@ -336,6 +343,18 @@ const Reports = () => {
                 <option value={2024}>2024</option>
                 <option value={2025}>2025</option>
             </select>
+            <button 
+                onClick={() => {
+                    if (isPremium) {
+                        setIsPlanningModalOpen(true);
+                    } else {
+                        showAlert('Recurso Premium', 'O módulo de Planejamento Financeiro (Projeção de Fluxo de Caixa) é exclusivo do plano Premium.', 'locked');
+                    }
+                }}
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isPremium ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-700 text-gray-400 hover:text-white'}`}
+            >
+                <span>📈</span> Planning {!isPremium && '🔒'}
+            </button>
             <button 
                 onClick={exportCSV}
                 className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isPro ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-700 text-gray-400 hover:text-white'}`}

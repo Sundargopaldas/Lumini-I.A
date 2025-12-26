@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Reports from './pages/Reports';
 import Plans from './pages/Plans';
+import Invoices from './pages/Invoices';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Integrations from './pages/Integrations';
@@ -35,6 +36,7 @@ function App() {
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/transactions" element={<Transactions />} />
                     <Route path="/reports" element={<Reports />} />
+                    <Route path="/invoices" element={<Invoices />} />
                     <Route path="/plans" element={<Plans />} />
                     <Route path="/integrations" element={<Integrations />} />
                   </Routes>

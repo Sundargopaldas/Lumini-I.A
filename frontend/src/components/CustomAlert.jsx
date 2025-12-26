@@ -45,7 +45,7 @@ const CustomAlert = ({ isOpen, onClose, title, message, type = 'info' }) => {
           
           <div className="space-y-2">
             <h3 className="text-xl font-bold">{title}</h3>
-            <p className="text-sm opacity-90">{message}</p>
+            <div className="text-sm opacity-90 whitespace-pre-line">{message}</div>
           </div>
 
           <button

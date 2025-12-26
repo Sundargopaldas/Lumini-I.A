@@ -1,11 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import AddGoalModal from './AddGoalModal';
+import CustomAlert from './CustomAlert';
 
 const GoalsWidget = () => {
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isPro = ['pro', 'premium', 'agency'].includes(user.plan);
+
+  // Custom Alert State
+  const [alertState, setAlertState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showAlert = (title, message, type = 'info') => {
+    setAlertState({ isOpen: true, title, message, type });
+  };
+
+  const closeAlert = () => {
+    setAlertState(prev => ({ ...prev, isOpen: false }));
+  };
 
   const fetchGoals = async () => {
     try {
@@ -44,15 +64,34 @@ const GoalsWidget = () => {
 
   if (loading) return <div className="animate-pulse bg-white/5 h-40 rounded-2xl"></div>;
 
+  const handleOpenModal = () => {
+    if (!isPro && goals.length >= 3) {
+        showAlert('Premium Limit Reached', 'Free plan users are limited to 3 financial goals.\n\nUpgrade to PRO to track unlimited dreams!', 'locked');
+        return;
+    }
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl">
+      <CustomAlert 
+        isOpen={alertState.isOpen}
+        onClose={closeAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+      />
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-white">Financial Goals</h2>
         <button 
-          onClick={() => setIsModalOpen(true)}
-          className="text-sm bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+          onClick={handleOpenModal}
+          className={`text-sm px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 ${
+             !isPro && goals.length >= 3 
+                ? 'bg-slate-700 text-gray-400 hover:bg-slate-600' 
+                : 'bg-purple-600 hover:bg-purple-500 text-white'
+          }`}
         >
-          <span>+</span> Add Goal
+          <span>{(!isPro && goals.length >= 3) ? '🔒' : '+'}</span> Add Goal
         </button>
       </div>
 
