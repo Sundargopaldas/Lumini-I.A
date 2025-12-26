@@ -1,8 +1,33 @@
 import React, { useState } from 'react';
+import CustomAlert from './CustomAlert';
 
 const TaxSimulatorModal = ({ isOpen, onClose }) => {
   const [revenue, setRevenue] = useState({ service: 0, commerce: 0 });
   
+  // Advanced Mode State
+  const [mode, setMode] = useState('mei'); // 'mei' or 'simples'
+  const [anexo, setAnexo] = useState('III'); // 'III' or 'V' for Simples Nacional
+
+  // Custom Alert State
+  const [alertState, setAlertState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showAlert = (title, message, type = 'info') => {
+    setAlertState({ isOpen: true, title, message, type });
+  };
+
+  const closeAlert = () => {
+    setAlertState(prev => ({ ...prev, isOpen: false }));
+  };
+  
+  // User Plan Check
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isPro = user.plan === 'pro';
+
   if (!isOpen) return null;
 
   // 2025 MEI Values (Estimated)
@@ -12,10 +37,6 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
   const INSS = 75.10;
   const ICMS = 1.00;
   const ISS = 5.00;
-
-  // Advanced Mode State
-  const [mode, setMode] = useState('mei'); // 'mei' or 'simples'
-  const [anexo, setAnexo] = useState('III'); // 'III' or 'V' for Simples Nacional
 
   const calculateDAS = () => {
     if (mode === 'mei') {
@@ -42,6 +63,13 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <CustomAlert 
+        isOpen={alertState.isOpen}
+        onClose={closeAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+      />
       <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
         <button 
           onClick={onClose}
@@ -61,10 +89,17 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
                 MEI
             </button>
             <button 
-                onClick={() => setMode('simples')}
-                className={`flex-1 py-1 rounded-md text-sm font-medium transition-colors ${mode === 'simples' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                onClick={() => {
+                    if (isPro) {
+                        setMode('simples');
+                    } else {
+                        showAlert('Premium Feature', 'Simples Nacional simulation is a PRO feature. Upgrade to unlock!', 'locked');
+                    }
+                }}
+                className={`flex-1 py-1 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${mode === 'simples' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'} ${!isPro ? 'opacity-75' : ''}`}
             >
                 Simples Nacional
+                {!isPro && <span>🔒</span>}
             </button>
         </div>
 
@@ -123,8 +158,22 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
           </div>
 
           <button 
+            onClick={() => {
+                if (isPro) {
+                    showAlert('Success', 'Generating PDF Report... (Mock)', 'success');
+                } else {
+                    showAlert('Premium Feature', 'PDF Reports are available for PRO users only.', 'locked');
+                }
+            }}
+            className={`w-full bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-700 transition-all mt-4 border border-slate-700 flex justify-center items-center gap-2 ${!isPro ? 'opacity-60 cursor-not-allowed' : ''}`}
+          >
+            Export PDF Report
+            {!isPro && <span>🔒</span>}
+          </button>
+
+          <button 
             onClick={onClose}
-            className="w-full bg-purple-600 text-white font-bold py-3 rounded-lg hover:bg-purple-700 transition-all mt-4"
+            className="w-full bg-purple-600 text-white font-bold py-3 rounded-lg hover:bg-purple-700 transition-all mt-2"
           >
             Close Simulator
           </button>

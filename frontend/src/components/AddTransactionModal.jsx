@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import CustomAlert from './CustomAlert';
 
 const incomeSources = ['Hotmart', 'YouTube', 'TikTok', 'Eduzz', 'Monetizze', 'Twitch', 'Patreon', 'Client', 'Other'];
 const expenseSources = ['Equipment', 'Software', 'Ads', 'Freelancers', 'Office', 'Education', 'Travel', 'Other'];
@@ -11,10 +12,31 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
     date: new Date().toISOString().split('T')[0],
     type: 'income',
     source: '',
-    goalId: ''
+    goalId: '',
+    isRecurring: false
   });
   const [customSource, setCustomSource] = useState('');
   const [goals, setGoals] = useState([]);
+  
+  // Custom Alert State
+  const [alertState, setAlertState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showAlert = (title, message, type = 'info') => {
+    setAlertState({ isOpen: true, title, message, type });
+  };
+
+  const closeAlert = () => {
+    setAlertState(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // User Plan Check
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isPro = user.plan === 'pro';
 
   useEffect(() => {
     if (isOpen) {
@@ -32,7 +54,8 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
           date: transactionToEdit.date ? transactionToEdit.date.split('T')[0] : new Date().toISOString().split('T')[0],
           type: transactionToEdit.type,
           source: isCustom ? 'Other' : transactionToEdit.source,
-          goalId: transactionToEdit.goalId || ''
+          goalId: transactionToEdit.goalId || '',
+          isRecurring: transactionToEdit.isRecurring || false
         });
         
         if (isCustom) {
@@ -47,7 +70,8 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
           date: new Date().toISOString().split('T')[0],
           type: 'income',
           source: '',
-          goalId: ''
+          goalId: '',
+          isRecurring: false
         });
         setCustomSource('');
       }
@@ -57,7 +81,16 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
   if (!isOpen) return null;
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    
+    // Check Pro features
+    if (e.target.name === 'isRecurring' && !isPro) {
+        showAlert('Premium Feature', 'Recurring transactions are available for PRO users only. Upgrade to unlock!', 'locked');
+        return;
+    }
+
+    setFormData({ ...formData, [e.target.name]: value });
+    
     if (e.target.name === 'type') {
       setCustomSource(''); // Reset custom source when switching types
     }
@@ -83,22 +116,33 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
-        <button 
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
-        >
-          ✕
-        </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <CustomAlert 
+        isOpen={alertState.isOpen}
+        onClose={closeAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+      />
+      <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl relative flex flex-col max-h-[90vh]">
+        {/* Header - Fixed at top */}
+        <div className="p-6 pb-2 flex justify-between items-center shrink-0">
+            <h2 className="text-2xl font-bold text-white">
+                {transactionToEdit ? 'Edit Transaction' : 'Add Transaction'}
+            </h2>
+            <button 
+              onClick={onClose}
+              className="text-white hover:text-gray-300 transition-colors bg-white/10 rounded-full p-2"
+            >
+              ✕
+            </button>
+        </div>
         
-        <h2 className="text-2xl font-bold text-white mb-6">
-            {transactionToEdit ? 'Edit Transaction' : 'Add Transaction'}
-        </h2>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Scrollable Content */}
+        <div className="p-6 pt-2 overflow-y-auto">
+            <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Type</label>
+            <label className="block text-sm font-medium text-white mb-1">Type</label>
             <div className="flex space-x-4">
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input 
@@ -126,7 +170,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
+            <label className="block text-sm font-medium text-white mb-1">Description</label>
             <input 
               type="text" 
               name="description" 
@@ -138,7 +182,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Amount (R$)</label>
+            <label className="block text-sm font-medium text-white mb-1">Amount (R$)</label>
             <input 
               type="number" 
               name="amount" 
@@ -152,7 +196,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Date</label>
+            <label className="block text-sm font-medium text-white mb-1">Date</label>
             <input 
               type="date" 
               name="date" 
@@ -164,7 +208,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-white mb-1">
               {formData.type === 'income' ? 'Source' : 'Category'}
             </label>
             <select 
@@ -220,6 +264,23 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
             </div>
           )}
 
+          <div>
+            <label className={`flex items-center space-x-2 cursor-pointer bg-slate-800 p-3 rounded-lg border transition-colors ${!isPro ? 'border-slate-700 opacity-75' : 'border-slate-700 hover:border-purple-500'}`}>
+              <input 
+                type="checkbox" 
+                name="isRecurring" 
+                checked={formData.isRecurring} 
+                onChange={handleChange}
+                className="form-checkbox text-purple-600 focus:ring-purple-500 w-5 h-5 rounded"
+              />
+              <div className="flex-1">
+                 <span className="text-white font-medium block">Monthly Recurring</span>
+                 {!isPro && <span className="text-xs text-purple-400 font-bold flex items-center gap-1">🔒 PRO Feature</span>}
+                 {isPro && <span className="text-xs text-green-400 font-bold">Enabled</span>}
+              </div>
+            </label>
+          </div>
+
           <button 
             type="submit" 
             className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-3 rounded-lg hover:shadow-lg hover:shadow-purple-500/30 transition-all mt-4"
@@ -227,6 +288,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
             Save Transaction
           </button>
         </form>
+        </div>
       </div>
     </div>
   );

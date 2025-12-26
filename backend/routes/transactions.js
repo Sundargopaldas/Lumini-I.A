@@ -33,12 +33,17 @@ router.get('/', auth, async (req, res) => {
 
 // Create transaction
 router.post('/', auth, async (req, res) => {
-  const { amount, description, date, type, source, goalId } = req.body;
+  const { amount, description, date, type, source, goalId, isRecurring } = req.body;
 
   try {
     // Check plan limits
     const user = await User.findByPk(req.user.id);
     
+    // Check Recurring Feature (Pro Only)
+    if (isRecurring && user.plan === 'free') {
+        return res.status(403).json({ message: 'Recurring transactions are a PRO feature.' });
+    }
+
     // Auto-Categorization Logic
     let finalSource = source;
 
@@ -87,6 +92,7 @@ router.post('/', auth, async (req, res) => {
       type,
       source: finalSource,
       goalId: goalId || null,
+      isRecurring: isRecurring || false,
       userId: req.user.id
     });
 
@@ -112,7 +118,7 @@ router.post('/', auth, async (req, res) => {
 
 // Update transaction
 router.put('/:id', auth, async (req, res) => {
-  const { amount, description, date, type, source, goalId } = req.body;
+  const { amount, description, date, type, source, goalId, isRecurring } = req.body;
 
   try {
     let transaction = await Transaction.findByPk(req.params.id);
@@ -124,6 +130,12 @@ router.put('/:id', auth, async (req, res) => {
     // Make sure user owns transaction
     if (transaction.userId !== req.user.id) {
       return res.status(401).json({ msg: 'Not authorized' });
+    }
+
+    // Check Recurring Feature (Pro Only) on Update
+    const user = await User.findByPk(req.user.id);
+    if (isRecurring === true && user.plan === 'free') {
+        return res.status(403).json({ message: 'Recurring transactions are a PRO feature.' });
     }
 
     const oldGoalId = transaction.goalId;
@@ -164,6 +176,7 @@ router.put('/:id', auth, async (req, res) => {
       date,
       type,
       source,
+      isRecurring: isRecurring !== undefined ? isRecurring : transaction.isRecurring,
       goalId: newGoalId
     });
 

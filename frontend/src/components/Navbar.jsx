@@ -1,10 +1,29 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import api from '../services/api';
+import CustomAlert from './CustomAlert';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isPro = user.plan === 'pro';
+
+  // Custom Alert State
+  const [alertState, setAlertState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showAlert = (title, message, type = 'info') => {
+    setAlertState({ isOpen: true, title, message, type });
+  };
+
+  const closeAlert = () => {
+    setAlertState(prev => ({ ...prev, isOpen: false }));
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -12,8 +31,30 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const handleTogglePlan = async () => {
+    const newPlan = user.plan === 'pro' ? 'free' : 'pro';
+    try {
+      const response = await api.put('/auth/plan', { plan: newPlan });
+      if (response.status === 200) {
+        const updatedUser = { ...user, plan: newPlan };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Failed to update plan:', error);
+      showAlert('Error', 'Failed to toggle plan. Check console.', 'error');
+    }
+  };
+
   return (
     <nav className="bg-white/10 backdrop-blur-lg border-b border-white/20 sticky top-0 z-50">
+      <CustomAlert 
+        isOpen={alertState.isOpen}
+        onClose={closeAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+      />
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -38,14 +79,28 @@ const Navbar = () => {
           
           <div className="hidden md:flex items-center space-x-4">
             <button 
-                onClick={() => alert("👨‍💻 Priority Support\n\nAs a PRO user, you have direct access to our engineering team via WhatsApp.\n\nStart Chat: +55 (11) 99999-9999")}
+                onClick={() => {
+                    if (isPro) {
+                        showAlert('Priority Support', 'As a PRO user, you have direct access to our engineering team via WhatsApp.\n\nStart Chat: +55 (11) 99999-9999', 'success');
+                    } else {
+                        showAlert('Premium Feature', 'Priority WhatsApp Support is available for PRO users only. Upgrade to unlock!', 'locked');
+                    }
+                }}
                 className="text-gray-300 hover:text-white text-sm font-medium transition-colors"
             >
-                💬 Support
+                💬 Support {!isPro && '🔒'}
             </button>
-            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-              PRO PLAN
-            </div>
+            <button 
+                onClick={handleTogglePlan}
+                className={`px-3 py-1 rounded-full text-xs font-bold shadow-lg transition-all ${
+                  user.plan === 'pro' 
+                    ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:shadow-purple-500/50' 
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+                title="Click to toggle plan (Debug)"
+            >
+              {user.plan === 'pro' ? 'PRO PLAN' : 'FREE PLAN'}
+            </button>
             <span className="text-gray-300 text-sm">Hello, {user.username}</span>
             <button 
               onClick={handleLogout}

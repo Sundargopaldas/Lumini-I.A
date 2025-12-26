@@ -13,6 +13,7 @@ import { Bar, Doughnut } from 'react-chartjs-2';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import api from '../services/api';
+import CustomAlert from '../components/CustomAlert';
 
 // Register ChartJS components
 ChartJS.register(
@@ -30,6 +31,26 @@ const Reports = () => {
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  // Custom Alert State
+  const [alertState, setAlertState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showAlert = (title, message, type = 'info') => {
+    setAlertState({ isOpen: true, title, message, type });
+  };
+
+  const closeAlert = () => {
+    setAlertState(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // User Plan Check
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isPro = user.plan === 'pro';
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -152,6 +173,10 @@ const Reports = () => {
   }, [transactions, selectedMonth, selectedYear]);
 
   const exportPDF = () => {
+    if (!isPro) {
+        showAlert('Premium Feature', 'PDF Reports are available for PRO users only. Upgrade to unlock!', 'locked');
+        return;
+    }
     const doc = new jsPDF();
     
     // Header
@@ -235,6 +260,10 @@ const Reports = () => {
   };
 
   const exportCSV = () => {
+    if (!isPro) {
+        showAlert('Premium Feature', 'CSV Export is available for PRO users only. Upgrade to unlock!', 'locked');
+        return;
+    }
     // CSV Header
     const headers = ['Date,Description,Type,Source,Amount,Goal'];
     
@@ -273,6 +302,13 @@ const Reports = () => {
 
   return (
     <div className="space-y-8">
+      <CustomAlert 
+        isOpen={alertState.isOpen}
+        onClose={closeAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+      />
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
             <h1 className="text-3xl font-bold text-white mb-2">Advanced Reports</h1>
@@ -302,15 +338,15 @@ const Reports = () => {
             </select>
             <button 
                 onClick={exportCSV}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isPro ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-700 text-gray-400 hover:text-white'}`}
             >
-                <span>📊</span> Export CSV
+                <span>📊</span> Export CSV {!isPro && '🔒'}
             </button>
             <button 
                 onClick={exportPDF}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isPro ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-slate-700 text-gray-400 hover:text-white'}`}
             >
-                <span>📄</span> Export PDF
+                <span>📄</span> Export PDF {!isPro && '🔒'}
             </button>
         </div>
       </div>

@@ -31,6 +31,11 @@ const Transaction = sequelize.define('Transaction', {
     allowNull: true,
     defaultValue: DataTypes.NOW,
   },
+  isRecurring: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false,
+  },
   userId: {
     type: DataTypes.INTEGER,
     references: {

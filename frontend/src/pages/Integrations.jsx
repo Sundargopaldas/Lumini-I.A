@@ -1,13 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../services/api';
+import ConnectModal from '../components/ConnectModal';
+import CustomAlert from '../components/CustomAlert';
 
 const Integrations = () => {
   const [loading, setLoading] = useState({});
-  const [connected, setConnected] = useState({
-    nubank: false,
-    hotmart: false,
-    youtube: false
+  const [connectedIntegrations, setConnectedIntegrations] = useState([]);
+  const [selectedIntegration, setSelectedIntegration] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [userData, setUserData] = useState(null);
+  
+  // Custom Alert State
+  const [alertState, setAlertState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
   });
+
+  const showAlert = (title, message, type = 'info') => {
+    setAlertState({ isOpen: true, title, message, type });
+  };
+
+  const closeAlert = () => {
+    setAlertState(prev => ({ ...prev, isOpen: false }));
+  };
 
   const integrations = [
     {
@@ -24,7 +41,8 @@ const Integrations = () => {
       type: 'Platform',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Hotmart_logo.svg/2560px-Hotmart_logo.svg.png',
       color: 'bg-orange-600',
-      description: 'Import your digital product sales in real-time.'
+      description: 'Import your digital product sales in real-time.',
+      hasWebhook: true
     },
     {
       id: 'youtube',
@@ -36,37 +54,134 @@ const Integrations = () => {
     }
   ];
 
-  const handleConnect = (id) => {
-    // Toggle connection state (Mock)
-    setConnected(prev => ({ ...prev, [id]: !prev[id] }));
-  };
+  // Fetch initial data
+  useEffect(() => {
+    fetchIntegrations();
+    fetchUserData();
+  }, []);
 
-  const handleSync = async (id, name) => {
-    setLoading(prev => ({ ...prev, [id]: true }));
+  const fetchIntegrations = async () => {
     try {
-      const response = await api.post('/integrations/sync', { provider: name });
-      alert(`✅ Success! ${response.data.message}`);
+      const response = await api.get('/integrations');
+      setConnectedIntegrations(response.data);
     } catch (error) {
-        console.error('Sync error:', error);
-        // Pro users have unlimited access, so we don't block them.
-        // If we wanted to block free users, we'd check here.
-        alert("❌ Failed to sync. Don't worry, your data is safe.");
-    } finally {
-      setLoading(prev => ({ ...prev, [id]: false }));
+      console.error('Error fetching integrations:', error);
     }
   };
 
-  console.log('Rendering Integrations component');
+  const fetchUserData = () => {
+      // Assuming user data is stored in local storage from login
+      // If not, we might need an endpoint, but for plan display purposes:
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) setUserData(user);
+  };
+
+  const handleOpenConnect = (integration) => {
+      // Check limit client-side for better UX (fail fast)
+      const isFree = userData?.plan === 'free';
+      
+      if (isFree) {
+          showAlert("Premium Feature", "Integrations are available for PRO users only. Upgrade to unlock!", "locked");
+          return;
+      }
+
+      setSelectedIntegration(integration);
+      setIsModalOpen(true);
+  };
+
+  const handleConnectSuccess = async (apiKey) => {
+    if (!selectedIntegration) return;
+
+    try {
+        const response = await api.post('/integrations/connect', {
+            provider: selectedIntegration.name,
+            apiKey
+        });
+        
+        // Update local state
+        setConnectedIntegrations(prev => [...prev, response.data]);
+        // Let the modal show the success screen
+        return true;
+
+    } catch (error) {
+        console.error('Connection error:', error);
+        if (error.response && error.response.status === 403) {
+            showAlert("Limit Reached", error.response.data.message, "locked");
+        } else {
+            showAlert("Connection Failed", error.response?.data?.message || 'Unknown error', "error");
+        }
+        throw error; // Propagate to modal to stop loading
+    }
+  };
+  
+  const handleDisconnect = async (integrationName) => {
+      const integration = connectedIntegrations.find(i => i.provider === integrationName);
+      if (!integration) return;
+
+      if(window.confirm('Are you sure you want to disconnect?')) {
+        try {
+            await api.delete(`/integrations/${integration.id}`);
+            setConnectedIntegrations(prev => prev.filter(i => i.id !== integration.id));
+        } catch (error) {
+            console.error('Disconnect error:', error);
+            alert("❌ Failed to disconnect.");
+        }
+      }
+  };
+
+  const handleSync = async (integrationName) => {
+    setLoading(prev => ({ ...prev, [integrationName]: true }));
+    try {
+      const response = await api.post('/integrations/sync', { provider: integrationName });
+      showAlert("Sync Success", response.data.message, "success");
+    } catch (error) {
+        console.error('Sync error:', error);
+        showAlert("Sync Failed", error.response?.data?.message || 'Server error', "error");
+    } finally {
+      setLoading(prev => ({ ...prev, [integrationName]: false }));
+    }
+  };
+
+  const isConnected = (name) => {
+      return connectedIntegrations.some(i => i.provider === name);
+  };
 
   return (
     <div className="space-y-8">
+      <CustomAlert 
+        isOpen={alertState.isOpen}
+        onClose={closeAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+      />
+
+      <ConnectModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        integration={selectedIntegration}
+        onConnect={handleConnectSuccess}
+      />
+
+      {/* Pro Badge / Limit Info */}
       <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/30 p-4 rounded-xl flex items-start gap-3">
         <div className="text-2xl">⚡</div>
         <div>
-            <h3 className="text-purple-200 font-bold text-sm">PRO Plan Active: Unlimited Integrations</h3>
-            <p className="text-purple-200/70 text-xs mt-1">
-                You have access to all integrations with no limits. Connect as many accounts as you need.
-            </p>
+            {userData?.plan === 'free' ? (
+                <>
+                    <h3 className="text-purple-200 font-bold text-sm">Free Plan: No Integrations Included</h3>
+                    <p className="text-purple-200/70 text-xs mt-1">
+                        Integrations are a PRO feature. Upgrade to connect your banks and platforms.
+                    </p>
+                </>
+            ) : (
+                <>
+                    <h3 className="text-purple-200 font-bold text-sm">PRO Plan Active: Unlimited Integrations</h3>
+                    <p className="text-purple-200/70 text-xs mt-1">
+                        You have access to all integrations with no limits. Connect as many accounts as you need.
+                    </p>
+                </>
+            )}
         </div>
       </div>
 
@@ -99,18 +214,27 @@ const Integrations = () => {
                 <h3 className="text-xl font-bold text-white">{integration.name}</h3>
                 <span className="text-xs font-medium text-gray-400 bg-white/10 px-2 py-1 rounded">{integration.type}</span>
               </div>
-              <p className="text-sm text-gray-400 mb-6">{integration.description}</p>
+              <p className="text-gray-400 text-sm mb-6">{integration.description}</p>
+              
+              {integration.hasWebhook && isConnected(integration.name) && (
+                  <div className="mb-4 bg-black/30 p-3 rounded border border-white/5">
+                      <p className="text-xs text-gray-500 mb-1">Your Webhook URL:</p>
+                      <code className="text-xs text-orange-400 break-all select-all block">
+                          https://api.luminia.com/v1/webhooks/hotmart
+                      </code>
+                  </div>
+              )}
             </div>
 
             <div className="space-y-3">
-                {connected[integration.id] ? (
+                {isConnected(integration.name) ? (
                     <>
                         <button 
-                            onClick={() => handleSync(integration.id, integration.name)}
-                            disabled={loading[integration.id]}
+                            onClick={() => handleSync(integration.name)}
+                            disabled={loading[integration.name]}
                             className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
                         >
-                            {loading[integration.id] ? (
+                            {loading[integration.name] ? (
                                 'Syncing...'
                             ) : (
                                 <>
@@ -122,7 +246,7 @@ const Integrations = () => {
                             )}
                         </button>
                         <button 
-                            onClick={() => handleConnect(integration.id)}
+                            onClick={() => handleDisconnect(integration.name)}
                             className="w-full bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10 font-medium py-2 rounded-lg transition-colors text-sm"
                         >
                             Disconnect
@@ -130,7 +254,7 @@ const Integrations = () => {
                     </>
                 ) : (
                     <button 
-                        onClick={() => handleConnect(integration.id)}
+                        onClick={() => handleOpenConnect(integration)}
                         className="w-full bg-white text-purple-900 font-bold py-2 rounded-lg hover:bg-gray-200 transition-colors"
                     >
                         Connect
