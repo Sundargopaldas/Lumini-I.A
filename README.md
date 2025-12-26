@@ -1,7 +1,7 @@
 # ✨ Lumini I.A
 
 > **The Ultimate Financial Assistant for Creators & Digital Entrepreneurs.**  
-> Manage your income, track expenses, simulate taxes, and integrate with your favorite platforms in one beautiful dashboard.
+> Manage your income, track expenses, simulate taxes, issue invoices, and plan your financial future in one beautiful dashboard.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React](https://img.shields.io/badge/frontend-React%20%2B%20Vite-61DAFB.svg?logo=react)
@@ -12,7 +12,7 @@
 
 ## 🚀 Overview
 
-**Lumini I.A** is a specialized financial management platform designed for the modern creator economy. Whether you're a YouTuber, Streamer, or Digital Marketer, Lumini helps you keep track of your finances with automated integrations and smart insights.
+**Lumini I.A** is a specialized financial management platform designed for the modern creator economy. Whether you're a YouTuber, Streamer, or Digital Marketer, Lumini helps you keep track of your finances with automated integrations, smart insights, and bureaucratic automation.
 
 ### 🌟 Key Features
 
@@ -26,32 +26,34 @@
 - **Recurring Transactions (Pro):** Set up automatic monthly recurring income/expenses.
 - **Goal Linking:** Directly link transactions to specific financial goals to track progress automatically.
 
+#### 🧾 Automation & Bureaucracy (Premium)
+- **NFS-e Issuing:** Issue Service Invoices automatically or manually with a few clicks.
+- **Certificate Management:** Securely manage your A1 Digital Certificate.
+- **Tax Simulator:** Compare MEI vs. Simples Nacional regimes to optimize your taxes.
+
+#### 📈 Financial Planning (Premium)
+- **Cash Flow Projection:** AI-powered projection of your future revenue vs. costs.
+- **Goal Setting:** Define revenue targets and expense limits to stay on track.
+
 #### 🏦 Integrations (Open Finance)
 - **Connect Your Accounts:** Seamlessly integrate with banks (Nubank, Inter) and platforms (Hotmart, YouTube, Adsense).
 - **Automated Sync:** Fetch transactions automatically to save time on manual entry.
-- **Safety First:** Built with simulated OAuth flows for secure and private connection handling.
-
-#### ⚖️ Tax Simulator
-- **MEI vs. Simples Nacional:** Compare tax regimes to find the best fit for your business.
-- **Advanced Calculations (Pro):** Simulate taxes based on service vs. commerce revenue streams.
-
-#### 📑 Reports
-- **Detailed Statements:** View comprehensive transaction history.
-- **Export Options (Pro):** Download your financial data in **CSV** or **PDF** formats for your accountant.
 
 ---
 
 ## 💎 Plans & Pricing
 
-| Feature | Free Plan | Pro Plan (✨) |
-| :--- | :---: | :---: |
-| **Dashboard Access** | ✅ | ✅ |
-| **Manual Transactions** | ✅ | ✅ |
-| **Recurring Transactions** | ❌ | ✅ |
-| **Integrations** | 0 (Demo) | Unlimited |
-| **Tax Simulator** | Basic (MEI) | Advanced (Simples) |
-| **Reports Export** | ❌ | ✅ (CSV/PDF) |
-| **Priority Support** | ❌ | ✅ (WhatsApp) |
+| Feature | Free Plan | Pro Plan (✨) | Premium Plan (👑) |
+| :--- | :---: | :---: | :---: |
+| **Dashboard Access** | ✅ | ✅ | ✅ |
+| **Manual Transactions** | ✅ | ✅ | ✅ |
+| **Recurring Transactions** | ❌ | ✅ | ✅ |
+| **Integrations** | 0 (Demo) | Unlimited | Unlimited |
+| **Reports Export** | ❌ | ✅ (CSV/PDF) | ✅ (CSV/PDF) |
+| **Priority Support** | ❌ | ✅ (WhatsApp) | ✅ (Dedicated Manager) |
+| **NFS-e Issuing** | ❌ | ❌ | ✅ |
+| **Financial Planning** | ❌ | ❌ | ✅ |
+| **Consulting** | ❌ | ❌ | ✅ (Monthly) |
 
 ---
 
