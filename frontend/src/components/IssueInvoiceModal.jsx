@@ -1,31 +1,68 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     clientName: '',
     document: '', // CPF/CNPJ
     email: '',
+    cep: '',
+    address: '',
+    neighborhood: '',
+    city: '',
+    state: '',
     serviceDescription: '',
     value: '',
     issRetained: false
-  });
+  };
+  const [formData, setFormData] = useState(initialFormState);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(initialFormState);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const formatCurrency = (value) => {
+    if (!value) return '';
+    // Removes non-numeric characters
+    const numericValue = value.replace(/\D/g, '');
+    if (!numericValue) return '';
+    // Converts to number and divides by 100 to account for cents
+    const amount = Number(numericValue) / 100;
+    // Formats to BRL
+    return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
+  const handleCurrencyChange = (e) => {
+    const value = e.target.value;
+    setFormData({ ...formData, value: formatCurrency(value) });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    onIssue(formData);
+    // Clean currency value to float before sending
+    let numericValue = 0;
+    if (formData.value) {
+        numericValue = parseFloat(formData.value.replace(/[^\d,]/g, '').replace(',', '.'));
+    }
+    
+    if (isNaN(numericValue)) numericValue = 0;
+
+    onIssue({ ...formData, value: numericValue });
     setLoading(false);
     onClose();
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
@@ -81,8 +118,65 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
                     value={formData.email}
                     onChange={e => setFormData({...formData, email: e.target.value})}
                   />
-                </div>
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">CEP</label>
+                <input
+                  type="text"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="00000-000"
+                  value={formData.cep}
+                  onChange={e => setFormData({...formData, cep: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Endereço</label>
+                <input
+                  type="text"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Rua, Número"
+                  value={formData.address}
+                  onChange={e => setFormData({...formData, address: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Bairro</label>
+                <input
+                  type="text"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Bairro"
+                  value={formData.neighborhood}
+                  onChange={e => setFormData({...formData, neighborhood: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Cidade</label>
+                <input
+                  type="text"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Cidade"
+                  value={formData.city}
+                  onChange={e => setFormData({...formData, city: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Estado</label>
+                <input
+                  type="text"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="UF"
+                  maxLength="2"
+                  value={formData.state}
+                  onChange={e => setFormData({...formData, state: e.target.value})}
+                />
+              </div>
+            </div>
             </div>
 
             <div className="h-px bg-white/10 my-4"></div>
@@ -105,15 +199,14 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Valor do Serviço (R$)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Valor do Serviço</label>
                   <input
-                    type="number"
+                    type="text"
                     required
-                    step="0.01"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="0.00"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-right font-mono text-lg"
+                    placeholder="R$ 0,00"
                     value={formData.value}
-                    onChange={e => setFormData({...formData, value: e.target.value})}
+                    onChange={handleCurrencyChange}
                   />
                 </div>
                 <div className="flex items-center pt-6">
@@ -139,11 +232,11 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    Processando...
+                    <span>Processando...</span>
                   </>
                 ) : (
                   <>
-                    <span>🚀</span> Emitir Nota Fiscal
+                    <span>🚀</span> <span>Emitir Nota Fiscal</span>
                   </>
                 )}
               </button>
@@ -155,7 +248,8 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
           </form>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

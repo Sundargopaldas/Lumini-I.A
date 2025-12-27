@@ -82,7 +82,8 @@ const CheckoutForm = ({ plan }) => {
            email: email,
            paymentMethodId: paymentMethod.id,
            planName: plan?.name,
-           name: formData.name
+           name: formData.name,
+           cpfCnpj: formData.cpfCnpj
         });
 
         if (response.data.status === 'active' || response.data.status === 'trialing') {

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
+const Invoice = require('../models/Invoice');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 // Stripe Webhook Handler
@@ -75,6 +76,7 @@ router.post('/hotmart', async (req, res) => {
 
     // 2. Process only approved sales
     if (status === 'approved') {
+        // Create Transaction
         await Transaction.create({
             description: `Hotmart Sale: ${prod_name}`,
             amount: price,
@@ -83,8 +85,31 @@ router.post('/hotmart', async (req, res) => {
             date: new Date(),
             userId: user.id
         });
+
+        // Create Invoice (NFS-e)
+        // Simulate extracting buyer info from webhook payload
+        const buyerName = req.body.first_name || 'Cliente Hotmart';
+        const buyerDoc = req.body.doc || '000.000.000-00';
+        const buyerEmail = req.body.email || 'cliente@email.com';
+        const buyerAddress = req.body.address 
+            ? `${req.body.address}, ${req.body.address_number || ''} - ${req.body.address_city || ''}/${req.body.address_state || ''}`
+            : 'Endereço não informado';
+
+        const newInvoice = await Invoice.create({
+            userId: user.id,
+            clientName: buyerName,
+            clientDocument: buyerDoc,
+            clientEmail: buyerEmail,
+            clientAddress: buyerAddress,
+            serviceDescription: `Curso Online: ${prod_name}`,
+            amount: price,
+            status: 'issued',
+            issueDate: new Date(),
+            externalReference: req.body.hottok || 'hotmart-ref'
+        });
         
         console.log(`[Webhook] Processed sale for ${user.email}: ${prod_name} - R$ ${price}`);
+        console.log(`[Webhook] Invoice #${newInvoice.id} generated automatically.`);
     }
 
     res.status(200).send('Webhook received');

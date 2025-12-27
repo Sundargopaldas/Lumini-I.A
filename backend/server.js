@@ -16,6 +16,8 @@ require('./models/Category');
 require('./models/Transaction');
 require('./models/Goal');
 require('./models/Integration');
+require('./models/Invoice');
+require('./models/Certificate');
 
 // Routes Placeholder
 const authRoutes = require('./routes/auth');
@@ -25,6 +27,8 @@ const integrationRoutes = require('./routes/integrations');
 const goalRoutes = require('./routes/goals');
 const webhookRoutes = require('./routes/webhooks');
 const paymentRoutes = require('./routes/payments');
+const invoiceRoutes = require('./routes/invoices');
+const certificateRoutes = require('./routes/certificates');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
@@ -33,6 +37,8 @@ app.use('/api/integrations', integrationRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/invoices', invoiceRoutes);
+app.use('/api/certificates', certificateRoutes);
 
 app.get('/', (req, res) => {
   res.send('Lumini I.A Backend is running');
@@ -48,6 +54,16 @@ const startServer = async () => {
     // Note: Since you have existing tables, be careful with sync. 
     // 'alter: true' tries to match the model to the table.
     await sequelize.sync();
+    
+    // Manual migration for cpfCnpj (safe add)
+    try {
+        await sequelize.query("ALTER TABLE Users ADD COLUMN cpfCnpj VARCHAR(255);");
+        console.log("Added cpfCnpj column to Users table.");
+    } catch (err) {
+        // Column likely exists
+        console.log("Note: cpfCnpj column check - " + err.message);
+    }
+
     console.log('Database synchronized.');
 
     const server = app.listen(PORT, () => {

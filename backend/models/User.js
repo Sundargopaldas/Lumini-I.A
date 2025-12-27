@@ -24,6 +24,10 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  cpfCnpj: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   plan: {
     type: DataTypes.ENUM('free', 'pro', 'premium', 'agency'),
     defaultValue: 'free',

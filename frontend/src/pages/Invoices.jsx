@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import CertificateModal from '../components/CertificateModal';
 import IssueInvoiceModal from '../components/IssueInvoiceModal';
 import CustomAlert from '../components/CustomAlert';
+import api from '../services/api';
 
 const Invoices = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -18,90 +19,298 @@ const Invoices = () => {
   const [alertState, setAlertState] = useState({ isOpen: false, title: '', message: '', type: 'info' });
   const showAlert = (title, message, type) => setAlertState({ isOpen: true, title, message, type });
 
-  // Mock Data
-  const [invoices, setInvoices] = useState([
-    { id: '20250001', date: '2025-12-20', client: 'João Silva', amount: 97.00, status: 'issued', service: 'Curso Online de Marketing Digital' },
-    { id: '20250002', date: '2025-12-21', client: 'Maria Oliveira', amount: 197.00, status: 'issued', service: 'Consultoria Financeira' },
-    { id: '20250003', date: '2025-12-22', client: 'Pedro Santos', amount: 97.00, status: 'processing', service: 'Ebook: Investimentos' },
-  ]);
+  const [invoices, setInvoices] = useState([]);
+
+  // Fetch invoices from backend
+  const fetchInvoices = async () => {
+    try {
+        const response = await api.get('/invoices');
+        setInvoices(response.data);
+    } catch (error) {
+        console.error('Error fetching invoices:', error);
+        // Fallback or empty if error
+    }
+  };
+
+  // Fetch certificate status
+  const fetchCertificate = async () => {
+    try {
+        const response = await api.get('/certificates');
+        if (response.data) {
+            setCertificate(response.data);
+        }
+    } catch (error) {
+        // It's okay if not found (404)
+        console.log('No certificate found or error fetching.');
+    }
+  };
+
+  useEffect(() => {
+    if (isPremium) {
+        fetchInvoices();
+        fetchCertificate();
+    }
+  }, [isPremium]);
 
   const handleSaveCertificate = (data) => {
     setCertificate(data);
-    showAlert('Sucesso', 'Certificado Digital conectado com sucesso! Agora você pode emitir notas.', 'success');
+    if (data) {
+        showAlert('Sucesso', 'Certificado Digital conectado com sucesso! Agora você pode emitir notas.', 'success');
+    } else {
+        showAlert('Sucesso', 'Certificado removido com sucesso.', 'success');
+    }
   };
 
-  const handleIssueInvoice = (data) => {
-    const newInvoice = {
-        id: (parseInt(invoices[0]?.id || '20250000') + 1).toString(),
-        date: new Date().toISOString().split('T')[0],
-        client: data.clientName,
-        amount: parseFloat(data.value),
-        status: 'processing',
-        service: data.serviceDescription
-    };
-    setInvoices([newInvoice, ...invoices]);
-    showAlert('Processando', 'A nota fiscal foi enviada para processamento na prefeitura. Você será notificado por e-mail.', 'success');
+  const handleIssueInvoice = async (data) => {
+    try {
+        // Clean currency string to float
+        const cleanValue = typeof data.value === 'string' 
+            ? parseFloat(data.value.replace(/[^\d,]/g, '').replace(',', '.')) 
+            : data.value;
+
+        const payload = {
+            ...data,
+            value: cleanValue
+        };
+
+        const response = await api.post('/invoices', payload);
+        
+        setInvoices([response.data, ...invoices]);
+        showAlert('Sucesso', 'Nota fiscal emitida com sucesso!', 'success');
+    } catch (error) {
+        console.error('Error issuing invoice:', error);
+        showAlert('Erro', 'Falha ao emitir nota fiscal.', 'error');
+    }
   };
+
+  const handleDeleteInvoice = async (id, originalId) => {
+    if (window.confirm('Tem certeza que deseja excluir esta nota fiscal?')) {
+        try {
+            // Use originalId (database ID) if available, otherwise fallback to id (might be string)
+            const idToDelete = originalId || id;
+            await api.delete(`/invoices/${idToDelete}`);
+            
+            const updatedInvoices = invoices.filter(inv => inv.id !== id);
+            setInvoices(updatedInvoices);
+            showAlert('Sucesso', 'Nota fiscal excluída com sucesso!', 'success');
+        } catch (error) {
+            console.error('Error deleting invoice:', error);
+            showAlert('Erro', 'Falha ao excluir nota fiscal.', 'error');
+        }
+    }
+  };
+
+  // Calculate totals dynamically
+  const totalCount = invoices.length;
+  const totalAmount = invoices.reduce((acc, inv) => acc + inv.amount, 0);
+  const franchiseLimit = 200;
+  const franchiseUsedPercent = Math.min((totalCount / franchiseLimit) * 100, 100);
 
   const generatePDF = (invoice) => {
     const doc = new jsPDF();
     
-    // Header - Prefeitura
-    doc.setFillColor(240, 240, 240);
-    doc.rect(10, 10, 190, 25, 'F');
-    doc.setFontSize(16);
+    // --- HEADER ---
+    doc.setDrawColor(0);
+    doc.setFillColor(250, 250, 250);
+    doc.rect(10, 10, 190, 28, 'F');
+    doc.rect(10, 10, 190, 28);
+    
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('PREFEITURA MUNICIPAL DE SÃO PAULO', 105, 20, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text('SECRETARIA DE FINANÇAS - NOTA FISCAL DE SERVIÇOS ELETRÔNICA - NFS-e', 105, 30, { align: 'center' });
-
-    // Invoice Info
-    doc.rect(10, 37, 190, 20);
+    doc.text('PREFEITURA MUNICIPAL DE SÃO PAULO', 105, 18, { align: 'center' });
     doc.setFontSize(10);
-    doc.text(`Número da Nota: ${invoice.id}`, 15, 45);
-    doc.text(`Data e Hora de Emissão: ${invoice.date} 14:30:00`, 15, 52);
-    doc.text(`Código de Verificação: A1B2-C3D4`, 120, 45);
-
-    // Prestador (User)
-    doc.rect(10, 59, 190, 35);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PRESTADOR DE SERVIÇOS', 15, 66);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text(`Razão Social: ${certificate?.razaoSocial || user.username + ' LTDA'}`, 15, 73);
-    doc.text(`CNPJ: ${certificate?.cnpj || '00.000.000/0001-00'}`, 15, 79);
-    doc.text(`E-mail: ${user.email}`, 15, 85);
-
-    // Tomador (Client)
-    doc.rect(10, 96, 190, 35);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('TOMADOR DE SERVIÇOS', 15, 103);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text(`Nome/Razão Social: ${invoice.client}`, 15, 110);
-    doc.text('CPF/CNPJ: 123.456.789-00', 15, 116);
-    doc.text('Endereço: Não Informado', 15, 122);
-
-    // Discriminação dos Serviços
-    doc.rect(10, 133, 190, 50);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('DISCRIMINAÇÃO DOS SERVIÇOS', 15, 140);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text(invoice.service, 15, 148);
-    doc.text('Serviço prestado referente à venda de infoproduto.', 15, 154);
-
-    // Valores
-    doc.rect(10, 185, 190, 30);
-    doc.setFont('helvetica', 'bold');
-    doc.text('VALOR TOTAL DA NOTA = R$ ' + invoice.amount.toFixed(2), 105, 205, { align: 'center' });
-
-    // Footer
+    doc.text('NOTA FISCAL DE SERVIÇOS ELETRÔNICA - NFS-e', 105, 24, { align: 'center' });
     doc.setFontSize(8);
-    doc.text('Documento emitido por ME ou EPP optante pelo Simples Nacional.', 105, 280, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.text(`RPS Nº ${invoice.id} Série A, emitido em ${new Date(invoice.date).toLocaleDateString('pt-BR')}`, 105, 32, { align: 'center' });
+
+    // --- INFO ROW ---
+    let y = 40;
+    doc.rect(10, y, 190, 14);
+    
+    // Vertical dividers
+    doc.line(73, y, 73, y+14);
+    doc.line(136, y, 136, y+14);
+
+    // Col 1: Numero
+    doc.setFontSize(7);
+    doc.text('NÚMERO DA NOTA', 41.5, y+4, { align: 'center' });
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(invoice.id, 41.5, y+10, { align: 'center' });
+
+    // Col 2: Data Emissao
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text('DATA E HORA DE EMISSÃO', 104.5, y+4, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`, 104.5, y+10, { align: 'center' });
+
+    // Col 3: Codigo Verificacao
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text('CÓDIGO DE VERIFICAÇÃO', 168, y+4, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('A1B2-C3D4-E5F6', 168, y+10, { align: 'center' });
+
+    // --- PRESTADOR ---
+    y += 16;
+    doc.rect(10, y, 190, 30);
+    doc.setFillColor(230, 230, 230);
+    doc.rect(10, y, 190, 6, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PRESTADOR DE SERVIÇOS', 105, y+4, { align: 'center' });
+
+    // Logo placeholder (Left)
+    doc.rect(14, y+9, 18, 18);
+    doc.setFontSize(6);
+    doc.text('LOGO', 23, y+19, { align: 'center' });
+
+    // Details
+    const startX = 38;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Razão Social:', startX, y+10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(certificate?.razaoSocial || user.username?.toUpperCase() + ' LTDA', startX+22, y+10);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('CPF/CNPJ:', startX, y+15);
+    doc.setFont('helvetica', 'normal');
+    doc.text(certificate?.cnpj || '00.000.000/0001-00', startX+22, y+15);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Endereço:', startX, y+20);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Av. Paulista, 1000 - Bela Vista - São Paulo/SP - CEP: 01310-100', startX+22, y+20);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Município:', startX, y+25);
+    doc.setFont('helvetica', 'normal');
+    doc.text('São Paulo - SP', startX+22, y+25);
+
+    // --- TOMADOR ---
+    y += 32;
+    doc.rect(10, y, 190, 28);
+    doc.setFillColor(230, 230, 230);
+    doc.rect(10, y, 190, 6, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TOMADOR DE SERVIÇOS', 105, y+4, { align: 'center' });
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Nome/Razão Social:', 15, y+10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(invoice.client, 50, y+10);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('CPF/CNPJ:', 15, y+15);
+    doc.setFont('helvetica', 'normal');
+    doc.text(invoice.clientDocument || 'Não Informado', 50, y+15);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Endereço:', 15, y+20);
+    doc.setFont('helvetica', 'normal');
+    doc.text(invoice.clientAddress || 'Não Informado', 50, y+20);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('E-mail:', 15, y+25);
+    doc.setFont('helvetica', 'normal');
+    doc.text(invoice.clientEmail || 'Não Informado', 50, y+25);
+
+    // --- DISCRIMINAÇÃO ---
+    y += 30;
+    doc.rect(10, y, 190, 50);
+    doc.setFillColor(230, 230, 230);
+    doc.rect(10, y, 190, 6, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DISCRIMINAÇÃO DOS SERVIÇOS', 105, y+4, { align: 'center' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    const splitService = doc.splitTextToSize(invoice.service || '', 180);
+    doc.text(splitService, 15, y+12);
+    
+    // --- IMPOSTOS E TOTAIS ---
+    y += 52;
+    doc.rect(10, y, 190, 35); // Main box
+    
+    // Row 1: Federal Taxes Headers & Values
+    doc.setFillColor(245, 245, 245);
+    doc.rect(10, y, 190, 12, 'F');
+    doc.line(10, y+12, 200, y+12);
+
+    const taxes = ['PIS', 'COFINS', 'INSS', 'IR', 'CSLL', 'Outras'];
+    const colWidth = 190 / 6;
+    
+    doc.setFontSize(7);
+    taxes.forEach((tax, i) => {
+        const x = 10 + (i * colWidth);
+        doc.line(x + colWidth, y, x + colWidth, y+12); // Vertical line
+        doc.setFont('helvetica', 'bold');
+        doc.text(tax + ' (R$)', x + (colWidth/2), y+4, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.text('0,00', x + (colWidth/2), y+9, { align: 'center' });
+    });
+
+    // Row 2: Service Values
+    doc.line(10, y+24, 200, y+24);
+    
+    const values = ['VALOR SERVIÇOS', 'DEDUÇÕES', 'DESC. INCOND', 'BASE CÁLCULO', 'ALÍQUOTA', 'VALOR ISS'];
+    values.forEach((val, i) => {
+        const x = 10 + (i * colWidth);
+        doc.line(x + colWidth, y+12, x + colWidth, y+24); // Vertical line
+        doc.setFont('helvetica', 'bold');
+        doc.text(val, x + (colWidth/2), y+16, { align: 'center' });
+    });
+
+    // Values for Row 2
+    const amountStr = invoice.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    const issStr = (invoice.amount * 0.05).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    
+    doc.setFont('helvetica', 'normal');
+    doc.text(amountStr, 10 + (colWidth*0.5), y+21, { align: 'center' }); // Servicos
+    doc.text('0,00', 10 + (colWidth*1.5), y+21, { align: 'center' }); // Deducoes
+    doc.text('0,00', 10 + (colWidth*2.5), y+21, { align: 'center' }); // Desc
+    doc.text(amountStr, 10 + (colWidth*3.5), y+21, { align: 'center' }); // Base
+    doc.text('5%', 10 + (colWidth*4.5), y+21, { align: 'center' }); // Aliquota
+    doc.text(issStr, 10 + (colWidth*5.5), y+21, { align: 'center' }); // ISS
+
+    // Row 3: Net Value
+    doc.setFillColor(220, 220, 220);
+    doc.rect(10, y+24, 190, 11, 'F');
+    doc.rect(10, y+24, 190, 11); // Border
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('VALOR LÍQUIDO DA NOTA', 30, y+31);
+    doc.setFontSize(12);
+    doc.text('R$ ' + amountStr, 180, y+31, { align: 'right' });
+
+    // --- OUTRAS INFORMACOES ---
+    y += 37;
+    doc.rect(10, y, 190, 22);
+    doc.setFillColor(230, 230, 230);
+    doc.rect(10, y, 190, 6, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('OUTRAS INFORMAÇÕES', 105, y+4, { align: 'center' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text('Esta NFS-e foi emitida com respaldo na Lei Nº 14.063/2020.', 15, y+10);
+    doc.text('Documento emitido por ME ou EPP optante pelo Simples Nacional.', 15, y+14);
+    doc.text('Não gera direito a crédito fiscal de IPI.', 15, y+18);
+    
+    // QR Code Placeholder
+    doc.rect(175, y+7, 14, 14);
+    doc.setFontSize(5);
+    doc.text('QR CODE', 182, y+15, { align: 'center' });
 
     doc.save(`NFS-e-${invoice.id}.pdf`);
   };
@@ -154,6 +363,7 @@ const Invoices = () => {
         isOpen={isCertModalOpen}
         onClose={() => setIsCertModalOpen(false)}
         onSave={handleSaveCertificate}
+        certificate={certificate}
       />
       
       <IssueInvoiceModal
@@ -188,20 +398,22 @@ const Invoices = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white/5 border border-white/10 p-6 rounded-xl">
             <h3 className="text-gray-400 text-sm mb-1">Notas Emitidas (Mês)</h3>
-            <p className="text-3xl font-bold text-white">127</p>
+            <p className="text-3xl font-bold text-white">{totalCount}</p>
         </div>
         <div className="bg-white/5 border border-white/10 p-6 rounded-xl">
             <h3 className="text-gray-400 text-sm mb-1">Valor Total</h3>
-            <p className="text-3xl font-bold text-green-400">R$ 12.450,00</p>
+            <p className="text-3xl font-bold text-green-400">
+                {totalAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </p>
         </div>
         <div className="bg-white/5 border border-white/10 p-6 rounded-xl">
             <h3 className="text-gray-400 text-sm mb-1">Franquia do Plano (Mensal)</h3>
             <div className="flex items-end gap-2 mb-2">
-                <p className="text-3xl font-bold text-white">127</p>
-                <p className="text-gray-400 mb-1">/ 200 notas</p>
+                <p className="text-3xl font-bold text-white">{totalCount}</p>
+                <p className="text-gray-400 mb-1">/ {franchiseLimit} notas</p>
             </div>
             <div className="w-full bg-slate-700 rounded-full h-2">
-                <div className="bg-purple-500 h-2 rounded-full" style={{ width: '63%' }}></div>
+                <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${franchiseUsedPercent}%` }}></div>
             </div>
             <p className="text-xs text-gray-500 mt-2">Renova em 01/01/2026</p>
         </div>
@@ -226,10 +438,12 @@ const Invoices = () => {
                 <tbody className="text-gray-300 text-sm">
                     {invoices.map((inv) => (
                         <tr key={inv.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
-                            <td className="p-4 font-mono text-purple-300">{inv.id}</td>
-                            <td className="p-4">{new Date(inv.date).toLocaleDateString()}</td>
+                            <td className="p-4 font-mono text-purple-400">{inv.id}</td>
+                            <td className="p-4">{new Date(inv.date).toLocaleDateString('pt-BR')}</td>
                             <td className="p-4">{inv.client}</td>
-                            <td className="p-4">R$ {inv.amount.toFixed(2)}</td>
+                            <td className="p-4">
+                                {inv.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            </td>
                             <td className="p-4">
                                 <span className={`px-2 py-1 rounded text-xs font-bold ${
                                     inv.status === 'issued' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
@@ -237,12 +451,20 @@ const Invoices = () => {
                                     {inv.status === 'issued' ? 'EMITIDA' : 'PROCESSANDO'}
                                 </span>
                             </td>
-                            <td className="p-4">
+                            <td className="p-4 flex gap-2">
                                 <button 
                                     onClick={() => generatePDF(inv)}
-                                    className="text-gray-400 hover:text-white transition-colors flex items-center gap-1 text-xs border border-white/10 px-2 py-1 rounded hover:bg-white/10"
+                                    className="text-white hover:text-purple-400 transition-colors" 
+                                    title="Baixar PDF"
                                 >
                                     📥 PDF
+                                </button>
+                                <button 
+                                    onClick={() => handleDeleteInvoice(inv.id, inv.originalId)}
+                                    className="text-white hover:text-red-400 transition-colors" 
+                                    title="Excluir Nota"
+                                >
+                                    🗑️
                                 </button>
                             </td>
                         </tr>

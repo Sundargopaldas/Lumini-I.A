@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const auth = require('../middleware/auth');
 // Initialize Stripe with the Secret Key
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
@@ -20,7 +21,7 @@ const PLANS = {
 };
 
 router.post('/create-subscription', async (req, res) => {
-    const { email, paymentMethodId, planName, name } = req.body;
+    const { email, paymentMethodId, planName, name, cpfCnpj } = req.body;
 
     try {
         console.log(`Processing subscription for ${email} - Plan: ${planName}`);
@@ -28,13 +29,51 @@ router.post('/create-subscription', async (req, res) => {
         // 1. Create or Get Customer
         const customers = await stripe.customers.list({ email: email, limit: 1 });
         let customer;
+        
+        // Helper to determine tax ID type
+        const getTaxIdType = (value) => {
+            const cleanValue = value.replace(/\D/g, '');
+            if (cleanValue.length === 11) return 'br_cpf';
+            if (cleanValue.length === 14) return 'br_cnpj';
+            return null;
+        };
+
+        const taxIdType = cpfCnpj ? getTaxIdType(cpfCnpj) : null;
+        const taxIdValue = cpfCnpj ? cpfCnpj.replace(/\D/g, '') : null;
+
         if (customers.data.length > 0) {
             customer = customers.data[0];
+            
+            // Try to add Tax ID to existing customer if provided
+            if (taxIdType && taxIdValue) {
+                try {
+                    // Check if already has this tax ID to avoid duplication error (optional optimization)
+                    // But simpler to just try-catch the creation
+                    await stripe.customers.createTaxId(customer.id, {
+                        type: taxIdType,
+                        value: taxIdValue
+                    });
+                    console.log(`Added Tax ID (${taxIdType}) to existing customer ${customer.id}`);
+                } catch (taxError) {
+                    // Ignore if it already exists or invalid, just log
+                    console.log(`Note: Could not add Tax ID to existing customer (might already exist): ${taxError.message}`);
+                }
+            }
+
         } else {
-            customer = await stripe.customers.create({ 
+            const customerData = { 
                 email: email,
                 name: name
-            });
+            };
+            
+            if (taxIdType && taxIdValue) {
+                customerData.tax_id_data = [{
+                    type: taxIdType,
+                    value: taxIdValue
+                }];
+            }
+
+            customer = await stripe.customers.create(customerData);
         }
 
         // 2. Attach Payment Method to Customer
@@ -96,7 +135,11 @@ router.post('/create-subscription', async (req, res) => {
         // UPDATE USER PLAN IN DB
         if (email) {
             const validPlan = ['pro', 'premium', 'agency'].includes(planKey) ? planKey : 'premium';
-            await User.update({ plan: validPlan }, { where: { email: email } });
+            const updateData = { plan: validPlan };
+            if (cpfCnpj) {
+                updateData.cpfCnpj = cpfCnpj.replace(/\D/g, ''); // Store clean numbers
+            }
+            await User.update(updateData, { where: { email: email } });
             console.log(`Updated user ${email} to plan ${validPlan}`);
         }
 
@@ -116,6 +159,48 @@ router.post('/create-subscription', async (req, res) => {
     } catch (error) {
         console.error('Stripe Error:', error);
         res.status(400).json({ error: { message: error.message } });
+    }
+});
+
+// List User Invoices (My Invoices)
+router.get('/my-invoices', auth, async (req, res) => {
+    try {
+        // 1. Get User Email
+        const user = await User.findByPk(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // 2. Find Customer in Stripe
+        const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+        if (customers.data.length === 0) {
+            return res.json([]); // No customer = no invoices
+        }
+        const customer = customers.data[0];
+
+        // 3. List Invoices
+        const invoices = await stripe.invoices.list({
+            customer: customer.id,
+            limit: 20,
+            status: 'paid' // Optional: only show paid invoices? Or 'all'
+        });
+
+        // 4. Format Data
+        const formattedInvoices = invoices.data.map(inv => ({
+            id: inv.id,
+            number: inv.number,
+            date: new Date(inv.created * 1000).toLocaleDateString('pt-BR'),
+            amount: (inv.amount_paid / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+            status: inv.status,
+            pdf: inv.invoice_pdf,
+            hosted_url: inv.hosted_invoice_url
+        }));
+
+        res.json(formattedInvoices);
+
+    } catch (error) {
+        console.error('Error fetching invoices:', error);
+        res.status(500).json({ message: 'Error fetching invoices' });
     }
 });
 

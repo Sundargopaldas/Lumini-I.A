@@ -1,12 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const Plans = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [invoices, setInvoices] = useState([]);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const currentPlan = user.plan || 'free';
+
+  useEffect(() => {
+    // Fetch invoices if user is logged in
+    if (user.email) {
+        api.get('/payments/my-invoices')
+           .then(res => setInvoices(res.data))
+           .catch(err => console.error('Erro ao buscar faturas:', err));
+    }
+  }, []);
 
   const handleUpgrade = (plan) => {
     navigate('/checkout', { state: { plan } });
@@ -128,6 +138,52 @@ const Plans = () => {
           </div>
         )})}
       </div>
+
+      {/* Histórico de Faturas */}
+      {invoices.length > 0 && (
+          <div className="mt-16 max-w-4xl mx-auto">
+              <h2 className="text-2xl font-bold text-white mb-6 text-center">Histórico de Cobranças</h2>
+              <div className="bg-white/5 backdrop-blur-md rounded-xl border border-white/10 overflow-hidden">
+                  <div className="overflow-x-auto">
+                      <table className="w-full text-left text-gray-300">
+                          <thead className="bg-white/5 text-gray-100 uppercase text-xs">
+                              <tr>
+                                  <th className="px-6 py-4 font-semibold">Data</th>
+                                  <th className="px-6 py-4 font-semibold">Valor</th>
+                                  <th className="px-6 py-4 font-semibold">Status</th>
+                                  <th className="px-6 py-4 font-semibold text-right">Fatura</th>
+                              </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/10">
+                              {invoices.map((inv) => (
+                                  <tr key={inv.id} className="hover:bg-white/5 transition-colors">
+                                      <td className="px-6 py-4">{inv.date}</td>
+                                      <td className="px-6 py-4 font-medium text-white">{inv.amount}</td>
+                                      <td className="px-6 py-4">
+                                          <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+                                              inv.status === 'paid' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
+                                          }`}>
+                                              {inv.status === 'paid' ? 'Pago' : inv.status}
+                                          </span>
+                                      </td>
+                                      <td className="px-6 py-4 text-right">
+                                          <a 
+                                              href={inv.pdf} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer"
+                                              className="text-purple-400 hover:text-purple-300 text-sm font-semibold hover:underline"
+                                          >
+                                              Baixar PDF
+                                          </a>
+                                      </td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          </div>
+      )}
 
       {/* Upsells Section */}
       <div className="mt-16 border-t border-white/10 pt-12">

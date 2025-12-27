@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import CustomAlert from './CustomAlert';
+import api from '../services/api';
 
-const CertificateModal = ({ isOpen, onClose, onSave }) => {
+const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
   const [formData, setFormData] = useState({
     cnpj: '',
     razaoSocial: '',
@@ -20,21 +21,113 @@ const CertificateModal = ({ isOpen, onClose, onSave }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleRemove = async () => {
+    if (window.confirm('Tem certeza que deseja remover o certificado digital?')) {
+        setLoading(true);
+        try {
+            await api.delete('/certificates');
+            onSave(null); // Clear certificate in parent
+            onClose();
+        } catch (error) {
+            console.error('Error removing certificate:', error);
+            alert('Erro ao remover certificado.');
+        } finally {
+            setLoading(false);
+        }
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate API validation of certificate
-    setTimeout(() => {
-        setLoading(false);
+    try {
+        const data = new FormData();
+        data.append('cnpj', formData.cnpj);
+        data.append('razaoSocial', formData.razaoSocial);
+        data.append('inscricaoMunicipal', formData.inscricaoMunicipal);
+        data.append('password', formData.password);
+        if (formData.file) {
+            data.append('file', formData.file);
+        }
+
+        const response = await api.post('/certificates', data, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
         onSave({
-            ...formData,
+            ...response.data,
             fileName: formData.file ? formData.file.name : 'certificado.pfx',
             status: 'active'
         });
+        
         onClose();
-    }, 2000);
+    } catch (error) {
+        console.error('Error uploading certificate:', error);
+        alert('Erro ao salvar certificado. Verifique os dados e tente novamente.');
+    } finally {
+        setLoading(false);
+    }
   };
+
+  if (certificate) {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative">
+            <button 
+              onClick={onClose}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+            
+            <div className="text-center space-y-4">
+                <div className="bg-green-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
+                    <span className="text-3xl">✅</span>
+                </div>
+                
+                <h2 className="text-xl font-bold text-white">Certificado Conectado</h2>
+                <p className="text-gray-400 text-sm">O certificado digital está ativo e pronto para uso.</p>
+                
+                <div className="bg-slate-800 rounded-lg p-4 text-left space-y-3 border border-slate-700">
+                    <div>
+                        <p className="text-xs text-gray-500 uppercase">Razão Social</p>
+                        <p className="text-white font-medium">{certificate.razaoSocial}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <p className="text-xs text-gray-500 uppercase">CNPJ</p>
+                            <p className="text-white font-medium">{certificate.cnpj}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 uppercase">Status</p>
+                            <p className="text-green-400 font-bold text-sm bg-green-500/10 inline-block px-2 py-0.5 rounded">ATIVO</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                    <button 
+                        onClick={onClose}
+                        className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg font-medium transition-colors"
+                    >
+                        Fechar
+                    </button>
+                    <button 
+                        onClick={handleRemove}
+                        disabled={loading}
+                        className="flex-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/50 py-2 rounded-lg font-medium transition-colors"
+                    >
+                        {loading ? 'Removendo...' : 'Desconectar Certificado'}
+                    </button>
+                </div>
+            </div>
+          </div>
+        </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
