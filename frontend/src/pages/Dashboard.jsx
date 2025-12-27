@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import TrendChart from '../components/TrendChart';
 import TransactionCard from '../components/TransactionCard';
 import GoalsWidget from '../components/GoalsWidget';
+import SubscriptionWidget from '../components/SubscriptionWidget';
 import TaxSimulatorModal from '../components/TaxSimulatorModal';
 import api from '../services/api';
 
@@ -11,6 +12,14 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+        setUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   const fetchTransactions = async () => {
     try {
@@ -192,10 +201,13 @@ const Dashboard = () => {
   const meiLimit = 81000;
   const meiPercentage = Math.min((metrics.annualRevenue / meiLimit) * 100, 100);
 
-  if (loading) return <div className="text-white text-center mt-10">Loading dashboard...</div>;
+  if (loading) return <div className="text-center py-10">Carregando dados...</div>;
 
   return (
     <div className="space-y-6">
+      
+      {/* Subscription Status Widget */}
+      <SubscriptionWidget user={user} />
       <h1 className="text-3xl font-bold text-white mb-8">Dashboard</h1>
 
       {error && (

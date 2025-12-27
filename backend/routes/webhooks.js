@@ -13,11 +13,15 @@ router.post('/stripe', express.raw({type: 'application/json'}), async (req, res)
 
   try {
     // In production, verify the webhook signature
-    // const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    // event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
     
-    // For development/test without signature verification (be careful!)
-    event = req.body;
+    if (endpointSecret) {
+        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    } else {
+        // Only for development/test without signature verification (be careful!)
+        console.warn("⚠️ Warning: Stripe Webhook Signature verification disabled (STRIPE_WEBHOOK_SECRET not set).");
+        event = req.body;
+    }
   } catch (err) {
     console.error('Webhook signature verification failed.', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
