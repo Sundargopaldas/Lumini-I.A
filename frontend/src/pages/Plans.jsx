@@ -1,13 +1,38 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import CustomAlert from '../components/CustomAlert';
+import CancelSurveyModal from '../components/CancelSurveyModal';
 
 const Plans = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [invoices, setInvoices] = useState([]);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    onConfirm: null
+  });
+
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const currentPlan = user.plan || 'free';
+
+  const showAlert = (title, message, type = 'info', onConfirm = null) => {
+    setAlertConfig({
+      isOpen: true,
+      title,
+      message,
+      type,
+      onConfirm
+    });
+  };
+
+  const closeAlert = () => {
+    setAlertConfig(prev => ({ ...prev, isOpen: false }));
+  };
 
   useEffect(() => {
     // Fetch invoices if user is logged in
@@ -20,6 +45,29 @@ const Plans = () => {
 
   const handleUpgrade = (plan) => {
     navigate('/checkout', { state: { plan } });
+  };
+
+  const handleCancelClick = () => {
+      setIsCancelModalOpen(true);
+  };
+
+  const handleConfirmCancel = async (reason) => {
+      setLoading(true);
+      try {
+          const res = await api.post('/payments/cancel-subscription', { reason });
+          setIsCancelModalOpen(false); // Close survey modal
+          showAlert('Sucesso', res.data.message, 'success');
+          // Reload after a short delay to let user read the message
+          setTimeout(() => {
+              window.location.reload();
+          }, 2000);
+      } catch (error) {
+          console.error('Erro ao cancelar:', error);
+          setIsCancelModalOpen(false);
+          showAlert('Erro', 'Erro ao cancelar assinatura. Tente novamente ou contate o suporte.', 'error');
+      } finally {
+          setLoading(false);
+      }
   };
 
   const plans = [
@@ -124,17 +172,29 @@ const Plans = () => {
               ))}
             </ul>
 
-            <button 
-                onClick={() => !isCurrent && handleUpgrade(plan)}
-                disabled={isCurrent || loading}
-                className={`w-full py-3 rounded-lg font-bold transition-all ${
-                    isCurrent 
-                    ? 'bg-green-500/20 text-green-400 cursor-default border border-green-500/50' 
-                    : plan.buttonStyle
-                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {isCurrent ? 'Current Plan' : (loading ? 'Processing...' : plan.buttonText)}
-            </button>
+            <div className="space-y-3">
+                <button 
+                    onClick={() => !isCurrent && handleUpgrade(plan)}
+                    disabled={isCurrent || loading}
+                    className={`w-full py-3 rounded-lg font-bold transition-all ${
+                        isCurrent 
+                        ? 'bg-green-500/20 text-green-400 cursor-default border border-green-500/50' 
+                        : plan.buttonStyle
+                    } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                {isCurrent ? 'Plano Atual' : (loading ? 'Processando...' : plan.buttonText)}
+                </button>
+                
+                {isCurrent && plan.name.toLowerCase() !== 'free' && (
+                    <button 
+                        onClick={handleCancelClick}
+                        disabled={loading}
+                        className="w-full py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                    >
+                        Cancelar Assinatura
+                    </button>
+                )}
+            </div>
           </div>
         )})}
       </div>
@@ -187,34 +247,79 @@ const Plans = () => {
 
       {/* Upsells Section */}
       <div className="mt-16 border-t border-white/10 pt-12">
-        <h2 className="text-2xl font-bold text-white mb-8 text-center">Optional Add-ons</h2>
+        <h2 className="text-2xl font-bold text-white mb-8 text-center">Complementos Opcionais</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white/5 border border-white/10 p-6 rounded-xl hover:bg-white/10 transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-semibold text-white">Partner Accountant</h3>
-                    <span className="text-purple-400 font-bold">R$ 149/mo</span>
+            {[
+                {
+                    name: 'Sócio Contador',
+                    price: 'R$ 149/mês',
+                    description: 'Contrate um contador certificado para cuidar de todas as suas declarações de impostos mensais e esclarecer suas dúvidas.',
+                    details: 'Tenha um contador dedicado para sua empresa. Inclui:\n• Declarações mensais (DAS, etc.)\n• Tira-dúvidas ilimitado via WhatsApp\n• Regularização fiscal contínua\n• Ideal para quem fatura acima de R$ 5k/mês.'
+                },
+                {
+                    name: 'Declaração de Imposto de Renda (IR)',
+                    price: 'R$ 199/ano',
+                    description: 'Serviço simplificado de declaração anual de imposto de renda para criadores de conteúdo.',
+                    details: 'Evite a malha fina com nossa declaração especializada para creators.\n• Análise de caixa\n• Declaração de Ganhos no Exterior (Adsense/Youtube)\n• Carnê-Leão retroativo (se necessário)\n• Entrega completa para a Receita Federal.'
+                },
+                {
+                    name: 'Auditoria Financeira',
+                    price: 'R$ 497',
+                    description: 'Uma análise aprofundada e única das suas finanças com um plano de crescimento personalizado.',
+                    details: 'Diagnóstico completo da sua saúde financeira.\n• Análise de gastos e desperdícios\n• Otimização tributária (pague menos impostos legalmente)\n• Plano de ação para dobrar seus lucros\n• Reunião de 1 hora com especialista.'
+                }
+            ].map((addon) => (
+                <div key={addon.name} className="bg-white/5 border border-white/10 p-6 rounded-xl hover:bg-white/10 transition-colors flex flex-col justify-between">
+                    <div>
+                        <div className="flex justify-between items-start mb-4">
+                            <h3 className="text-lg font-semibold text-white max-w-[70%]">{addon.name}</h3>
+                            <span className="text-purple-400 font-bold text-sm whitespace-nowrap">{addon.price}</span>
+                        </div>
+                        <p className="text-sm text-gray-400 mb-6">{addon.description}</p>
+                    </div>
+                    <button 
+                        onClick={() => {
+                            showAlert(
+                                addon.name,
+                                `${addon.details}\n\nDeseja solicitar o contato de um consultor para este serviço?`,
+                                'confirm',
+                                () => {
+                                    // Mock sending interest
+                                    setLoading(true);
+                                    setTimeout(() => {
+                                        setLoading(false);
+                                        showAlert(
+                                            'Solicitação Enviada!',
+                                            'Nossa equipe entrará em contato pelo email cadastrado em até 24 horas para finalizar a contratação.',
+                                            'success'
+                                        );
+                                    }, 1000);
+                                }
+                            );
+                        }}
+                        className="text-sm text-white border border-white/20 px-4 py-2 rounded hover:bg-white/10 w-full hover:border-purple-500/50 transition-all"
+                    >
+                        Saber mais
+                    </button>
                 </div>
-                <p className="text-sm text-gray-400 mb-4">Get a certified accountant to handle all your monthly tax filings and doubts.</p>
-                <button className="text-sm text-white border border-white/20 px-4 py-2 rounded hover:bg-white/10 w-full">Learn More</button>
-            </div>
-            <div className="bg-white/5 border border-white/10 p-6 rounded-xl hover:bg-white/10 transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-semibold text-white">Tax Declaration (IR)</h3>
-                    <span className="text-purple-400 font-bold">R$ 199/yr</span>
-                </div>
-                <p className="text-sm text-gray-400 mb-4">Simplified annual income tax declaration service for creators.</p>
-                <button className="text-sm text-white border border-white/20 px-4 py-2 rounded hover:bg-white/10 w-full">Learn More</button>
-            </div>
-            <div className="bg-white/5 border border-white/10 p-6 rounded-xl hover:bg-white/10 transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-semibold text-white">Financial Audit</h3>
-                    <span className="text-purple-400 font-bold">R$ 497</span>
-                </div>
-                <p className="text-sm text-gray-400 mb-4">One-time deep dive into your finances with a customized growth plan.</p>
-                <button className="text-sm text-white border border-white/20 px-4 py-2 rounded hover:bg-white/10 w-full">Learn More</button>
-            </div>
+            ))}
         </div>
       </div>
+      <CustomAlert 
+        isOpen={alertConfig.isOpen}
+        onClose={closeAlert}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onConfirm={alertConfig.onConfirm}
+      />
+      
+      <CancelSurveyModal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onConfirm={handleConfirmCancel}
+        loading={loading}
+      />
     </div>
   );
 };

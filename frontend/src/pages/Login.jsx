@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import CustomAlert from '../components/CustomAlert';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -9,6 +10,20 @@ const Login = () => {
     email: '',
     password: '',
   });
+  const [alertConfig, setAlertConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showAlert = (title, message, type = 'info') => {
+    setAlertConfig({ isOpen: true, title, message, type });
+  };
+
+  const closeAlert = () => {
+    setAlertConfig(prev => ({ ...prev, isOpen: false }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,9 +46,9 @@ const Login = () => {
       console.error('Login failed:', error);
       let msg = error.response?.data?.message || 'Falha no login.';
       if (error.message === 'Network Error') {
-          msg = 'Erro de conexão com o servidor. Verifique se o backend está rodando.';
+          msg = 'Erro de conexão com o servidor. Verifique sua internet ou tente novamente mais tarde.';
       }
-      alert(msg);
+      showAlert('Erro no Login', msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -130,13 +145,20 @@ const Login = () => {
         
         <div className="text-center mt-4">
           <p className="text-sm text-gray-300">
-            Don't have an account?{' '}
+            Ainda não tem conta?{' '}
             <Link to="/register" className="font-medium text-purple-300 hover:text-purple-200 transition-colors">
-              Sign up
+              Criar conta
             </Link>
           </p>
         </div>
       </div>
+      <CustomAlert 
+        isOpen={alertConfig.isOpen}
+        onClose={closeAlert}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 };

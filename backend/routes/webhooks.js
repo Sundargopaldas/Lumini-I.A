@@ -44,8 +44,22 @@ router.post('/stripe', express.raw({type: 'application/json'}), async (req, res)
       
     case 'customer.subscription.deleted':
       const subscription = event.data.object;
-      // Revert to free plan if subscription is cancelled
-      // We need to fetch customer email from Stripe if not present in the event object
+      console.log(`[Stripe Webhook] Subscription deleted: ${subscription.id}`);
+      
+      try {
+        // Fetch customer to get email
+        const customerId = subscription.customer;
+        const customer = await stripe.customers.retrieve(customerId);
+        
+        if (customer && customer.email) {
+            await User.update({ plan: 'free' }, { where: { email: customer.email } });
+            console.log(`[Stripe Webhook] User ${customer.email} downgraded to FREE.`);
+        } else {
+            console.log(`[Stripe Webhook] Could not find user email for customer ${customerId}`);
+        }
+      } catch (err) {
+          console.error('[Stripe Webhook] Error processing subscription deletion:', err);
+      }
       break;
       
     default:
@@ -107,6 +121,17 @@ router.post('/hotmart', async (req, res) => {
             issueDate: new Date(),
             externalReference: req.body.hottok || 'hotmart-ref'
         });
+
+        // Send Email
+        if (buyerEmail) {
+            sendInvoiceEmail(buyerEmail, {
+                id: newInvoice.id,
+                clientName: buyerName,
+                serviceDescription: `Curso Online: ${prod_name}`,
+                amount: price,
+                issueDate: newInvoice.issueDate
+            });
+        }
         
         console.log(`[Webhook] Processed sale for ${user.email}: ${prod_name} - R$ ${price}`);
         console.log(`[Webhook] Invoice #${newInvoice.id} generated automatically.`);

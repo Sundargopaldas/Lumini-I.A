@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import CustomAlert from '../components/CustomAlert';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -10,12 +11,26 @@ const Register = () => {
     password: '',
     confirmPassword: '',
   });
+  const [alertConfig, setAlertConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showAlert = (title, message, type = 'info') => {
+    setAlertConfig({ isOpen: true, title, message, type });
+  };
+
+  const closeAlert = () => {
+    setAlertConfig(prev => ({ ...prev, isOpen: false }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+      showAlert('Erro', 'As senhas não coincidem.', 'error');
       return;
     }
 
@@ -25,11 +40,13 @@ const Register = () => {
         email: formData.email,
         password: formData.password
       });
-      alert('Registration successful! Please login.');
-      navigate('/login');
+      showAlert('Sucesso', 'Cadastro realizado com sucesso! Por favor faça login.', 'success');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (error) {
       console.error('Registration failed:', error);
-      alert(error.response?.data?.message || 'Registration failed');
+      showAlert('Erro no Cadastro', error.response?.data?.message || 'Falha ao cadastrar.', 'error');
     }
   };
 
@@ -112,14 +129,21 @@ const Register = () => {
         </form>
 
         <div className="text-center mt-4">
-          <p className="text-sm text-gray-300">
-            Already have an account?{' '}
-            <Link to="/login" className="font-medium text-purple-300 hover:text-purple-200 transition-colors">
-              Sign in
-            </Link>
-          </p>
-        </div>
+            <p className="text-sm text-gray-300">
+              Já tem uma conta?{' '}
+              <Link to="/login" className="font-medium text-purple-300 hover:text-purple-200 transition-colors">
+                Fazer login
+              </Link>
+            </p>
+          </div>
       </div>
+      <CustomAlert 
+        isOpen={alertConfig.isOpen}
+        onClose={closeAlert}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 };

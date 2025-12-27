@@ -186,7 +186,8 @@ const Invoices = () => {
     if (user.logo) {
         const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
         const BASE_URL = API_URL.replace('/api', '');
-        const logoUrl = `${BASE_URL}/uploads/logos/${user.logo}`;
+        // Add cache buster to avoid CORS issues with cached images
+        const logoUrl = `${BASE_URL}/uploads/logos/${user.logo}?t=${new Date().getTime()}`;
         
         try {
             const logoData = await getDataUri(logoUrl);
@@ -236,7 +237,7 @@ const Invoices = () => {
     doc.rect(10, y, 190, 6, 'F');
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('TOMADOR DE SERVIÇOS', 105, y+4, { align: 'center' });
+    doc.text('CLIENTE', 105, y+4, { align: 'center' });
 
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
@@ -248,6 +249,11 @@ const Invoices = () => {
     doc.text('CPF/CNPJ:', 15, y+15);
     doc.setFont('helvetica', 'normal');
     doc.text(invoice.clientDocument || 'Não Informado', 50, y+15);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Inscrição Estadual:', 110, y+15);
+    doc.setFont('helvetica', 'normal');
+    doc.text(invoice.clientStateRegistration || 'Isento', 145, y+15);
 
     doc.setFont('helvetica', 'bold');
     doc.text('Endereço:', 15, y+20);

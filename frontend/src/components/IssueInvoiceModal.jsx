@@ -6,6 +6,7 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
   const initialFormState = {
     clientName: '',
     document: '', // CPF/CNPJ
+    stateRegistration: '',
     email: '',
     cep: '',
     address: '',
@@ -40,6 +41,36 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
   const handleCurrencyChange = (e) => {
     const value = e.target.value;
     setFormData({ ...formData, value: formatCurrency(value) });
+  };
+
+  const maskCPF_CNPJ = (value) => {
+    const clean = value.replace(/\D/g, '');
+    if (clean.length <= 11) {
+        return clean
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+            .replace(/(-\d{2})\d+?$/, '$1');
+    } else {
+        return clean
+            .replace(/^(\d{2})(\d)/, '$1.$2')
+            .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+            .replace(/\.(\d{3})(\d)/, '.$1/$2')
+            .replace(/(\d{4})(\d)/, '$1-$2')
+            .replace(/(-\d{2})\d+?$/, '$1');
+    }
+  };
+
+  const handleDocumentChange = (e) => {
+      const value = e.target.value;
+      setFormData({ ...formData, document: maskCPF_CNPJ(value) });
+  };
+
+  const maskCEP = (value) => {
+      return value
+          .replace(/\D/g, '')
+          .replace(/^(\d{5})(\d)/, '$1-$2')
+          .replace(/(-\d{3})\d+?$/, '$1');
   };
 
   const handleSubmit = async (e) => {
@@ -105,21 +136,33 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
                     className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="00.000.000/0000-00"
                     value={formData.document}
-                    onChange={e => setFormData({...formData, document: e.target.value})}
+                    onChange={handleDocumentChange}
+                    maxLength="18"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Inscrição Estadual</label>
                   <input
-                    type="email"
-                    required
+                    type="text"
                     className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="cliente@email.com"
-                    value={formData.email}
-                    onChange={e => setFormData({...formData, email: e.target.value})}
+                    placeholder="Ex: 123.456.789.111"
+                    value={formData.stateRegistration}
+                    onChange={e => setFormData({...formData, stateRegistration: e.target.value.replace(/[^0-9.-]/g, '')})}
                   />
+                </div>
               </div>
-            </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="cliente@email.com"
+                  value={formData.email}
+                  onChange={e => setFormData({...formData, email: e.target.value})}
+                />
+              </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -129,7 +172,8 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="00000-000"
                   value={formData.cep}
-                  onChange={e => setFormData({...formData, cep: e.target.value})}
+                  onChange={e => setFormData({...formData, cep: maskCEP(e.target.value)})}
+                  maxLength="9"
                 />
               </div>
               <div>

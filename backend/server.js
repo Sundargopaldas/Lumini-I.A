@@ -66,6 +66,15 @@ const startServer = async () => {
         console.log("Note: cpfCnpj column check - " + err.message);
     }
 
+    // Manual migration for logo (safe add)
+    try {
+        await sequelize.query("ALTER TABLE Users ADD COLUMN logo VARCHAR(255);");
+        console.log("Added logo column to Users table.");
+    } catch (err) {
+        // Column likely exists
+        console.log("Note: logo column check - " + err.message);
+    }
+
     console.log('Database synchronized.');
 
     const server = app.listen(PORT, () => {

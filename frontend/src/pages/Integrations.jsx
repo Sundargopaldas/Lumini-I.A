@@ -15,11 +15,12 @@ const Integrations = () => {
     isOpen: false,
     title: '',
     message: '',
-    type: 'info'
+    type: 'info',
+    onConfirm: null
   });
 
-  const showAlert = (title, message, type = 'info') => {
-    setAlertState({ isOpen: true, title, message, type });
+  const showAlert = (title, message, type = 'info', onConfirm = null) => {
+    setAlertState({ isOpen: true, title, message, type, onConfirm });
   };
 
   const closeAlert = () => {
@@ -118,15 +119,21 @@ const Integrations = () => {
       const integration = connectedIntegrations.find(i => i.provider === integrationName);
       if (!integration) return;
 
-      if(window.confirm('Are you sure you want to disconnect?')) {
-        try {
-            await api.delete(`/integrations/${integration.id}`);
-            setConnectedIntegrations(prev => prev.filter(i => i.id !== integration.id));
-        } catch (error) {
-            console.error('Disconnect error:', error);
-            alert("❌ Failed to disconnect.");
+      showAlert(
+        'Disconnect Integration',
+        'Are you sure you want to disconnect? This will stop data syncing.',
+        'confirm',
+        async () => {
+            try {
+                await api.delete(`/integrations/${integration.id}`);
+                setConnectedIntegrations(prev => prev.filter(i => i.id !== integration.id));
+                showAlert("Success", "Integration disconnected successfully.", "success");
+            } catch (error) {
+                console.error('Disconnect error:', error);
+                showAlert("Error", "Failed to disconnect.", "error");
+            }
         }
-      }
+      );
   };
 
   const handleSync = async (integrationName) => {
@@ -154,6 +161,7 @@ const Integrations = () => {
         title={alertState.title}
         message={alertState.message}
         type={alertState.type}
+        onConfirm={alertState.onConfirm}
       />
 
       <ConnectModal 

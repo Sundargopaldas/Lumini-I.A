@@ -24,6 +24,10 @@ const Invoice = sequelize.define('Invoice', {
     type: DataTypes.STRING,
     allowNull: true // CPF/CNPJ
   },
+  clientStateRegistration: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   clientEmail: {
     type: DataTypes.STRING,
     allowNull: true

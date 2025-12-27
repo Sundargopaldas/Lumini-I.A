@@ -6,7 +6,7 @@ import CustomAlert from '../components/CustomAlert';
 import api from '../services/api';
 
 // Initialize Stripe outside component to avoid recreation
-const stripePromise = loadStripe('pk_test_51SHVpM2OKONfldjlWcZ714t20Mk9IxsNHcSusy3sbhiAF1p3MKU19MPLgHP758KFx2tNWcxfmFgVdTXglxPkaDa600kUz6toaj');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_51SHVpM2OKONfldjlWcZ714t20Mk9IxsNHcSusy3sbhiAF1p3MKU19MPLgHP758KFx2tNWcxfmFgVdTXglxPkaDa600kUz6toaj');
 
 const CheckoutForm = ({ plan }) => {
   const stripe = useStripe();

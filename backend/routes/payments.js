@@ -204,4 +204,61 @@ router.get('/my-invoices', auth, async (req, res) => {
     }
 });
 
+const { sendCancellationEmail } = require('../services/EmailService');
+
+// Cancel Subscription
+router.post('/cancel-subscription', auth, async (req, res) => {
+    try {
+        const { reason } = req.body;
+        const user = await User.findByPk(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // 1. Find Customer
+        const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+        if (customers.data.length === 0) {
+            return res.status(404).json({ message: 'No subscription found (Customer not found)' });
+        }
+        const customer = customers.data[0];
+
+        // 2. Find Active Subscription
+        const subscriptions = await stripe.subscriptions.list({ 
+            customer: customer.id, 
+            status: 'active',
+            limit: 1 
+        });
+
+        if (subscriptions.data.length === 0) {
+             // Maybe they are already trialing or past_due, but let's assume active for now
+             // If no active subscription, maybe update local DB to free just in case?
+             await User.update({ plan: 'free' }, { where: { id: user.id } });
+             return res.json({ message: 'Subscription already cancelled or not found. Plan reset to Free.' });
+        }
+
+        const subscription = subscriptions.data[0];
+
+        // 3. Cancel at period end
+        await stripe.subscriptions.update(subscription.id, {
+            cancel_at_period_end: true
+        });
+
+        // 4. Send Feedback Email
+        if (reason) {
+            await sendCancellationEmail(user, reason);
+        }
+
+        // Optionally update DB to reflect "cancellation pending" or just leave it until webhook fires?
+        // For simplicity and user feedback, we might just tell them it's done.
+        // We won't downgrade them immediately because they paid for the month.
+        // We rely on the webhook 'customer.subscription.deleted' to actually set plan='free' later.
+
+        res.json({ message: 'Assinatura cancelada com sucesso. Seu plano permanecerá ativo até o fim do período atual.' });
+
+    } catch (error) {
+        console.error('Cancel Subscription Error:', error);
+        res.status(500).json({ message: 'Error cancelling subscription' });
+    }
+});
+
 module.exports = router;
