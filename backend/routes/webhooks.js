@@ -54,6 +54,9 @@ router.post('/stripe', express.raw({type: 'application/json'}), async (req, res)
         if (customer && customer.email) {
             await User.update({ plan: 'free' }, { where: { email: customer.email } });
             console.log(`[Stripe Webhook] User ${customer.email} downgraded to FREE.`);
+            
+            // Optional: Send final confirmation email that plan has ended
+            // await sendCancellationEmail({ email: customer.email, name: customer.name }, 'Período de assinatura encerrado.');
         } else {
             console.log(`[Stripe Webhook] Could not find user email for customer ${customerId}`);
         }

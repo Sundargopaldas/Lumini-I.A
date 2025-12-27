@@ -1,81 +1,61 @@
 const nodemailer = require('nodemailer');
-require('dotenv').config();
 
-// Create reusable transporter object using the default SMTP transport
+// Configure Transporter
+// For Gmail: use App Password (not your login password)
+// For testing: use Ethereal.email or similar
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.ethereal.email",
-  port: process.env.SMTP_PORT || 587,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER || "test@ethereal.email", // generated ethereal user
-    pass: process.env.SMTP_PASS || "testpass", // generated ethereal password
-  },
+    service: 'gmail', // or 'hotmail', 'yahoo', etc.
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
 });
 
-const sendInvoiceEmail = async (to, invoiceData) => {
-  try {
-    const info = await transporter.sendMail({
-      from: '"Lumini I.A" <no-reply@lumini.ia>', // sender address
-      to: to, // list of receivers
-      subject: `Nota Fiscal de Serviço - ${invoiceData.serviceDescription}`, // Subject line
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Olá, ${invoiceData.clientName}</h2>
-          <p>Sua Nota Fiscal de Serviço Eletrônica (NFS-e) foi gerada com sucesso.</p>
-          
-          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <p><strong>Serviço:</strong> ${invoiceData.serviceDescription}</p>
-            <p><strong>Valor:</strong> R$ ${parseFloat(invoiceData.amount).toFixed(2).replace('.', ',')}</p>
-            <p><strong>Data de Emissão:</strong> ${new Date(invoiceData.issueDate).toLocaleDateString('pt-BR')}</p>
-            <p><strong>Número da Nota:</strong> ${invoiceData.id.toString().padStart(6, '0')}</p>
-          </div>
+/**
+ * Send Cancellation Confirmation Email
+ * @param {Object} user - User object containing email and name
+ * @param {String} reason - Reason for cancellation provided by user
+ */
+const sendCancellationEmail = async (user, reason) => {
+    if (!user.email) return;
 
-          <p>Você pode visualizar ou baixar sua nota fiscal acessando o painel.</p>
-          
-          <p>Atenciosamente,<br>Equipe Lumini I.A</p>
-        </div>
-      `, // html body
-    });
+    const mailOptions = {
+        from: `"Equipe Lumini I.A" <${process.env.EMAIL_USER}>`,
+        to: user.email,
+        subject: 'Confirmação de Cancelamento de Assinatura',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #4a5568;">Cancelamento Recebido</h2>
+                <p>Olá, ${user.name || 'Usuário'},</p>
+                <p>Recebemos sua solicitação de cancelamento da assinatura <strong>Lumini I.A</strong>.</p>
+                <p>Sua assinatura permanecerá ativa até o final do período de cobrança atual. Após essa data, sua conta retornará ao plano Gratuito.</p>
+                
+                ${reason ? `<p><strong>Motivo informado:</strong> ${reason}</p>` : ''}
+                
+                <p>Sentimos muito em ver você partir. Se houver algo que possamos fazer para melhorar sua experiência, por favor, responda a este e-mail.</p>
+                
+                <p>Atenciosamente,<br>Equipe Lumini I.A</p>
+            </div>
+        `
+    };
 
-    console.log("Message sent: %s", info.messageId);
-    return info;
-  } catch (error) {
-    console.error("Error sending email:", error);
-    // Don't throw error to avoid blocking the main flow, just log it
-    return null;
-  }
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Cancellation email sent to ${user.email}`);
+    } catch (error) {
+        console.error('Error sending cancellation email:', error);
+    }
 };
 
-const sendCancellationEmail = async (user, reason) => {
-  try {
-    // Send to admin/company
-    await transporter.sendMail({
-      from: '"Lumini I.A System" <no-reply@lumini.ia>',
-      to: 'contato@lumini.ia', // The company email to receive feedback
-      subject: `Cancelamento de Assinatura - ${user.name}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Relatório de Cancelamento</h2>
-          <p>Um usuário cancelou a assinatura Premium/Pro.</p>
-          
-          <div style="background-color: #fff0f0; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #ffcccc;">
-            <p><strong>Usuário:</strong> ${user.name} (${user.email})</p>
-            <p><strong>Plano Cancelado:</strong> ${user.plan}</p>
-            <p><strong>Data:</strong> ${new Date().toLocaleString('pt-BR')}</p>
-            <hr style="border: 0; border-top: 1px solid #ffcccc; margin: 10px 0;">
-            <p><strong>Motivo do Cancelamento:</strong></p>
-            <p style="font-style: italic; color: #555;">"${reason}"</p>
-          </div>
-        </div>
-      `,
-    });
-    console.log(`Cancellation email sent for user ${user.email}`);
-  } catch (error) {
-    console.error("Error sending cancellation email:", error);
-  }
+/**
+ * Send Invoice Email (Placeholder for future implementation)
+ */
+const sendInvoiceEmail = async (toEmail, invoiceData) => {
+    // Implementation for invoice email
+    console.log(`[Mock] Invoice email sent to ${toEmail}`);
 };
 
 module.exports = {
-  sendInvoiceEmail,
-  sendCancellationEmail
+    sendCancellationEmail,
+    sendInvoiceEmail
 };

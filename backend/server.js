@@ -9,6 +9,11 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
+
+// Webhooks must be before express.json() to allow raw body access
+const webhookRoutes = require('./routes/webhooks');
+app.use('/api/webhooks', webhookRoutes);
+
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -27,7 +32,7 @@ const transactionRoutes = require('./routes/transactions');
 const dashboardRoutes = require('./routes/dashboard');
 const integrationRoutes = require('./routes/integrations');
 const goalRoutes = require('./routes/goals');
-const webhookRoutes = require('./routes/webhooks');
+// webhookRoutes imported earlier
 const paymentRoutes = require('./routes/payments');
 const invoiceRoutes = require('./routes/invoices');
 const certificateRoutes = require('./routes/certificates');
@@ -37,7 +42,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/goals', goalRoutes);
-app.use('/api/webhooks', webhookRoutes);
+// app.use('/api/webhooks', webhookRoutes); // Moved up
 app.use('/api/payments', paymentRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/certificates', certificateRoutes);
