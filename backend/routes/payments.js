@@ -7,8 +7,16 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 // Map frontend plan names to details
 // Amount is in cents (BRL)
 const PLANS = {
-    'premium': { name: 'Lumini Premium', amount: 9990 }, 
-    'pro': { name: 'Lumini Pro', amount: 4990 }
+    'premium': { 
+        name: 'Lumini Premium', 
+        amount: 9900,
+        priceId: 'price_1Sij8q2OKONfldjlyXBCMw6G' 
+    }, 
+    'pro': { 
+        name: 'Lumini Pro', 
+        amount: 4990,
+        priceId: 'price_1Sij7o2OKONfldjlVHI0o62I' 
+    }
 };
 
 router.post('/create-subscription', async (req, res) => {
@@ -33,8 +41,6 @@ router.post('/create-subscription', async (req, res) => {
         try {
             await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
         } catch (attachError) {
-            // If already attached or other issue, log but try to proceed if possible, 
-            // though usually this fails if not attached.
             console.error('Error attaching payment method:', attachError);
             throw attachError;
         }
@@ -44,38 +50,46 @@ router.post('/create-subscription', async (req, res) => {
             invoice_settings: { default_payment_method: paymentMethodId }
         });
 
-        // 3. Get or Create Price dynamically (for demo purposes)
-        // In a real app, you would use fixed Price IDs from your Stripe Dashboard
+        // 3. Determine Price ID
         const planKey = (planName || 'premium').toLowerCase();
         const planDetails = PLANS[planKey] || PLANS['premium'];
         
-        // Find product by name
-        const products = await stripe.products.search({ query: `name:'${planDetails.name}'` });
-        let product = products.data.length > 0 ? products.data[0] : null;
+        let priceId = planDetails.priceId;
 
-        if (!product) {
-            product = await stripe.products.create({ name: planDetails.name });
+        // If no fixed price ID, try dynamic lookup/creation (Fallback)
+        if (!priceId) {
+            console.log(`No fixed priceId for ${planKey}, attempting dynamic lookup...`);
+            
+            // Find product by name
+            const products = await stripe.products.search({ query: `name:'${planDetails.name}'` });
+            let product = products.data.length > 0 ? products.data[0] : null;
+
+            if (!product) {
+                product = await stripe.products.create({ name: planDetails.name });
+            }
+
+            // Find price for product
+            const prices = await stripe.prices.list({ product: product.id, limit: 1 });
+            let price = prices.data.length > 0 ? prices.data[0] : null;
+
+            // If no price or price amount mismatch, create new price
+            if (!price || price.unit_amount !== planDetails.amount) {
+                price = await stripe.prices.create({
+                    product: product.id,
+                    unit_amount: planDetails.amount,
+                    currency: 'brl',
+                    recurring: { interval: 'month' },
+                });
+            }
+            priceId = price.id;
         }
 
-        // Find price for product
-        const prices = await stripe.prices.list({ product: product.id, limit: 1 });
-        let price = prices.data.length > 0 ? prices.data[0] : null;
-
-        // If no price or price amount mismatch, create new price
-        // (Simple logic: if existing price matches amount, use it. Else create new.)
-        if (!price || price.unit_amount !== planDetails.amount) {
-            price = await stripe.prices.create({
-                product: product.id,
-                unit_amount: planDetails.amount,
-                currency: 'brl',
-                recurring: { interval: 'month' },
-            });
-        }
+        console.log(`Using Price ID: ${priceId}`);
 
         // 4. Create Subscription
         const subscription = await stripe.subscriptions.create({
             customer: customer.id,
-            items: [{ price: price.id }],
+            items: [{ price: priceId }],
             expand: ['latest_invoice.payment_intent'],
         });
 

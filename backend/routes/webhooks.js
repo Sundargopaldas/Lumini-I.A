@@ -2,6 +2,57 @@ const express = require('express');
 const router = express.Router();
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+// Stripe Webhook Handler
+// This ensures that plan updates happen even if the user closes the browser
+router.post('/stripe', express.raw({type: 'application/json'}), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    // In production, verify the webhook signature
+    // const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    // event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    
+    // For development/test without signature verification (be careful!)
+    event = req.body;
+  } catch (err) {
+    console.error('Webhook signature verification failed.', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case 'checkout.session.completed':
+    case 'invoice.payment_succeeded':
+      const session = event.data.object;
+      // Find user by email and update plan
+      if (session.customer_email || session.email) {
+        const email = session.customer_email || session.email;
+        console.log(`[Stripe Webhook] Payment succeeded for ${email}`);
+        
+        // Determine plan based on amount or product ID
+        // This is a simplified logic. In prod, map price IDs to plans.
+        let newPlan = 'pro'; 
+        if (session.amount_paid > 5000) newPlan = 'premium'; // Example threshold
+
+        await User.update({ plan: newPlan }, { where: { email } });
+      }
+      break;
+      
+    case 'customer.subscription.deleted':
+      const subscription = event.data.object;
+      // Revert to free plan if subscription is cancelled
+      // We need to fetch customer email from Stripe if not present in the event object
+      break;
+      
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+
+  res.send();
+});
 
 // Webhook Receiver for Hotmart (Simulation)
 // In a real scenario, Hotmart sends a POST request here when a sale occurs.

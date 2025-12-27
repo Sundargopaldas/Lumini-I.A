@@ -50,9 +50,15 @@ const startServer = async () => {
     await sequelize.sync();
     console.log('Database synchronized.');
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
+    
+    // Handle errors
+    server.on('error', (error) => {
+       console.error('Server error:', error);
+    });
+
   } catch (error) {
     console.error('Unable to connect to the database:', error);
   }
@@ -60,4 +66,11 @@ const startServer = async () => {
 
 startServer();
 
-// Trigger restart
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+

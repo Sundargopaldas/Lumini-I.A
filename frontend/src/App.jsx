@@ -8,13 +8,27 @@ import Checkout from './pages/Checkout';
 import Invoices from './pages/Invoices';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Integrations from './pages/Integrations';
 
 const PrivateRoute = ({ children }) => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  const token = localStorage.getItem('token');
-  // Check for both user object and token
-  return (user && token) ? children : <Navigate to="/login" replace />;
+  try {
+    const userStr = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    
+    if (!userStr || !token) {
+      return <Navigate to="/login" replace />;
+    }
+
+    const user = JSON.parse(userStr);
+    return user && token ? children : <Navigate to="/login" replace />;
+  } catch (error) {
+    console.error('Auth Error:', error);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    return <Navigate to="/login" replace />;
+  }
 };
 
 import ErrorBoundary from './components/ErrorBoundary';
@@ -26,24 +40,26 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           
           <Route path="/*" element={
             <PrivateRoute>
-              <Navbar />
-              <div className="container mx-auto px-4 py-8">
-                <ErrorBoundary>
-                  <Routes>
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/transactions" element={<Transactions />} />
-                    <Route path="/reports" element={<Reports />} />
-                    <Route path="/invoices" element={<Invoices />} />
-                    <Route path="/plans" element={<Plans />} />
-                    <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/integrations" element={<Integrations />} />
-                  </Routes>
-                </ErrorBoundary>
-              </div>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                    <Routes>
+                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/transactions" element={<Transactions />} />
+                      <Route path="/reports" element={<Reports />} />
+                      <Route path="/invoices" element={<Invoices />} />
+                      <Route path="/plans" element={<Plans />} />
+                      <Route path="/checkout" element={<Checkout />} />
+                      <Route path="/integrations" element={<Integrations />} />
+                    </Routes>
+                </div>
+              </ErrorBoundary>
             </PrivateRoute>
           } />
         </Routes>
