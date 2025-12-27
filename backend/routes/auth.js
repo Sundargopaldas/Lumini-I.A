@@ -3,8 +3,42 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const checkPremium = require('../middleware/checkPremium');
+
+// Configure Multer for Logo Upload
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dir = 'uploads/logos';
+    if (!fs.existsSync(dir)){
+        fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    // Save as userId-timestamp.ext
+    cb(null, `${req.user.id}-${Date.now()}${path.extname(file.originalname)}`);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|webp/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error('Apenas imagens (jpeg, jpg, png, webp) são permitidas!'));
+  }
+});
 
 // Register
 router.post('/register', async (req, res) => {
@@ -100,7 +134,7 @@ router.put('/plan', auth, async (req, res) => {
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
-      attributes: ['id', 'username', 'email', 'plan']
+      attributes: { exclude: ['password'] }
     });
     res.json(user);
   } catch (error) {
@@ -195,6 +229,63 @@ router.post('/reset-password', async (req, res) => {
     console.error('Reset Password Error:', error);
     res.status(400).json({ message: 'Invalid or expired token' });
   }
+});
+
+// Upload Logo
+router.post('/logo', auth, checkPremium, upload.single('logo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Nenhuma imagem enviada.' });
+    }
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
+
+    // Delete old logo if exists
+    if (user.logo) {
+      const oldPath = path.join('uploads/logos', user.logo);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    // Update user
+    user.logo = req.file.filename;
+    await user.save();
+
+    res.json({ 
+        message: 'Logo atualizado com sucesso!', 
+        logo: user.logo,
+        logoUrl: `/uploads/logos/${user.logo}`
+    });
+
+  } catch (error) {
+    console.error('Logo upload error:', error);
+    res.status(500).json({ message: 'Erro ao fazer upload do logo.' });
+  }
+});
+
+// Delete Logo
+router.delete('/logo', auth, async (req, res) => {
+    try {
+      const user = await User.findByPk(req.user.id);
+      if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
+  
+      if (user.logo) {
+        const oldPath = path.join('uploads/logos', user.logo);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+        user.logo = null;
+        await user.save();
+      }
+  
+      res.json({ message: 'Logo removido com sucesso!' });
+  
+    } catch (error) {
+      console.error('Logo delete error:', error);
+      res.status(500).json({ message: 'Erro ao remover logo.' });
+    }
 });
 
 module.exports = router;

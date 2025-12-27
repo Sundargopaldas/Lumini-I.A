@@ -11,6 +11,7 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Integrations from './pages/Integrations';
+import Settings from './pages/Settings';
 
 const PrivateRoute = ({ children }) => {
   try {
@@ -57,6 +58,7 @@ function App() {
                       <Route path="/plans" element={<Plans />} />
                       <Route path="/checkout" element={<Checkout />} />
                       <Route path="/integrations" element={<Integrations />} />
+                      <Route path="/settings" element={<Settings />} />
                     </Routes>
                 </div>
               </ErrorBoundary>

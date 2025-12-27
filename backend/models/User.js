@@ -28,6 +28,10 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  logo: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   plan: {
     type: DataTypes.ENUM('free', 'pro', 'premium', 'agency'),
     defaultValue: 'free',

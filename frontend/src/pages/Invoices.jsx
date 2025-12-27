@@ -106,7 +106,24 @@ const Invoices = () => {
   const franchiseLimit = 200;
   const franchiseUsedPercent = Math.min((totalCount / franchiseLimit) * 100, 100);
 
-  const generatePDF = (invoice) => {
+  const getDataUri = (url) => {
+    return new Promise((resolve) => {
+        const image = new Image();
+        image.setAttribute('crossOrigin', 'anonymous');
+        image.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = image.width;
+            canvas.height = image.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(image, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        image.onerror = () => resolve(null);
+        image.src = url;
+    });
+  };
+
+  const generatePDF = async (invoice) => {
     const doc = new jsPDF();
     
     // --- HEADER ---
@@ -117,9 +134,9 @@ const Invoices = () => {
     
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('PREFEITURA MUNICIPAL DE SÃO PAULO', 105, 18, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text('NOTA FISCAL DE SERVIÇOS ELETRÔNICA - NFS-e', 105, 24, { align: 'center' });
+    // doc.text('PREFEITURA MUNICIPAL DE SÃO PAULO', 105, 18, { align: 'center' });
+    doc.setFontSize(14);
+    doc.text('NOTA FISCAL DE SERVIÇOS ELETRÔNICA - NFS-e', 105, 20, { align: 'center' });
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.text(`RPS Nº ${invoice.id} Série A, emitido em ${new Date(invoice.date).toLocaleDateString('pt-BR')}`, 105, 32, { align: 'center' });
@@ -164,10 +181,30 @@ const Invoices = () => {
     doc.setFont('helvetica', 'bold');
     doc.text('PRESTADOR DE SERVIÇOS', 105, y+4, { align: 'center' });
 
-    // Logo placeholder (Left)
-    doc.rect(14, y+9, 18, 18);
-    doc.setFontSize(6);
-    doc.text('LOGO', 23, y+19, { align: 'center' });
+    // Logo Logic
+    let logoAdded = false;
+    if (user.logo) {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        const BASE_URL = API_URL.replace('/api', '');
+        const logoUrl = `${BASE_URL}/uploads/logos/${user.logo}`;
+        
+        try {
+            const logoData = await getDataUri(logoUrl);
+            if (logoData) {
+                doc.addImage(logoData, 'PNG', 14, y+9, 18, 18);
+                logoAdded = true;
+            }
+        } catch (e) {
+            console.error('Error adding logo to PDF:', e);
+        }
+    }
+
+    if (!logoAdded) {
+        // Logo placeholder (Left)
+        doc.rect(14, y+9, 18, 18);
+        doc.setFontSize(6);
+        doc.text('LOGO', 23, y+19, { align: 'center' });
+    }
 
     // Details
     const startX = 38;
