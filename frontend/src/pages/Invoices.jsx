@@ -17,7 +17,7 @@ const Invoices = () => {
 
   // Custom Alert State
   const [alertState, setAlertState] = useState({ isOpen: false, title: '', message: '', type: 'info' });
-  const showAlert = (title, message, type) => setAlertState({ isOpen: true, title, message, type });
+  const showAlert = (title, message, type, onConfirm) => setAlertState({ isOpen: true, title, message, type, onConfirm });
 
   const [invoices, setInvoices] = useState([]);
 
@@ -83,21 +83,26 @@ const Invoices = () => {
     }
   };
 
-  const handleDeleteInvoice = async (id, originalId) => {
-    if (window.confirm('Tem certeza que deseja excluir esta nota fiscal?')) {
-        try {
-            // Use originalId (database ID) if available, otherwise fallback to id (might be string)
-            const idToDelete = originalId || id;
-            await api.delete(`/invoices/${idToDelete}`);
-            
-            const updatedInvoices = invoices.filter(inv => inv.id !== id);
-            setInvoices(updatedInvoices);
-            showAlert('Sucesso', 'Nota fiscal excluída com sucesso!', 'success');
-        } catch (error) {
-            console.error('Error deleting invoice:', error);
-            showAlert('Erro', 'Falha ao excluir nota fiscal.', 'error');
+  const handleDeleteInvoice = (id, originalId) => {
+    showAlert(
+        'Excluir Nota Fiscal',
+        'Tem certeza que deseja excluir esta nota fiscal?',
+        'confirm',
+        async () => {
+            try {
+                // Use originalId (database ID) if available, otherwise fallback to id (might be string)
+                const idToDelete = originalId || id;
+                await api.delete(`/invoices/${idToDelete}`);
+                
+                const updatedInvoices = invoices.filter(inv => inv.id !== id);
+                setInvoices(updatedInvoices);
+                showAlert('Sucesso', 'Nota fiscal excluída com sucesso!', 'success');
+            } catch (error) {
+                console.error('Error deleting invoice:', error);
+                showAlert('Erro', 'Falha ao excluir nota fiscal.', 'error');
+            }
         }
-    }
+    );
   };
 
   // Calculate totals dynamically
@@ -184,8 +189,8 @@ const Invoices = () => {
     // Logo Logic
     let logoAdded = false;
     if (user.logo) {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-        const BASE_URL = API_URL.replace('/api', '');
+        const API_URL = import.meta.env.VITE_API_URL;
+        const BASE_URL = API_URL ? API_URL.replace('/api', '') : '';
         // Add cache buster to avoid CORS issues with cached images
         const logoUrl = `${BASE_URL}/uploads/logos/${user.logo}?t=${new Date().getTime()}`;
         
@@ -400,6 +405,7 @@ const Invoices = () => {
         title={alertState.title}
         message={alertState.message}
         type={alertState.type}
+        onConfirm={alertState.onConfirm}
       />
       
       <CertificateModal 

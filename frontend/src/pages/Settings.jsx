@@ -15,10 +15,9 @@ const Settings = () => {
             const res = await api.get('/auth/me');
             setUser(res.data);
             if (res.data.logo) {
-                // Assuming backend runs on localhost:5000 or relative path if proxied
-                // Construct full URL if needed, but relative usually works if proxy set up
-                // Or just use the filename and let the img src handle the base URL
-                setLogoPreview(`http://localhost:5000/uploads/logos/${res.data.logo}`);
+                const API_URL = import.meta.env.VITE_API_URL;
+                const BASE_URL = API_URL ? API_URL.replace('/api', '') : '';
+                setLogoPreview(`${BASE_URL}/uploads/logos/${res.data.logo}`);
             }
         } catch (error) {
             console.error('Error fetching user:', error);
@@ -54,7 +53,9 @@ const Settings = () => {
         localStorage.setItem('user', JSON.stringify(updatedUser));
         
         // Update preview with server URL to be sure
-        setLogoPreview(`http://localhost:5000/uploads/logos/${res.data.logo}`);
+        const API_URL = import.meta.env.VITE_API_URL;
+        const BASE_URL = API_URL ? API_URL.replace('/api', '') : '';
+        setLogoPreview(`${BASE_URL}/uploads/logos/${res.data.logo}`);
 
         setAlertState({
             isOpen: true,
@@ -76,35 +77,41 @@ const Settings = () => {
     }
   };
 
-  const handleRemoveLogo = async () => {
-    if (!window.confirm('Deseja remover o logotipo?')) return;
+  const handleRemoveLogo = () => {
+    setAlertState({
+        isOpen: true,
+        title: 'Remover Logotipo',
+        message: 'Tem certeza que deseja remover o logotipo da empresa?',
+        type: 'confirm',
+        onConfirm: async () => {
+            setLoading(true);
+            try {
+                await api.delete('/auth/logo');
+                
+                const updatedUser = { ...user, logo: null };
+                setUser(updatedUser);
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+                setLogoPreview(null);
 
-    setLoading(true);
-    try {
-        await api.delete('/auth/logo');
-        
-        const updatedUser = { ...user, logo: null };
-        setUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        setLogoPreview(null);
-
-        setAlertState({
-            isOpen: true,
-            title: 'Sucesso',
-            message: 'Logotipo removido.',
-            type: 'success'
-        });
-    } catch (error) {
-        console.error('Delete error:', error);
-        setAlertState({
-            isOpen: true,
-            title: 'Erro',
-            message: 'Falha ao remover logotipo.',
-            type: 'error'
-        });
-    } finally {
-        setLoading(false);
-    }
+                setAlertState({
+                    isOpen: true,
+                    title: 'Sucesso',
+                    message: 'Logotipo removido.',
+                    type: 'success'
+                });
+            } catch (error) {
+                console.error('Delete error:', error);
+                setAlertState({
+                    isOpen: true,
+                    title: 'Erro',
+                    message: 'Falha ao remover logotipo.',
+                    type: 'error'
+                });
+            } finally {
+                setLoading(false);
+            }
+        }
+    });
   };
 
   const isPremium = ['premium', 'agency'].includes(user.plan);
@@ -117,6 +124,7 @@ const Settings = () => {
         title={alertState.title}
         message={alertState.message}
         type={alertState.type}
+        onConfirm={alertState.onConfirm}
       />
 
       <div>

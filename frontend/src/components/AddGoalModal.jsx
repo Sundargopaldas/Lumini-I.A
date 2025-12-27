@@ -53,25 +53,25 @@ const AddGoalModal = ({ isOpen, onClose, onSave }) => {
           ✕
         </button>
         
-        <h2 className="text-2xl font-bold text-white mb-6">New Financial Goal</h2>
+        <h2 className="text-2xl font-bold text-white mb-6">Nova Meta Financeira</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Goal Name</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Nome da Meta</label>
             <input 
               type="text" 
               name="name" 
               value={formData.name} 
               onChange={handleChange}
               required
-              placeholder="e.g. New Car, Emergency Fund"
+              placeholder="Ex: Carro Novo, Reserva de Emergência"
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Target Amount (R$)</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Valor Alvo (R$)</label>
                 <input 
                 type="number" 
                 name="targetAmount" 
@@ -85,7 +85,7 @@ const AddGoalModal = ({ isOpen, onClose, onSave }) => {
                 />
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Current Saved (R$)</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Valor Atual (R$)</label>
                 <input 
                 type="number" 
                 name="currentAmount" 
@@ -100,7 +100,7 @@ const AddGoalModal = ({ isOpen, onClose, onSave }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Deadline (Optional)</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Prazo (Opcional)</label>
             <input 
               type="date" 
               name="deadline" 
@@ -111,7 +111,7 @@ const AddGoalModal = ({ isOpen, onClose, onSave }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Color Label</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Cor da Etiqueta</label>
             <div className="flex gap-2 flex-wrap">
                 {COLORS.map(color => (
                     <button
@@ -129,7 +129,7 @@ const AddGoalModal = ({ isOpen, onClose, onSave }) => {
             type="submit" 
             className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-3 rounded-lg hover:shadow-lg hover:shadow-purple-500/30 transition-all mt-4"
           >
-            Create Goal
+            Criar Meta
           </button>
         </form>
       </div>

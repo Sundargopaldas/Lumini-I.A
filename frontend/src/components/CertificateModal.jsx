@@ -13,6 +13,18 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
   
   const [loading, setLoading] = useState(false);
 
+  // Custom Alert State
+  const [alertState, setAlertState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showAlert = (title, message, type = 'info', onConfirm) => {
+    setAlertState({ isOpen: true, title, message, type, onConfirm });
+  };
+
   if (!isOpen) return null;
 
   const handleFileChange = (e) => {
@@ -21,8 +33,8 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
     }
   };
 
-  const handleRemove = async () => {
-    if (window.confirm('Tem certeza que deseja remover o certificado digital?')) {
+  const handleRemove = () => {
+    showAlert('Remover Certificado', 'Tem certeza que deseja remover o certificado digital?', 'confirm', async () => {
         setLoading(true);
         try {
             await api.delete('/certificates');
@@ -30,11 +42,11 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
             onClose();
         } catch (error) {
             console.error('Error removing certificate:', error);
-            alert('Erro ao remover certificado.');
+            showAlert('Erro', 'Erro ao remover certificado.', 'error');
         } finally {
             setLoading(false);
         }
-    }
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -66,7 +78,7 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
         onClose();
     } catch (error) {
         console.error('Error uploading certificate:', error);
-        alert('Erro ao salvar certificado. Verifique os dados e tente novamente.');
+        showAlert('Erro', 'Erro ao salvar certificado. Verifique os dados e tente novamente.', 'error');
     } finally {
         setLoading(false);
     }
@@ -75,6 +87,14 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
   if (certificate) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <CustomAlert 
+            isOpen={alertState.isOpen}
+            onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))}
+            title={alertState.title}
+            message={alertState.message}
+            type={alertState.type}
+            onConfirm={alertState.onConfirm}
+          />
           <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative">
             <button 
               onClick={onClose}
@@ -131,6 +151,14 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <CustomAlert 
+        isOpen={alertState.isOpen}
+        onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        onConfirm={alertState.onConfirm}
+      />
       <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative animate-in zoom-in-95 duration-200">
         <button 
           onClick={onClose}

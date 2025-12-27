@@ -17,7 +17,6 @@ const CancelSurveyModal = ({ isOpen, onClose, onConfirm, loading }) => {
   const handleSubmit = () => {
     const finalReason = reason === 'Outro motivo' ? customReason : reason;
     if (!finalReason) {
-        alert('Por favor, selecione um motivo.'); // Fallback simple alert or just block
         return;
     }
     onConfirm(finalReason);

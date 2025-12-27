@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import TransactionCard from '../components/TransactionCard';
 import AddTransactionModal from '../components/AddTransactionModal';
+import CustomAlert from '../components/CustomAlert';
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -10,6 +11,9 @@ const Transactions = () => {
   const [transactionToEdit, setTransactionToEdit] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+
+  const [alertState, setAlertState] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+  const showAlert = (title, message, type, onConfirm) => setAlertState({ isOpen: true, title, message, type, onConfirm });
 
   const fetchTransactions = async () => {
     try {
@@ -45,7 +49,7 @@ const Transactions = () => {
       setTransactionToEdit(null);
     } catch (error) {
       console.error('Error saving transaction:', error);
-      alert('Failed to save transaction');
+      showAlert('Erro', 'Falha ao salvar transação', 'error');
     }
   };
 
@@ -54,16 +58,17 @@ const Transactions = () => {
     setIsModalOpen(true);
   };
 
-  const handleDeleteTransaction = async (id) => {
-    if (window.confirm('Are you sure you want to delete this transaction?')) {
+  const handleDeleteTransaction = (id) => {
+    showAlert('Excluir Transação', 'Tem certeza que deseja excluir esta transação?', 'confirm', async () => {
       try {
         await api.delete(`/transactions/${id}`);
         setTransactions(transactions.filter(t => t.id !== id));
+        showAlert('Sucesso', 'Transação excluída com sucesso', 'success');
       } catch (error) {
         console.error('Error deleting transaction:', error);
-        alert('Failed to delete transaction');
+        showAlert('Erro', 'Falha ao excluir transação', 'error');
       }
-    }
+    });
   };
 
   const handleCloseModal = () => {
@@ -80,8 +85,16 @@ const Transactions = () => {
 
   return (
     <div className="space-y-6">
+      <CustomAlert 
+        isOpen={alertState.isOpen}
+        onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        onConfirm={alertState.onConfirm}
+      />
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
-        <h1 className="text-3xl font-bold text-white">Transactions</h1>
+        <h1 className="text-3xl font-bold text-white">Transações</h1>
         <button 
           onClick={() => {
             setTransactionToEdit(null);
@@ -89,7 +102,7 @@ const Transactions = () => {
           }}
           className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors shadow-lg shadow-purple-500/30 font-medium w-full sm:w-auto"
         >
-          + Add Transaction
+          + Nova Transação
         </button>
       </div>
 
@@ -98,7 +111,7 @@ const Transactions = () => {
         <div className="relative flex-1">
           <input 
             type="text" 
-            placeholder="Search transactions..." 
+            placeholder="Buscar transações..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -112,20 +125,20 @@ const Transactions = () => {
           onChange={(e) => setFilterType(e.target.value)}
           className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-[150px]"
         >
-          <option value="all" className="bg-gray-900 text-white">All Types</option>
-          <option value="income" className="bg-gray-900 text-white">Income</option>
-          <option value="expense" className="bg-gray-900 text-white">Expense</option>
+          <option value="all" className="bg-gray-900 text-white">Todas</option>
+          <option value="income" className="bg-gray-900 text-white">Receitas</option>
+          <option value="expense" className="bg-gray-900 text-white">Despesas</option>
         </select>
       </div>
 
       <div className="bg-white/10 backdrop-blur-lg border border-white/20 sm:rounded-2xl overflow-hidden min-h-[400px]">
         {loading ? (
-          <div className="p-8 text-center text-gray-400">Loading transactions...</div>
+          <div className="p-8 text-center text-gray-400">Carregando...</div>
         ) : filteredTransactions.length === 0 ? (
           <div className="p-12 text-center">
-            <p className="text-gray-300 text-lg mb-2">No transactions found matching your criteria.</p>
+            <p className="text-gray-300 text-lg mb-2">Nenhuma transação encontrada.</p>
             {transactions.length === 0 && (
-                <p className="text-gray-500 text-sm">Start by adding your first income or expense.</p>
+                <p className="text-gray-500 text-sm">Comece adicionando sua primeira receita ou despesa.</p>
             )}
           </div>
         ) : (

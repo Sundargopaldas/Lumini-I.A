@@ -19,8 +19,8 @@ const GoalsWidget = () => {
     type: 'info'
   });
 
-  const showAlert = (title, message, type = 'info') => {
-    setAlertState({ isOpen: true, title, message, type });
+  const showAlert = (title, message, type = 'info', onConfirm) => {
+    setAlertState({ isOpen: true, title, message, type, onConfirm });
   };
 
   const closeAlert = () => {
@@ -48,25 +48,27 @@ const GoalsWidget = () => {
       fetchGoals();
     } catch (error) {
       console.error('Error adding goal:', error);
-      alert('Failed to add goal');
+      showAlert('Erro', 'Falha ao adicionar meta', 'error');
     }
   };
 
-  const handleDeleteGoal = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this goal?')) return;
-    try {
-      await api.delete(`/goals/${id}`);
-      fetchGoals();
-    } catch (error) {
-      console.error('Error deleting goal:', error);
-    }
+  const handleDeleteGoal = (id) => {
+    showAlert('Excluir Meta', 'Tem certeza que deseja excluir esta meta?', 'confirm', async () => {
+      try {
+        await api.delete(`/goals/${id}`);
+        fetchGoals();
+      } catch (error) {
+        console.error('Error deleting goal:', error);
+        showAlert('Erro', 'Falha ao excluir meta', 'error');
+      }
+    });
   };
 
   if (loading) return <div className="animate-pulse bg-white/5 h-40 rounded-2xl"></div>;
 
   const handleOpenModal = () => {
     if (!isPro && goals.length >= 3) {
-        showAlert('Premium Limit Reached', 'Free plan users are limited to 3 financial goals.\n\nUpgrade to PRO to track unlimited dreams!', 'locked');
+        showAlert('Limite Premium Atingido', 'Usuários do plano gratuito estão limitados a 3 metas financeiras.\n\nFaça upgrade para o PRO para rastrear sonhos ilimitados!', 'locked');
         return;
     }
     setIsModalOpen(true);
@@ -80,9 +82,10 @@ const GoalsWidget = () => {
         title={alertState.title}
         message={alertState.message}
         type={alertState.type}
+        onConfirm={alertState.onConfirm}
       />
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-white">Financial Goals</h2>
+        <h2 className="text-xl font-bold text-white">Metas Financeiras</h2>
         <button 
           onClick={handleOpenModal}
           className={`text-sm px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 ${
@@ -91,7 +94,7 @@ const GoalsWidget = () => {
                 : 'bg-purple-600 hover:bg-purple-500 text-white'
           }`}
         >
-          <span>{(!isPro && goals.length >= 3) ? '🔒' : '+'}</span> Add Goal
+          <span>{(!isPro && goals.length >= 3) ? '🔒' : '+'}</span> Nova Meta
         </button>
       </div>
 
