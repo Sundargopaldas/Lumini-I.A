@@ -1,11 +1,31 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const sequelize = require('./config/database');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Trust Proxy (Essential for HTTPS behind proxies/load balancers like Ngrok, Vercel, Heroku)
+app.enable('trust proxy');
+
+// Security Middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow images to be loaded by frontend
+}));
+
+// Rate Limiting - Global
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // Limit each IP to 300 requests per windowMs
+  standardHeaders: true, 
+  legacyHeaders: false,
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use(globalLimiter);
 
 // Middleware
 app.use(cors());
@@ -37,7 +57,14 @@ const paymentRoutes = require('./routes/payments');
 const invoiceRoutes = require('./routes/invoices');
 const certificateRoutes = require('./routes/certificates');
 
-app.use('/api/auth', authRoutes);
+// Rate Limiting - Auth (Stricter)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // Limit each IP to 50 login/register attempts per windowMs
+  message: 'Too many login attempts, please try again later'
+});
+
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/integrations', integrationRoutes);

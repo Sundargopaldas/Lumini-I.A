@@ -18,12 +18,12 @@ const PrivateRoute = ({ children }) => {
     const userStr = localStorage.getItem('user');
     const token = localStorage.getItem('token');
     
-    if (!userStr || !token) {
+    if (!userStr || !token || userStr === 'undefined') {
       return <Navigate to="/login" replace />;
     }
 
     const user = JSON.parse(userStr);
-    return user && token ? children : <Navigate to="/login" replace />;
+    return user && user.id && token ? children : <Navigate to="/login" replace />;
   } catch (error) {
     console.error('Auth Error:', error);
     localStorage.removeItem('user');
