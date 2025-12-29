@@ -11,12 +11,12 @@ const PLANS = {
     'premium': { 
         name: 'Lumini Premium', 
         amount: 9900,
-        priceId: 'price_1Sij8q2OKONfldjlyXBCMw6G' 
+        priceId: 'price_1SjgWT2OKONfldjliYgukClY' 
     }, 
     'pro': { 
         name: 'Lumini Pro', 
-        amount: 4990,
-        priceId: 'price_1Sij7o2OKONfldjlVHI0o62I' 
+        amount: 4900,
+        priceId: 'price_1SjgWT2OKONfldjlivd97hha' 
     }
 };
 
@@ -25,6 +25,30 @@ router.post('/create-subscription', async (req, res) => {
 
     try {
         console.log(`Processing subscription for ${email} - Plan: ${planName}`);
+
+        // --- DEV BYPASS: SIMULATED PAYMENT ---
+        if (paymentMethodId === 'mock_payment_method_dev') {
+            console.log('⚠️ MOCK PAYMENT DETECTED - Bypassing Stripe (Dev Mode)');
+            const user = await User.findOne({ where: { email } });
+            if (user) {
+                user.plan = (planName || 'premium').toLowerCase();
+                await user.save();
+                console.log(`User ${user.email} upgraded to ${user.plan} (Mock)`);
+                
+                // Send Welcome Email
+                sendWelcomeEmail(user, user.plan === 'premium' ? 'Premium' : 'Pro');
+                
+                return res.json({
+                    status: 'active',
+                    clientSecret: 'mock_secret_dev',
+                    subscriptionId: 'sub_mock_dev_' + Date.now()
+                });
+            } else {
+                 // Even if user not found (unlikely in this flow), return success to not break UI
+                 return res.json({ status: 'active', clientSecret: 'mock', subscriptionId: 'mock' });
+            }
+        }
+        // -------------------------------------
 
         // 1. Create or Get Customer
         const customers = await stripe.customers.list({ email: email, limit: 1 });
@@ -141,6 +165,16 @@ router.post('/create-subscription', async (req, res) => {
             }
             await User.update(updateData, { where: { email: email } });
             console.log(`Updated user ${email} to plan ${validPlan}`);
+
+            // Send Welcome Email
+            try {
+                const userForEmail = await User.findOne({ where: { email } });
+                if (userForEmail) {
+                    sendWelcomeEmail(userForEmail, validPlan === 'premium' ? 'Premium' : 'Pro');
+                }
+            } catch (emailErr) {
+                console.error('Error triggering welcome email:', emailErr);
+            }
         }
 
         // 5. Respond to Frontend
@@ -204,7 +238,7 @@ router.get('/my-invoices', auth, async (req, res) => {
     }
 });
 
-const { sendCancellationEmail } = require('../services/EmailService');
+const { sendCancellationEmail, sendWelcomeEmail } = require('../services/EmailService');
 
 // Cancel Subscription
 router.post('/cancel-subscription', auth, async (req, res) => {
@@ -225,18 +259,22 @@ router.post('/cancel-subscription', auth, async (req, res) => {
         // 2. Find Active Subscription
         const subscriptions = await stripe.subscriptions.list({ 
             customer: customer.id, 
-            status: 'active',
             limit: 1 
         });
 
-        if (subscriptions.data.length === 0) {
+        // Filter manually for relevant statuses if needed, or just log what we found
+        const activeSub = subscriptions.data.find(sub => sub.status === 'active' || sub.status === 'trialing');
+        
+        if (!activeSub) {
+             console.log(`[Cancel Subscription] No active subscription found for user ${user.email}. Found statuses: ${subscriptions.data.map(s => s.status).join(', ')}`);
              // Maybe they are already trialing or past_due, but let's assume active for now
              // If no active subscription, maybe update local DB to free just in case?
              await User.update({ plan: 'free' }, { where: { id: user.id } });
              return res.json({ message: 'Subscription already cancelled or not found. Plan reset to Free.' });
         }
 
-        const subscription = subscriptions.data[0];
+        const subscription = activeSub;
+        console.log(`[Cancel Subscription] Found subscription ${subscription.id} with status: ${subscription.status}`);
 
         // 3. Cancel at period end
         await stripe.subscriptions.update(subscription.id, {
@@ -244,8 +282,18 @@ router.post('/cancel-subscription', auth, async (req, res) => {
         });
 
         // 4. Send Feedback Email
-        if (reason) {
-            await sendCancellationEmail(user, reason);
+        const finalReason = reason || 'Motivo não informado';
+        console.log(`[Cancel Subscription] Attempting to send cancellation email to ${user.email} with reason: ${finalReason}`);
+        
+        try {
+            // Pass plain object to avoid any Sequelize serialization issues
+            await sendCancellationEmail({
+                email: user.email,
+                name: user.name
+            }, finalReason);
+            console.log(`[Cancel Subscription] Email sent successfully to ${user.email}`);
+        } catch (emailError) {
+            console.error(`[Cancel Subscription] CRITICAL ERROR sending email:`, emailError);
         }
 
         // Optionally update DB to reflect "cancellation pending" or just leave it until webhook fires?

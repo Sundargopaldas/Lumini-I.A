@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import ConnectModal from '../components/ConnectModal';
 import CustomAlert from '../components/CustomAlert';
 
 const Integrations = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState({});
   const [connectedIntegrations, setConnectedIntegrations] = useState([]);
   const [selectedIntegration, setSelectedIntegration] = useState(null);
@@ -34,7 +36,7 @@ const Integrations = () => {
       type: 'Bank',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Nubank_logo_2021.svg/2560px-Nubank_logo_2021.svg.png',
       color: 'bg-purple-800',
-      description: 'Sync your expenses and credit card bills automatically.'
+      description: t('integrations.nubank_desc')
     },
     {
       id: 'hotmart',
@@ -42,7 +44,7 @@ const Integrations = () => {
       type: 'Platform',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Hotmart_logo.svg/2560px-Hotmart_logo.svg.png',
       color: 'bg-orange-600',
-      description: 'Import your digital product sales in real-time.',
+      description: t('integrations.hotmart_desc'),
       hasWebhook: true
     },
     {
@@ -51,7 +53,7 @@ const Integrations = () => {
       type: 'Platform',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/2560px-YouTube_full-color_icon_%282017%29.svg.png',
       color: 'bg-red-600',
-      description: 'Track your AdSense revenue directly.'
+      description: t('integrations.youtube_desc')
     }
   ];
 
@@ -172,21 +174,21 @@ const Integrations = () => {
       />
 
       {/* Pro Badge / Limit Info */}
-      <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/30 p-4 rounded-xl flex items-start gap-3">
+      <div className="bg-gradient-to-r from-purple-600/10 to-blue-600/10 dark:from-purple-600/20 dark:to-blue-600/20 border border-purple-500/20 dark:border-purple-500/30 p-4 rounded-xl flex items-start gap-3">
         <div className="text-2xl">⚡</div>
         <div>
             {userData?.plan === 'free' ? (
                 <>
-                    <h3 className="text-purple-200 font-bold text-sm">Free Plan: No Integrations Included</h3>
-                    <p className="text-purple-200/70 text-xs mt-1">
-                        Integrations are a PRO feature. Upgrade to connect your banks and platforms.
+                    <h3 className="text-purple-800 dark:text-purple-200 font-bold text-sm">{t('integrations.free_plan_title')}</h3>
+                    <p className="text-purple-700/70 dark:text-purple-200/70 text-xs mt-1">
+                        {t('integrations.free_plan_desc')}
                     </p>
                 </>
             ) : (
                 <>
-                    <h3 className="text-purple-200 font-bold text-sm">PRO Plan Active: Unlimited Integrations</h3>
-                    <p className="text-purple-200/70 text-xs mt-1">
-                        You have access to all integrations with no limits. Connect as many accounts as you need.
+                    <h3 className="text-purple-800 dark:text-purple-200 font-bold text-sm">{t('integrations.pro_plan_title')}</h3>
+                    <p className="text-purple-700/70 dark:text-purple-200/70 text-xs mt-1">
+                        {t('integrations.pro_plan_desc')}
                     </p>
                 </>
             )}
@@ -194,15 +196,15 @@ const Integrations = () => {
       </div>
 
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Integrations</h1>
-        <p className="text-gray-400">Connect your accounts to automate your financial tracking.</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('integrations.title')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('integrations.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {integrations.map((integration) => (
-          <div key={integration.id} className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col justify-between hover:bg-white/10 transition-colors">
+          <div key={integration.id} className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-6 flex flex-col justify-between hover:shadow-lg dark:hover:bg-white/10 transition-all">
             <div>
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-white p-2 overflow-hidden`}>
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-gray-50 dark:bg-white p-2 overflow-hidden border border-gray-100 dark:border-none`}>
                  <img 
                     src={integration.logo} 
                     alt={integration.name} 
@@ -219,14 +221,14 @@ const Integrations = () => {
                  />
               </div>
               <div className="flex justify-between items-start mb-2">
-                <h3 className="text-xl font-bold text-white">{integration.name}</h3>
-                <span className="text-xs font-medium text-gray-400 bg-white/10 px-2 py-1 rounded">{integration.type}</span>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{integration.name}</h3>
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 px-2 py-1 rounded border border-gray-200 dark:border-none">{integration.type}</span>
               </div>
-              <p className="text-gray-400 text-sm mb-6">{integration.description}</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">{integration.description}</p>
               
               {integration.hasWebhook && isConnected(integration.name) && (
-                  <div className="mb-4 bg-black/30 p-3 rounded border border-white/5">
-                      <p className="text-xs text-gray-500 mb-1">Your Webhook URL:</p>
+                  <div className="mb-4 bg-gray-900 dark:bg-black/30 p-3 rounded border border-gray-800 dark:border-white/5">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{t('integrations.webhook_url')}</p>
                       <code className="text-xs text-orange-400 break-all select-all block">
                           https://api.luminia.com/v1/webhooks/hotmart
                       </code>
@@ -243,29 +245,29 @@ const Integrations = () => {
                             className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
                         >
                             {loading[integration.name] ? (
-                                'Syncing...'
+                                t('integrations.syncing')
                             ) : (
                                 <>
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                     </svg>
-                                    Sync Now
+                                    {t('integrations.sync_now')}
                                 </>
                             )}
                         </button>
                         <button 
                             onClick={() => handleDisconnect(integration.name)}
-                            className="w-full bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10 font-medium py-2 rounded-lg transition-colors text-sm"
+                            className="w-full bg-transparent border border-red-500/30 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 font-medium py-2 rounded-lg transition-colors text-sm"
                         >
-                            Disconnect
+                            {t('integrations.disconnect')}
                         </button>
                     </>
                 ) : (
                     <button 
                         onClick={() => handleOpenConnect(integration)}
-                        className="w-full bg-white text-purple-900 font-bold py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                        className="w-full bg-gray-100 dark:bg-white text-gray-900 dark:text-purple-900 font-bold py-2 rounded-lg hover:bg-gray-200 transition-colors border border-gray-200 dark:border-none"
                     >
-                        Connect
+                        {t('integrations.connect')}
                     </button>
                 )}
             </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import TrendChart from '../components/TrendChart';
 import TransactionCard from '../components/TransactionCard';
 import GoalsWidget from '../components/GoalsWidget';
@@ -8,6 +9,7 @@ import TaxSimulatorModal from '../components/TaxSimulatorModal';
 import api from '../services/api';
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -201,21 +203,21 @@ const Dashboard = () => {
   const meiLimit = 81000;
   const meiPercentage = Math.min((metrics.annualRevenue / meiLimit) * 100, 100);
 
-  if (loading) return <div className="text-center py-10">Carregando dados...</div>;
+  if (loading) return <div className="text-center py-10">{t('plans.processing')}</div>;
 
   return (
     <div className="space-y-6">
       
       {/* Subscription Status Widget */}
       <SubscriptionWidget user={user} />
-      <h1 className="text-3xl font-bold text-white mb-8">Dashboard</h1>
+      <h1 className="text-3xl font-bold text-white mb-8">{t('dashboard.title')}</h1>
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/50 text-red-200 p-4 rounded-lg mb-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
              <span className="text-xl">⚠️</span>
              <div>
-                <p className="font-bold">Connection Issue</p>
+                <p className="font-bold">{t('dashboard.connection_issue')}</p>
                 <p className="text-sm opacity-80">{error}</p>
              </div>
           </div>
@@ -223,7 +225,7 @@ const Dashboard = () => {
             onClick={fetchTransactions}
             className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-sm font-semibold transition-colors border border-red-500/30"
           >
-            Retry
+            {t('dashboard.retry')}
           </button>
         </div>
       )}
@@ -231,12 +233,12 @@ const Dashboard = () => {
       {/* MEI Tracker Widget */}
       <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-6 shadow-xl border border-white/20">
         <div className="flex justify-between items-center mb-2">
-          <h2 className="text-white font-semibold text-lg">MEI Annual Limit Tracker</h2>
+          <h2 className="text-white font-semibold text-lg">{t('dashboard.mei_tracker')}</h2>
           <button 
             onClick={() => setIsTaxModalOpen(true)}
             className="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-full transition-colors"
           >
-            Simulate Taxes
+            {t('dashboard.simulate_taxes')}
           </button>
         </div>
         <div className="flex justify-between items-center mb-2">
@@ -249,38 +251,38 @@ const Dashboard = () => {
           ></div>
         </div>
         <p className="text-white/70 text-sm mt-2">
-          You have used {meiPercentage.toFixed(1)}% of your annual MEI limit. 
-          {meiPercentage > 80 && <span className="text-red-200 font-bold ml-1">Warning: Approaching limit!</span>}
+          {t('dashboard.limit_used', { percent: meiPercentage.toFixed(1) })} 
+          {meiPercentage > 80 && <span className="text-red-200 font-bold ml-1">{t('dashboard.limit_warning')}</span>}
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl">
-          <h3 className="text-gray-300 text-sm font-medium">Total Balance</h3>
-          <p className={`text-3xl font-bold break-all ${metrics.totalBalance >= 0 ? 'text-white' : 'text-red-400'}`}>
+        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+          <h3 className="text-slate-600 dark:text-gray-300 text-sm font-medium">{t('dashboard.total_balance')}</h3>
+          <p className={`text-3xl font-bold break-all ${metrics.totalBalance >= 0 ? 'text-slate-900 dark:text-white' : 'text-red-500 dark:text-red-400'}`}>
             R$ {metrics.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </p>
         </div>
-        <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl">
-          <h3 className="text-gray-300 text-sm font-medium">Income (This Month)</h3>
-          <p className="text-3xl font-bold text-green-400 break-all">+R$ {metrics.monthlyIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-          <p className="text-xs text-gray-400 mt-1 break-words">Top source: {metrics.topSource}</p>
+        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+          <h3 className="text-slate-600 dark:text-gray-300 text-sm font-medium">{t('dashboard.income_month')}</h3>
+          <p className="text-3xl font-bold text-green-600 dark:text-green-400 break-all">+R$ {metrics.monthlyIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 break-words">{t('dashboard.top_source')}: {metrics.topSource}</p>
         </div>
-        <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl">
-          <h3 className="text-gray-300 text-sm font-medium">Expenses (This Month)</h3>
-          <p className="text-3xl font-bold text-red-400 break-all">-R$ {metrics.monthlyExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-          <p className="text-xs text-gray-400 mt-1 break-words">Top expense: {metrics.topExpense}</p>
+        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+          <h3 className="text-slate-600 dark:text-gray-300 text-sm font-medium">{t('dashboard.expenses_month')}</h3>
+          <p className="text-3xl font-bold text-red-600 dark:text-red-400 break-all">-R$ {metrics.monthlyExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 break-words">{t('dashboard.top_expense')}: {metrics.topExpense}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl">
-          <h2 className="text-xl font-bold text-white mb-4">Balance Evolution (6 Months)</h2>
+        <div className="lg:col-span-2 bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{t('dashboard.balance_evolution')}</h2>
           <div className="h-64">
              {trendData ? (
                  <TrendChart data={trendData} />
              ) : (
-                 <p className="text-gray-400 text-center mt-10">No data for chart</p>
+                 <p className="text-slate-500 dark:text-gray-400 text-center mt-10">{t('dashboard.no_chart_data')}</p>
              )}
           </div>
         </div>
@@ -288,10 +290,10 @@ const Dashboard = () => {
         <div className="space-y-6">
           <GoalsWidget />
 
-          <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl">
+          <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
             <div className="flex justify-between items-center mb-4">
-               <h2 className="text-xl font-bold text-white">Recent Transactions</h2>
-               <Link to="/transactions" className="text-sm text-purple-400 hover:text-purple-300">View All</Link>
+               <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('dashboard.recent_transactions')}</h2>
+               <Link to="/transactions" className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300">{t('dashboard.view_all')}</Link>
             </div>
             <div className="space-y-4">
               {transactions.length > 0 ? (
@@ -299,7 +301,7 @@ const Dashboard = () => {
                   <TransactionCard key={transaction.id} transaction={transaction} />
                 ))
               ) : (
-                <p className="text-gray-400">No transactions yet.</p>
+                <p className="text-slate-500 dark:text-gray-400">{t('dashboard.no_transactions')}</p>
               )}
             </div>
           </div>

@@ -37,13 +37,29 @@ router.post('/stripe', express.raw({type: 'application/json'}), async (req, res)
         const email = session.customer_email || session.email;
         console.log(`[Stripe Webhook] Payment succeeded for ${email}`);
         
-        // Determine plan based on amount or product ID
-        // This is a simplified logic. In prod, map price IDs to plans.
-        let newPlan = 'pro'; 
-        if (session.amount_paid > 5000) newPlan = 'premium'; // Example threshold
+        // Determine plan based on amount
+        let newPlan = 'pro'; // Default
+        
+        // Check amount_paid (in cents)
+        // Pro: 4900, Premium: 9900
+        if (session.amount_paid === 9900) {
+            newPlan = 'premium';
+        } else if (session.amount_paid === 4900) {
+            newPlan = 'pro';
+        } else if (session.amount_paid > 5000) {
+            // Fallback for future plans with higher price
+            newPlan = 'premium';
+        }
 
         await User.update({ plan: newPlan }, { where: { email } });
+        console.log(`[Stripe Webhook] User ${email} plan updated to ${newPlan}`);
       }
+      break;
+      
+    case 'customer.subscription.updated':
+      const sub = event.data.object;
+      // Logic to handle plan changes (upgrade/downgrade)
+      // Usually we look at sub.items.data[0].price.id
       break;
       
     case 'customer.subscription.deleted':

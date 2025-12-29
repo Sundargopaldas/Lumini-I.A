@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import TransactionCard from '../components/TransactionCard';
 import AddTransactionModal from '../components/AddTransactionModal';
 import CustomAlert from '../components/CustomAlert';
 
 const Transactions = () => {
+  const { t } = useTranslation();
   const [transactions, setTransactions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,7 @@ const Transactions = () => {
       setTransactionToEdit(null);
     } catch (error) {
       console.error('Error saving transaction:', error);
-      showAlert('Erro', 'Falha ao salvar transação', 'error');
+      showAlert(t('common.error'), t('transactions.save_error'), 'error');
     }
   };
 
@@ -59,14 +61,14 @@ const Transactions = () => {
   };
 
   const handleDeleteTransaction = (id) => {
-    showAlert('Excluir Transação', 'Tem certeza que deseja excluir esta transação?', 'confirm', async () => {
+    showAlert(t('transactions.delete_title'), t('transactions.delete_confirm'), 'confirm', async () => {
       try {
         await api.delete(`/transactions/${id}`);
         setTransactions(transactions.filter(t => t.id !== id));
-        showAlert('Sucesso', 'Transação excluída com sucesso', 'success');
+        showAlert(t('common.success'), t('transactions.delete_success'), 'success');
       } catch (error) {
         console.error('Error deleting transaction:', error);
-        showAlert('Erro', 'Falha ao excluir transação', 'error');
+        showAlert(t('common.error'), t('transactions.delete_error'), 'error');
       }
     });
   };
@@ -77,8 +79,10 @@ const Transactions = () => {
   };
 
   const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          transaction.source.toLowerCase().includes(searchTerm.toLowerCase());
+    const description = transaction.description || '';
+    const source = transaction.source || '';
+    const matchesSearch = description.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          source.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || transaction.type === filterType;
     return matchesSearch && matchesType;
   });
@@ -94,7 +98,7 @@ const Transactions = () => {
         onConfirm={alertState.onConfirm}
       />
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
-        <h1 className="text-3xl font-bold text-white">Transações</h1>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white transition-colors">{t('transactions.title')}</h1>
         <button 
           onClick={() => {
             setTransactionToEdit(null);
@@ -102,7 +106,7 @@ const Transactions = () => {
           }}
           className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors shadow-lg shadow-purple-500/30 font-medium w-full sm:w-auto"
         >
-          + Nova Transação
+          {t('transactions.new_transaction')}
         </button>
       </div>
 
@@ -111,40 +115,40 @@ const Transactions = () => {
         <div className="relative flex-1">
           <input 
             type="text" 
-            placeholder="Buscar transações..." 
+            placeholder={t('transactions.search_placeholder')} 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 pl-10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
           />
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400 dark:text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
         <select 
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-[150px]"
+          className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-[150px] transition-colors"
         >
-          <option value="all" className="bg-gray-900 text-white">Todas</option>
-          <option value="income" className="bg-gray-900 text-white">Receitas</option>
-          <option value="expense" className="bg-gray-900 text-white">Despesas</option>
+          <option value="all" className="bg-white dark:bg-gray-900 text-slate-900 dark:text-white">{t('transactions.filter_all')}</option>
+          <option value="income" className="bg-white dark:bg-gray-900 text-slate-900 dark:text-white">{t('transactions.filter_income')}</option>
+          <option value="expense" className="bg-white dark:bg-gray-900 text-slate-900 dark:text-white">{t('transactions.filter_expense')}</option>
         </select>
       </div>
 
-      <div className="bg-white/10 backdrop-blur-lg border border-white/20 sm:rounded-2xl overflow-hidden min-h-[400px]">
+      <div className="bg-white dark:bg-white/10 backdrop-blur-lg border border-slate-200 dark:border-white/20 sm:rounded-2xl overflow-hidden min-h-[400px] transition-colors">
         {loading ? (
-          <div className="p-8 text-center text-gray-400">Carregando...</div>
+          <div className="p-8 text-center text-slate-400 dark:text-gray-400">{t('common.loading')}</div>
         ) : filteredTransactions.length === 0 ? (
           <div className="p-12 text-center">
-            <p className="text-gray-300 text-lg mb-2">Nenhuma transação encontrada.</p>
+            <p className="text-slate-500 dark:text-gray-300 text-lg mb-2">{t('transactions.no_transactions_found')}</p>
             {transactions.length === 0 && (
-                <p className="text-gray-500 text-sm">Comece adicionando sua primeira receita ou despesa.</p>
+                <p className="text-slate-400 dark:text-gray-500 text-sm">{t('transactions.start_adding')}</p>
             )}
           </div>
         ) : (
-          <ul className="divide-y divide-white/10">
+          <ul className="divide-y divide-slate-200 dark:divide-white/10">
             {filteredTransactions.map((transaction) => (
-              <li key={transaction.id} className="p-4 hover:bg-white/5 transition-colors">
+              <li key={transaction.id} className="p-4 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                  <TransactionCard 
                     transaction={transaction} 
                     onEdit={handleEditTransaction}

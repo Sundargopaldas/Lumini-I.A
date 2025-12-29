@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useTranslation } from 'react-i18next';
 import CertificateModal from '../components/CertificateModal';
 import IssueInvoiceModal from '../components/IssueInvoiceModal';
 import CustomAlert from '../components/CustomAlert';
 import api from '../services/api';
 
 const Invoices = () => {
+  const { t, i18n } = useTranslation();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isPremium = user.plan === 'premium';
   
@@ -55,9 +57,9 @@ const Invoices = () => {
   const handleSaveCertificate = (data) => {
     setCertificate(data);
     if (data) {
-        showAlert('Sucesso', 'Certificado Digital conectado com sucesso! Agora você pode emitir notas.', 'success');
+        showAlert(t('common.success'), t('invoices.cert_connected_success'), 'success');
     } else {
-        showAlert('Sucesso', 'Certificado removido com sucesso.', 'success');
+        showAlert(t('common.success'), t('invoices.cert_removed_success'), 'success');
     }
   };
 
@@ -76,17 +78,17 @@ const Invoices = () => {
         const response = await api.post('/invoices', payload);
         
         setInvoices([response.data, ...invoices]);
-        showAlert('Sucesso', 'Nota fiscal emitida com sucesso!', 'success');
+        showAlert(t('common.success'), t('invoices.invoice_issued_success'), 'success');
     } catch (error) {
         console.error('Error issuing invoice:', error);
-        showAlert('Erro', 'Falha ao emitir nota fiscal.', 'error');
+        showAlert(t('common.error'), t('invoices.invoice_issue_error'), 'error');
     }
   };
 
   const handleDeleteInvoice = (id, originalId) => {
     showAlert(
-        'Excluir Nota Fiscal',
-        'Tem certeza que deseja excluir esta nota fiscal?',
+        t('invoices.delete_invoice_title'),
+        t('invoices.delete_invoice_confirm'),
         'confirm',
         async () => {
             try {
@@ -96,10 +98,10 @@ const Invoices = () => {
                 
                 const updatedInvoices = invoices.filter(inv => inv.id !== id);
                 setInvoices(updatedInvoices);
-                showAlert('Sucesso', 'Nota fiscal excluída com sucesso!', 'success');
+                showAlert(t('common.success'), t('invoices.invoice_deleted_success'), 'success');
             } catch (error) {
                 console.error('Error deleting invoice:', error);
-                showAlert('Erro', 'Falha ao excluir nota fiscal.', 'error');
+                showAlert(t('common.error'), t('invoices.delete_invoice_error'), 'error');
             }
         }
     );
@@ -132,19 +134,26 @@ const Invoices = () => {
     const doc = new jsPDF();
     
     // --- HEADER ---
-    doc.setDrawColor(0);
-    doc.setFillColor(250, 250, 250);
+    doc.setDrawColor(200, 200, 220); // Softer border
+    doc.setFillColor(79, 70, 229); // Brand Indigo
     doc.rect(10, 10, 190, 28, 'F');
     doc.rect(10, 10, 190, 28);
     
+    doc.setTextColor(255, 255, 255); // White Text
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     // doc.text('PREFEITURA MUNICIPAL DE SÃO PAULO', 105, 18, { align: 'center' });
     doc.setFontSize(14);
-    doc.text('NOTA FISCAL DE SERVIÇOS ELETRÔNICA - NFS-e', 105, 20, { align: 'center' });
+    doc.text(t('invoices.pdf.nfse_title'), 105, 20, { align: 'center' });
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.text(`RPS Nº ${invoice.id} Série A, emitido em ${new Date(invoice.date).toLocaleDateString('pt-BR')}`, 105, 32, { align: 'center' });
+    const rpsText = t('invoices.pdf.rps_text', { 
+        number: invoice.id, 
+        date: new Date(invoice.date).toLocaleDateString(i18n.language) 
+    });
+    doc.text(rpsText, 105, 32, { align: 'center' });
+    
+    doc.setTextColor(60, 60, 60); // Reset to Dark Gray
 
     // --- INFO ROW ---
     let y = 40;
@@ -156,7 +165,7 @@ const Invoices = () => {
 
     // Col 1: Numero
     doc.setFontSize(7);
-    doc.text('NÚMERO DA NOTA', 41.5, y+4, { align: 'center' });
+    doc.text(t('invoices.pdf.note_number'), 41.5, y+4, { align: 'center' });
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.text(invoice.id, 41.5, y+10, { align: 'center' });
@@ -164,222 +173,178 @@ const Invoices = () => {
     // Col 2: Data Emissao
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.text('DATA E HORA DE EMISSÃO', 104.5, y+4, { align: 'center' });
+    doc.text(t('invoices.pdf.issue_date'), 104.5, y+4, { align: 'center' });
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text(`${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`, 104.5, y+10, { align: 'center' });
+    // Use invoice issue date, fallback to now
+    const issueDate = invoice.date ? new Date(invoice.date) : new Date();
+    doc.text(`${issueDate.toLocaleDateString(i18n.language)} ${issueDate.toLocaleTimeString(i18n.language)}`, 104.5, y+10, { align: 'center' });
 
     // Col 3: Codigo Verificacao
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.text('CÓDIGO DE VERIFICAÇÃO', 168, y+4, { align: 'center' });
+    doc.text(t('invoices.pdf.verification_code'), 168, y+4, { align: 'center' });
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('A1B2-C3D4-E5F6', 168, y+10, { align: 'center' });
+    // Generate a mock hash for verification code
+    const mockHash = `A${invoice.id}B-2025-${Math.floor(Math.random() * 1000)}`;
+    doc.text(mockHash, 168, y+10, { align: 'center' });
 
     // --- PRESTADOR ---
     y += 16;
-    doc.rect(10, y, 190, 30);
-    doc.setFillColor(230, 230, 230);
+    doc.rect(10, y, 190, 35);
+    doc.setFillColor(238, 242, 255); // Light Indigo
     doc.rect(10, y, 190, 6, 'F');
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('PRESTADOR DE SERVIÇOS', 105, y+4, { align: 'center' });
+    doc.setTextColor(79, 70, 229); // Brand Indigo
+    doc.text(t('invoices.pdf.provider_title'), 105, y+4, { align: 'center' });
+    doc.setTextColor(60, 60, 60); // Reset
 
     // Logo Logic
     let logoAdded = false;
     if (user.logo) {
         const API_URL = import.meta.env.VITE_API_URL;
         const BASE_URL = API_URL ? API_URL.replace('/api', '') : '';
-        // Add cache buster to avoid CORS issues with cached images
         const logoUrl = `${BASE_URL}/uploads/logos/${user.logo}?t=${new Date().getTime()}`;
         
         try {
             const logoData = await getDataUri(logoUrl);
             if (logoData) {
-                doc.addImage(logoData, 'PNG', 14, y+9, 18, 18);
+                doc.addImage(logoData, 'PNG', 14, y+9, 20, 20);
                 logoAdded = true;
             }
         } catch (e) {
-            console.error('Error adding logo to PDF:', e);
+            console.error("Logo error", e);
         }
     }
 
-    if (!logoAdded) {
-        // Logo placeholder (Left)
-        doc.rect(14, y+9, 18, 18);
-        doc.setFontSize(6);
-        doc.text('LOGO', 23, y+19, { align: 'center' });
-    }
-
-    // Details
-    const startX = 38;
+    // Provider Info
+    const leftMargin = logoAdded ? 40 : 15;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(user.name || t('invoices.pdf.provider_name_fallback'), leftMargin, y+11);
+    
     doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Razão Social:', startX, y+10);
     doc.setFont('helvetica', 'normal');
-    doc.text(certificate?.razaoSocial || user.username?.toUpperCase() + ' LTDA', startX+22, y+10);
+    const cpfCnpj = user.cpfCnpj || '00.000.000/0001-00';
+    doc.text(`CPF/CNPJ: ${cpfCnpj}`, leftMargin, y+16);
+    doc.text(`Email: ${user.email}`, leftMargin, y+21);
+    doc.text(`Endereço: ${user.address || t('invoices.pdf.not_informed')}`, leftMargin, y+26);
 
-    doc.setFont('helvetica', 'bold');
-    doc.text('CPF/CNPJ:', startX, y+15);
-    doc.setFont('helvetica', 'normal');
-    doc.text(certificate?.cnpj || '00.000.000/0001-00', startX+22, y+15);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('Endereço:', startX, y+20);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Av. Paulista, 1000 - Bela Vista - São Paulo/SP - CEP: 01310-100', startX+22, y+20);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('Município:', startX, y+25);
-    doc.setFont('helvetica', 'normal');
-    doc.text('São Paulo - SP', startX+22, y+25);
 
     // --- TOMADOR ---
-    y += 32;
-    doc.rect(10, y, 190, 28);
-    doc.setFillColor(230, 230, 230);
+    y += 37;
+    doc.rect(10, y, 190, 30);
+    doc.setFillColor(238, 242, 255);
     doc.rect(10, y, 190, 6, 'F');
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('CLIENTE', 105, y+4, { align: 'center' });
+    doc.setTextColor(79, 70, 229);
+    doc.text(t('invoices.pdf.client_title'), 105, y+4, { align: 'center' });
+    doc.setTextColor(60, 60, 60);
 
+    doc.setFontSize(9);
+    doc.text(invoice.client || t('invoices.pdf.client_not_identified'), 15, y+11);
+    
     doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Nome/Razão Social:', 15, y+10);
     doc.setFont('helvetica', 'normal');
-    doc.text(invoice.client, 50, y+10);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('CPF/CNPJ:', 15, y+15);
-    doc.setFont('helvetica', 'normal');
-    doc.text(invoice.clientDocument || 'Não Informado', 50, y+15);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('Inscrição Estadual:', 110, y+15);
-    doc.setFont('helvetica', 'normal');
-    doc.text(invoice.clientStateRegistration || 'Isento', 145, y+15);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('Endereço:', 15, y+20);
-    doc.setFont('helvetica', 'normal');
-    doc.text(invoice.clientAddress || 'Não Informado', 50, y+20);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('E-mail:', 15, y+25);
-    doc.setFont('helvetica', 'normal');
-    doc.text(invoice.clientEmail || 'Não Informado', 50, y+25);
+    doc.text(`CPF/CNPJ: ${invoice.clientDocument || t('invoices.pdf.not_informed')}`, 15, y+16);
+    doc.text(`Email: ${invoice.clientEmail || t('invoices.pdf.not_informed')}`, 15, y+21);
+    doc.text(`Endereço: ${invoice.clientAddress || t('invoices.pdf.not_informed')}`, 15, y+26);
 
     // --- DISCRIMINAÇÃO ---
-    y += 30;
+    y += 32;
+    // Calculate height based on text length
     doc.rect(10, y, 190, 50);
-    doc.setFillColor(230, 230, 230);
+    doc.setFillColor(238, 242, 255);
     doc.rect(10, y, 190, 6, 'F');
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('DISCRIMINAÇÃO DOS SERVIÇOS', 105, y+4, { align: 'center' });
-
+    doc.setTextColor(79, 70, 229);
+    doc.text(t('invoices.pdf.service_desc_title'), 105, y+4, { align: 'center' });
+    doc.setTextColor(60, 60, 60);
+    
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    const splitService = doc.splitTextToSize(invoice.service || '', 180);
-    doc.text(splitService, 15, y+12);
-    
-    // --- IMPOSTOS E TOTAIS ---
+    // Split text to fit width
+    const splitText = doc.splitTextToSize(invoice.service || '', 180);
+    doc.text(splitText, 15, y+12);
+
+    // --- VALORES E IMPOSTOS (SIMULADO) ---
     y += 52;
-    doc.rect(10, y, 190, 35); // Main box
+    doc.rect(10, y, 190, 20);
     
-    // Row 1: Federal Taxes Headers & Values
-    doc.setFillColor(245, 245, 245);
-    doc.rect(10, y, 190, 12, 'F');
-    doc.line(10, y+12, 200, y+12);
-
-    const taxes = ['PIS', 'COFINS', 'INSS', 'IR', 'CSLL', 'Outras'];
-    const colWidth = 190 / 6;
-    
-    doc.setFontSize(7);
-    taxes.forEach((tax, i) => {
-        const x = 10 + (i * colWidth);
-        doc.line(x + colWidth, y, x + colWidth, y+12); // Vertical line
-        doc.setFont('helvetica', 'bold');
-        doc.text(tax + ' (R$)', x + (colWidth/2), y+4, { align: 'center' });
-        doc.setFont('helvetica', 'normal');
-        doc.text('0,00', x + (colWidth/2), y+9, { align: 'center' });
-    });
-
-    // Row 2: Service Values
-    doc.line(10, y+24, 200, y+24);
-    
-    const values = ['VALOR SERVIÇOS', 'DEDUÇÕES', 'DESC. INCOND', 'BASE CÁLCULO', 'ALÍQUOTA', 'VALOR ISS'];
-    values.forEach((val, i) => {
-        const x = 10 + (i * colWidth);
-        doc.line(x + colWidth, y+12, x + colWidth, y+24); // Vertical line
-        doc.setFont('helvetica', 'bold');
-        doc.text(val, x + (colWidth/2), y+16, { align: 'center' });
-    });
-
-    // Values for Row 2
-    const amountStr = invoice.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-    const issStr = (invoice.amount * 0.05).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-    
-    doc.setFont('helvetica', 'normal');
-    doc.text(amountStr, 10 + (colWidth*0.5), y+21, { align: 'center' }); // Servicos
-    doc.text('0,00', 10 + (colWidth*1.5), y+21, { align: 'center' }); // Deducoes
-    doc.text('0,00', 10 + (colWidth*2.5), y+21, { align: 'center' }); // Desc
-    doc.text(amountStr, 10 + (colWidth*3.5), y+21, { align: 'center' }); // Base
-    doc.text('5%', 10 + (colWidth*4.5), y+21, { align: 'center' }); // Aliquota
-    doc.text(issStr, 10 + (colWidth*5.5), y+21, { align: 'center' }); // ISS
-
-    // Row 3: Net Value
-    doc.setFillColor(220, 220, 220);
-    doc.rect(10, y+24, 190, 11, 'F');
-    doc.rect(10, y+24, 190, 11); // Border
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('VALOR LÍQUIDO DA NOTA', 30, y+31);
-    doc.setFontSize(12);
-    doc.text('R$ ' + amountStr, 180, y+31, { align: 'right' });
-
-    // --- OUTRAS INFORMACOES ---
-    y += 37;
-    doc.rect(10, y, 190, 22);
-    doc.setFillColor(230, 230, 230);
+    // Header Row
+    doc.setFillColor(238, 242, 255);
     doc.rect(10, y, 190, 6, 'F');
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('OUTRAS INFORMAÇÕES', 105, y+4, { align: 'center' });
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.text('Esta NFS-e foi emitida com respaldo na Lei Nº 14.063/2020.', 15, y+10);
-    doc.text('Documento emitido por ME ou EPP optante pelo Simples Nacional.', 15, y+14);
-    doc.text('Não gera direito a crédito fiscal de IPI.', 15, y+18);
     
-    // QR Code Placeholder
-    doc.rect(175, y+7, 14, 14);
-    doc.setFontSize(5);
-    doc.text('QR CODE', 182, y+15, { align: 'center' });
+    const colWidth = 190/6;
+    const headers = ['PIS (0,65%)', 'COFINS (3%)', 'INSS', 'IR (1,5%)', 'CSLL (1%)', 'ISS (5%)'];
+    
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(79, 70, 229);
+    headers.forEach((h, i) => {
+        doc.text(h, 10 + (i * colWidth) + (colWidth/2), y+4, { align: 'center' });
+        // Vertical lines
+        if(i > 0) doc.line(10 + (i * colWidth), y, 10 + (i * colWidth), y+14);
+    });
+    doc.setTextColor(60, 60, 60);
 
+    // Values Row
+    doc.setFont('helvetica', 'normal');
+    const valor = invoice.amount || 0;
+    const vals = [
+        (valor * 0.0065).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
+        (valor * 0.03).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
+        'R$ 0,00',
+        (valor * 0.015).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
+        (valor * 0.01).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
+        (valor * 0.05).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
+    ];
+    
+    vals.forEach((v, i) => {
+        doc.text(v, 10 + (i * colWidth) + (colWidth/2), y+12, { align: 'center' });
+        if(i > 0) doc.line(10 + (i * colWidth), y+6, 10 + (i * colWidth), y+20);
+    });
+    
+    doc.line(10, y+14, 200, y+14); // Separator
+
+    // Total Line
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('VALOR TOTAL DA NOTA:', 130, y+18);
+    doc.text(valor.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}), 195, y+18, { align: 'right' });
+
+    // --- RODAPÉ ---
+    y += 25;
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Documento emitido por ME ou EPP optante pelo Simples Nacional.', 105, y, { align: 'center' });
+    doc.text('Não gera direito a crédito fiscal de IPI.', 105, y+4, { align: 'center' });
+    
+    // Save
     doc.save(`NFS-e-${invoice.id}.pdf`);
   };
 
   if (!isPremium) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
-        <div className="bg-purple-600/20 p-6 rounded-full">
+        <div className="bg-purple-600/10 dark:bg-purple-600/20 p-6 rounded-full">
             <span className="text-6xl">🧾</span>
         </div>
-        <h1 className="text-3xl font-bold text-white">Automação de Notas Fiscais</h1>
-        <p className="text-gray-400 max-w-lg">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Automação de Notas Fiscais</h1>
+        <p className="text-gray-600 dark:text-gray-400 max-w-lg">
           Emita notas fiscais de serviço (NFS-e) automaticamente para cada venda realizada na Hotmart, Kiwify ou Eduzz.
           Chega de trabalho manual e burocracia.
         </p>
         
-        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 max-w-md w-full text-left space-y-3">
-            <h3 className="text-white font-semibold flex items-center gap-2">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-gray-200 dark:border-slate-700 max-w-md w-full text-left space-y-3 shadow-lg dark:shadow-none">
+            <h3 className="text-gray-900 dark:text-white font-semibold flex items-center gap-2">
                 <span>✨</span> O que você ganha no Premium:
             </h3>
-            <ul className="space-y-2 text-sm text-gray-300">
+            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                 <li className="flex gap-2">✅ Emissão automática pós-venda</li>
                 <li className="flex gap-2">✅ Envio de PDF por e-mail para o cliente</li>
                 <li className="flex gap-2">✅ Cálculo automático de impostos</li>
@@ -423,97 +388,103 @@ const Invoices = () => {
 
       <div className="flex justify-between items-center">
         <div>
-            <h1 className="text-2xl font-bold text-white">Notas Fiscais (NFS-e)</h1>
-            <p className="text-gray-400 text-sm">Gerencie suas emissões automáticas</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('invoices.title')}</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('invoices.subtitle')}</p>
         </div>
         <div className="flex gap-3">
             <button 
                 onClick={() => setIsIssueModalOpen(true)}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shadow-lg shadow-purple-500/20"
             >
-                <span className="text-lg">+</span> Emitir Nota
+                <span className="text-lg">+</span> {t('invoices.issue_invoice')}
             </button>
             <button 
                 onClick={() => setIsCertModalOpen(true)}
                 className={`px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${
-                    certificate ? 'bg-green-600/20 text-green-400 border border-green-600/50' : 'bg-slate-700 hover:bg-slate-600 text-white'
+                    certificate ? 'bg-green-600/20 text-green-600 dark:text-green-400 border border-green-600/50' : 'bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 dark:text-white'
                 }`}
             >
-                {certificate ? '✅ Certificado Ativo' : '⚙️ Configurar Certificado'}
+                {certificate ? `✅ ${t('invoices.certificate_active')}` : `⚙️ ${t('invoices.configure_certificate')}`}
             </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white/5 border border-white/10 p-6 rounded-xl">
-            <h3 className="text-gray-400 text-sm mb-1">Notas Emitidas (Mês)</h3>
-            <p className="text-3xl font-bold text-white">{totalCount}</p>
+        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-6 rounded-xl shadow-sm dark:shadow-none">
+            <h3 className="text-gray-500 dark:text-gray-400 text-sm mb-1">{t('invoices.issued_month')}</h3>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
         </div>
-        <div className="bg-white/5 border border-white/10 p-6 rounded-xl">
-            <h3 className="text-gray-400 text-sm mb-1">Valor Total</h3>
-            <p className="text-3xl font-bold text-green-400">
+        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-6 rounded-xl shadow-sm dark:shadow-none">
+            <h3 className="text-gray-500 dark:text-gray-400 text-sm mb-1">{t('invoices.total_amount')}</h3>
+            <p className="text-3xl font-bold text-green-600 dark:text-green-400">
                 {totalAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </p>
         </div>
-        <div className="bg-white/5 border border-white/10 p-6 rounded-xl">
-            <h3 className="text-gray-400 text-sm mb-1">Franquia do Plano (Mensal)</h3>
+        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-6 rounded-xl shadow-sm dark:shadow-none">
+            <h3 className="text-gray-500 dark:text-gray-400 text-sm mb-1">{t('invoices.plan_franchise')}</h3>
             <div className="flex items-end gap-2 mb-2">
-                <p className="text-3xl font-bold text-white">{totalCount}</p>
-                <p className="text-gray-400 mb-1">/ {franchiseLimit} notas</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
+                <p className="text-gray-500 dark:text-gray-400 mb-1">/ {franchiseLimit} {t('invoices.table.number')}</p>
             </div>
-            <div className="w-full bg-slate-700 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
                 <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${franchiseUsedPercent}%` }}></div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">Renova em 01/01/2026</p>
+            <p className="text-xs text-gray-500 mt-2">{t('invoices.renews_on')} 01/01/2026</p>
         </div>
       </div>
 
-      <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-        <div className="p-6 border-b border-white/10">
-            <h2 className="font-semibold text-white">Histórico de Emissões</h2>
+      <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+        <div className="p-6 border-b border-gray-200 dark:border-white/10">
+            <h2 className="font-semibold text-gray-900 dark:text-white">{t('invoices.history')}</h2>
         </div>
         <div className="overflow-x-auto">
             <table className="w-full text-left">
-                <thead className="bg-white/5 text-gray-400 text-sm">
+                <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 text-sm">
                     <tr>
-                        <th className="p-4">Número</th>
-                        <th className="p-4">Data</th>
-                        <th className="p-4">Cliente</th>
-                        <th className="p-4">Valor</th>
-                        <th className="p-4">Status</th>
-                        <th className="p-4">Ações</th>
+                        <th className="p-4">{t('invoices.table.number')}</th>
+                        <th className="p-4">{t('invoices.table.date')}</th>
+                        <th className="p-4">{t('invoices.table.client')}</th>
+                        <th className="p-4">{t('invoices.table.value')}</th>
+                        <th className="p-4">{t('invoices.table.status')}</th>
+                        <th className="p-4">{t('invoices.table.actions')}</th>
                     </tr>
                 </thead>
-                <tbody className="text-gray-300 text-sm">
+                <tbody className="text-gray-600 dark:text-gray-300 text-sm">
                     {invoices.map((inv) => (
-                        <tr key={inv.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
-                            <td className="p-4 font-mono text-purple-400">{inv.id}</td>
+                        <tr key={inv.id} className="border-t border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                            <td className="p-4 font-mono text-purple-600 dark:text-purple-400">{inv.id}</td>
                             <td className="p-4">{new Date(inv.date).toLocaleDateString('pt-BR')}</td>
-                            <td className="p-4">{inv.client}</td>
-                            <td className="p-4">
+                            <td className="p-4 align-middle text-sm text-gray-800 dark:text-gray-300 max-w-[200px] truncate">{inv.client}</td>
+                            <td className="p-4 align-middle text-sm text-gray-800 dark:text-gray-300 font-mono">
                                 {inv.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                             </td>
-                            <td className="p-4">
-                                <span className={`px-2 py-1 rounded text-xs font-bold ${
-                                    inv.status === 'issued' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
+                            <td className="p-4 align-middle text-sm">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    inv.status === 'issued' 
+                                    ? 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/20' 
+                                    : 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/20'
                                 }`}>
-                                    {inv.status === 'issued' ? 'EMITIDA' : 'PROCESSANDO'}
+                                    {inv.status === 'issued' ? t('invoices.status.issued') : t('invoices.status.pending')}
                                 </span>
                             </td>
-                            <td className="p-4 flex gap-2">
+                            <td className="p-4 align-middle text-right space-x-2">
                                 <button 
                                     onClick={() => generatePDF(inv)}
-                                    className="text-white hover:text-purple-400 transition-colors" 
+                                    className="p-2 text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 rounded-lg transition-colors"
                                     title="Baixar PDF"
                                 >
-                                    📥 PDF
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
                                 </button>
                                 <button 
                                     onClick={() => handleDeleteInvoice(inv.id, inv.originalId)}
-                                    className="text-white hover:text-red-400 transition-colors" 
-                                    title="Excluir Nota"
+                                    className="p-2 text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                                    title="Excluir"
                                 >
-                                    🗑️
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
                                 </button>
                             </td>
                         </tr>

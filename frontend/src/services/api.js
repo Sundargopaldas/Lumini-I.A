@@ -19,7 +19,8 @@ api.interceptors.response.use(
     // Don't redirect if it's a login attempt failure
     const isLoginRequest = error.config && error.config.url && error.config.url.includes('/auth/login');
 
-    if (error.response && (error.response.status === 401 || error.response.status === 403) && !isLoginRequest) {
+    // Only logout on 401 (Unauthorized), not 403 (Forbidden/Premium Locked)
+    if (error.response && error.response.status === 401 && !isLoginRequest) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';

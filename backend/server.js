@@ -98,6 +98,20 @@ const startServer = async () => {
         console.log("Note: cpfCnpj column check - " + err.message);
     }
 
+    // Manual migration for name and address
+    try {
+        await sequelize.query("ALTER TABLE Users ADD COLUMN name VARCHAR(255);");
+        console.log("Added name column to Users table.");
+    } catch (err) {
+         // Ignore if exists
+    }
+    try {
+        await sequelize.query("ALTER TABLE Users ADD COLUMN address VARCHAR(255);");
+        console.log("Added address column to Users table.");
+    } catch (err) {
+         // Ignore if exists
+    }
+
     // Manual migration for logo (safe add)
     try {
         await sequelize.query("ALTER TABLE Users ADD COLUMN logo VARCHAR(255);");

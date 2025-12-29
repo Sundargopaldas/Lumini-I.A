@@ -40,21 +40,21 @@ const ConnectModal = ({ isOpen, onClose, integration, onConnect }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all">
+      <div className="bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl transition-colors">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-gray-800 to-gray-900 p-6 border-b border-white/5 flex justify-between items-center">
+        <div className="bg-slate-50 dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 p-6 border-b border-slate-200 dark:border-white/5 flex justify-between items-center transition-colors">
           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-white rounded-lg p-1.5 flex items-center justify-center">
+             <div className="w-10 h-10 bg-white dark:bg-white rounded-lg p-1.5 flex items-center justify-center shadow-sm">
                 <img src={integration.logo} alt={integration.name} className="max-w-full max-h-full object-contain" />
              </div>
              <div>
-               <h3 className="text-lg font-bold text-white">Connect {integration.name}</h3>
-               <p className="text-xs text-gray-400">Via Safe Connection</p>
+               <h3 className="text-lg font-bold text-slate-900 dark:text-white">Connect {integration.name}</h3>
+               <p className="text-xs text-slate-500 dark:text-gray-400">Via Safe Connection</p>
              </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-slate-400 dark:text-gray-400 hover:text-slate-600 dark:hover:text-white transition-colors">
             ✕
           </button>
         </div>
@@ -66,12 +66,12 @@ const ConnectModal = ({ isOpen, onClose, integration, onConnect }) => {
               {integration.type === 'Bank' ? (
                 // BANK FLOW
                 <>
-                  <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg">
+                  <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 p-4 rounded-lg transition-colors">
                     <div className="flex gap-3">
-                      <div className="text-blue-400 text-xl">🛡️</div>
+                      <div className="text-blue-500 dark:text-blue-400 text-xl">🛡️</div>
                       <div>
-                        <h4 className="text-blue-100 font-bold text-sm mb-1">Bank-Level Security</h4>
-                        <p className="text-blue-200/70 text-xs">
+                        <h4 className="text-blue-800 dark:text-blue-100 font-bold text-sm mb-1">Bank-Level Security</h4>
+                        <p className="text-blue-700/70 dark:text-blue-200/70 text-xs">
                           You will be redirected to <strong>{integration.name}</strong> to authorize access. 
                           We never see or store your banking passwords.
                         </p>
@@ -79,7 +79,7 @@ const ConnectModal = ({ isOpen, onClose, integration, onConnect }) => {
                     </div>
                   </div>
                   
-                  <ul className="space-y-2 text-sm text-gray-400 mt-4">
+                  <ul className="space-y-2 text-sm text-slate-600 dark:text-gray-400 mt-4 transition-colors">
                     <li className="flex items-center gap-2">
                       <span className="text-green-500">✓</span> Read-only access to transactions
                     </li>
@@ -109,19 +109,19 @@ const ConnectModal = ({ isOpen, onClose, integration, onConnect }) => {
               ) : (
                 // PLATFORM FLOW (API Key / Webhook)
                 <>
-                   <p className="text-gray-300 text-sm mb-4">
+                   <p className="text-slate-600 dark:text-gray-300 text-sm mb-4 transition-colors">
                      To connect <strong>{integration.name}</strong>, please paste your API Key below.
                      You can find this in your {integration.name} settings.
                    </p>
 
                    <div>
-                     <label className="text-xs text-gray-500 block mb-1">API Key / Access Token</label>
+                     <label className="text-xs text-slate-500 dark:text-gray-500 block mb-1 transition-colors">API Key / Access Token</label>
                      <input 
                        type="password" 
                        placeholder="ak_live_xxxxxxxxxxxx"
                        value={apiKey}
                        onChange={(e) => setApiKey(e.target.value)}
-                       className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition-colors font-mono text-sm"
+                       className="w-full bg-slate-50 dark:bg-black/30 border border-slate-300 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 transition-colors font-mono text-sm"
                      />
                    </div>
 
@@ -130,7 +130,7 @@ const ConnectModal = ({ isOpen, onClose, integration, onConnect }) => {
                     disabled={loading || !apiKey.trim()}
                     className={`w-full mt-6 font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2 ${
                         loading || !apiKey.trim() 
-                        ? 'bg-gray-600 cursor-not-allowed text-gray-400' 
+                        ? 'bg-slate-200 dark:bg-gray-600 cursor-not-allowed text-slate-400 dark:text-gray-400' 
                         : 'bg-purple-600 hover:bg-purple-700 text-white'
                     }`}
                   >
@@ -143,16 +143,16 @@ const ConnectModal = ({ isOpen, onClose, integration, onConnect }) => {
 
           {step === 2 && (
             <div className="text-center py-4">
-              <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl animate-bounce">
+              <div className="w-16 h-16 bg-green-500/10 dark:bg-green-500/20 text-green-600 dark:text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl animate-bounce transition-colors">
                 ✓
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Successfully Connected!</h3>
-              <p className="text-gray-400 text-sm mb-6">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 transition-colors">Successfully Connected!</h3>
+              <p className="text-slate-500 dark:text-gray-400 text-sm mb-6 transition-colors">
                 Your transactions from <strong>{integration.name}</strong> are now syncing automatically.
               </p>
               <button 
                 onClick={handleFinalize}
-                className="w-full bg-white text-black font-bold py-3 rounded-lg hover:bg-gray-200 transition-colors"
+                className="w-full bg-slate-900 dark:bg-white text-white dark:text-black font-bold py-3 rounded-lg hover:bg-slate-800 dark:hover:bg-gray-200 transition-colors"
               >
                 Done
               </button>

@@ -86,7 +86,7 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
 
   if (certificate) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 transition-all">
           <CustomAlert 
             isOpen={alertState.isOpen}
             onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))}
@@ -95,35 +95,35 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
             type={alertState.type}
             onConfirm={alertState.onConfirm}
           />
-          <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative transition-colors">
             <button 
               onClick={onClose}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-slate-400 dark:text-gray-400 hover:text-slate-600 dark:hover:text-white transition-colors"
             >
               ✕
             </button>
             
             <div className="text-center space-y-4">
-                <div className="bg-green-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
+                <div className="bg-green-500/10 dark:bg-green-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto transition-colors">
                     <span className="text-3xl">✅</span>
                 </div>
                 
-                <h2 className="text-xl font-bold text-white">Certificado Conectado</h2>
-                <p className="text-gray-400 text-sm">O certificado digital está ativo e pronto para uso.</p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white transition-colors">Certificado Conectado</h2>
+                <p className="text-slate-500 dark:text-gray-400 text-sm transition-colors">O certificado digital está ativo e pronto para uso.</p>
                 
-                <div className="bg-slate-800 rounded-lg p-4 text-left space-y-3 border border-slate-700">
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 text-left space-y-3 border border-slate-200 dark:border-slate-700 transition-colors">
                     <div>
-                        <p className="text-xs text-gray-500 uppercase">Razão Social</p>
-                        <p className="text-white font-medium">{certificate.razaoSocial}</p>
+                        <p className="text-xs text-slate-500 dark:text-gray-500 uppercase transition-colors">Razão Social</p>
+                        <p className="text-slate-900 dark:text-white font-medium transition-colors">{certificate.razaoSocial}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <p className="text-xs text-gray-500 uppercase">CNPJ</p>
-                            <p className="text-white font-medium">{certificate.cnpj}</p>
+                            <p className="text-xs text-slate-500 dark:text-gray-500 uppercase transition-colors">CNPJ</p>
+                            <p className="text-slate-900 dark:text-white font-medium transition-colors">{certificate.cnpj}</p>
                         </div>
                         <div>
-                            <p className="text-xs text-gray-500 uppercase">Status</p>
-                            <p className="text-green-400 font-bold text-sm bg-green-500/10 inline-block px-2 py-0.5 rounded">ATIVO</p>
+                            <p className="text-xs text-slate-500 dark:text-gray-500 uppercase transition-colors">Status</p>
+                            <p className="text-green-600 dark:text-green-400 font-bold text-sm bg-green-100 dark:bg-green-500/10 inline-block px-2 py-0.5 rounded transition-colors">ATIVO</p>
                         </div>
                     </div>
                 </div>
@@ -131,14 +131,14 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
                 <div className="pt-4 flex gap-3">
                     <button 
                         onClick={onClose}
-                        className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg font-medium transition-colors"
+                        className="flex-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white py-2 rounded-lg font-medium transition-colors"
                     >
                         Fechar
                     </button>
                     <button 
                         onClick={handleRemove}
                         disabled={loading}
-                        className="flex-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/50 py-2 rounded-lg font-medium transition-colors"
+                        className="flex-1 bg-red-100 dark:bg-red-600/20 hover:bg-red-200 dark:hover:bg-red-600/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-600/50 py-2 rounded-lg font-medium transition-colors"
                     >
                         {loading ? 'Removendo...' : 'Desconectar Certificado'}
                     </button>
@@ -150,7 +150,7 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all">
       <CustomAlert 
         isOpen={alertState.isOpen}
         onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))}
@@ -159,46 +159,46 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
         type={alertState.type}
         onConfirm={alertState.onConfirm}
       />
-      <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative animate-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative animate-in zoom-in-95 duration-200 transition-colors">
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-slate-400 dark:text-gray-400 hover:text-slate-600 dark:hover:text-white transition-colors"
         >
           ✕
         </button>
         
         <div className="mb-6 flex items-center gap-3">
-            <div className="bg-purple-600/20 p-3 rounded-lg text-purple-400 text-2xl">🔐</div>
+            <div className="bg-purple-100 dark:bg-purple-600/20 p-3 rounded-lg text-purple-600 dark:text-purple-400 text-2xl transition-colors">🔐</div>
             <div>
-                <h2 className="text-xl font-bold text-white">Configurar Certificado Digital</h2>
-                <p className="text-sm text-gray-400">Necessário para assinar e transmitir as notas (A1).</p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white transition-colors">Configurar Certificado Digital</h2>
+                <p className="text-sm text-slate-500 dark:text-gray-400 transition-colors">Necessário para assinar e transmitir as notas (A1).</p>
             </div>
         </div>
         
-        <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg mb-6 text-xs text-blue-200 leading-relaxed">
+        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 p-3 rounded-lg mb-6 text-xs text-blue-800 dark:text-blue-200 leading-relaxed transition-colors">
             ℹ️ <strong>Importante:</strong> O Certificado Digital A1 é um arquivo (.pfx) que você deve adquirir com uma Autoridade Certificadora (ex: Serasa, Certisign). O Lumini armazena seu certificado com criptografia de ponta apenas para assinar suas notas fiscais automaticamente.
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">CNPJ</label>
+                    <label className="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1 transition-colors">CNPJ</label>
                     <input 
                         type="text" 
                         value={formData.cnpj}
                         onChange={(e) => setFormData({...formData, cnpj: e.target.value})}
-                        className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
                         placeholder="00.000.000/0001-00"
                         required
                     />
                 </div>
                 <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">Inscrição Municipal</label>
+                    <label className="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1 transition-colors">Inscrição Municipal</label>
                     <input 
                         type="text" 
                         value={formData.inscricaoMunicipal}
                         onChange={(e) => setFormData({...formData, inscricaoMunicipal: e.target.value})}
-                        className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
                         placeholder="Ex: 123456-7"
                         required
                     />
@@ -206,18 +206,18 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
             </div>
 
             <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Razão Social</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1 transition-colors">Razão Social</label>
                 <input 
                     type="text" 
                     value={formData.razaoSocial}
                     onChange={(e) => setFormData({...formData, razaoSocial: e.target.value})}
-                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
                     placeholder="Sua Empresa LTDA"
                     required
                 />
             </div>
 
-            <div className="p-4 border-2 border-dashed border-slate-700 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition-colors text-center group cursor-pointer relative">
+            <div className="p-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-center group cursor-pointer relative">
                 <input 
                     type="file" 
                     accept=".pfx,.p12"
@@ -228,20 +228,20 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
                 <div className="space-y-2">
                     <span className="text-2xl block">📂</span>
                     {formData.file ? (
-                        <span className="text-green-400 font-medium text-sm">{formData.file.name}</span>
+                        <span className="text-green-600 dark:text-green-400 font-medium text-sm transition-colors">{formData.file.name}</span>
                     ) : (
-                        <span className="text-gray-400 text-sm group-hover:text-white">Arraste seu arquivo .pfx ou clique aqui</span>
+                        <span className="text-slate-500 dark:text-gray-400 text-sm group-hover:text-slate-700 dark:group-hover:text-white transition-colors">Arraste seu arquivo .pfx ou clique aqui</span>
                     )}
                 </div>
             </div>
 
             <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Senha do Certificado</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1 transition-colors">Senha do Certificado</label>
                 <input 
                     type="password" 
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
                     placeholder="••••••••"
                     required
                 />

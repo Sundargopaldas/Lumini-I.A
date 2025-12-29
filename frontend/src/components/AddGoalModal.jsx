@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const COLORS = [
   '#a855f7', // Purple
@@ -12,6 +13,7 @@ const COLORS = [
 ];
 
 const AddGoalModal = ({ isOpen, onClose, onSave }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     targetAmount: '',
@@ -45,33 +47,33 @@ const AddGoalModal = ({ isOpen, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl relative transition-colors">
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
         >
           ✕
         </button>
         
-        <h2 className="text-2xl font-bold text-white mb-6">Nova Meta Financeira</h2>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 transition-colors">{t('goals.add_goal_title')}</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Nome da Meta</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1 transition-colors">{t('goals.goal_name')}</label>
             <input 
               type="text" 
               name="name" 
               value={formData.name} 
               onChange={handleChange}
               required
-              placeholder="Ex: Carro Novo, Reserva de Emergência"
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder={t('goals.placeholder_name')}
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Valor Alvo (R$)</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1 transition-colors">{t('goals.target_amount')}</label>
                 <input 
                 type="number" 
                 name="targetAmount" 
@@ -81,11 +83,11 @@ const AddGoalModal = ({ isOpen, onClose, onSave }) => {
                 min="0.01"
                 step="0.01"
                 placeholder="0.00"
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
                 />
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Valor Atual (R$)</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1 transition-colors">{t('goals.current_amount')}</label>
                 <input 
                 type="number" 
                 name="currentAmount" 
@@ -94,31 +96,31 @@ const AddGoalModal = ({ isOpen, onClose, onSave }) => {
                 min="0"
                 step="0.01"
                 placeholder="0.00"
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
                 />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Prazo (Opcional)</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1 transition-colors">{t('goals.deadline')}</label>
             <input 
               type="date" 
               name="deadline" 
               value={formData.deadline} 
               onChange={handleChange}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Cor da Etiqueta</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2 transition-colors">{t('goals.color')}</label>
             <div className="flex gap-2 flex-wrap">
                 {COLORS.map(color => (
                     <button
                         key={color}
                         type="button"
                         onClick={() => setFormData({...formData, color})}
-                        className={`w-8 h-8 rounded-full border-2 transition-all ${formData.color === color ? 'border-white scale-110' : 'border-transparent hover:scale-105'}`}
+                        className={`w-8 h-8 rounded-full border-2 transition-all ${formData.color === color ? 'border-slate-900 dark:border-white scale-110' : 'border-transparent hover:scale-105'}`}
                         style={{ backgroundColor: color }}
                     />
                 ))}
@@ -129,7 +131,7 @@ const AddGoalModal = ({ isOpen, onClose, onSave }) => {
             type="submit" 
             className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-3 rounded-lg hover:shadow-lg hover:shadow-purple-500/30 transition-all mt-4"
           >
-            Criar Meta
+            {t('goals.create_btn')}
           </button>
         </form>
       </div>

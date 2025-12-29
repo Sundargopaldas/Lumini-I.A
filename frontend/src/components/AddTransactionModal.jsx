@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import CustomAlert from './CustomAlert';
 
@@ -6,6 +7,7 @@ const incomeSources = ['Hotmart', 'YouTube', 'TikTok', 'Eduzz', 'Monetizze', 'Tw
 const expenseSources = ['Equipment', 'Software', 'Ads', 'Freelancers', 'Office', 'Education', 'Travel', 'Other'];
 
 const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
@@ -85,7 +87,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
     
     // Check Pro features
     if (e.target.name === 'isRecurring' && !isPro) {
-        showAlert('Recurso Premium', 'Transações recorrentes estão disponíveis apenas para usuários PRO. Faça upgrade para desbloquear!', 'locked');
+        showAlert(t('transactions.recurring_locked_title'), t('transactions.recurring_locked_msg'), 'locked');
         return;
     }
 
@@ -102,7 +104,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
     const finalSource = formData.source === 'Other' ? customSource : formData.source;
     
     if (formData.source === 'Other' && !customSource.trim()) {
-        showAlert('Atenção', 'Por favor, insira uma fonte/categoria personalizada', 'warning');
+        showAlert(t('common.attention'), t('transactions.warning_custom_source'), 'warning');
         return;
     }
 
@@ -128,7 +130,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
         {/* Header - Fixed at top */}
         <div className="p-6 pb-2 flex justify-between items-center shrink-0">
             <h2 className="text-2xl font-bold text-white">
-                {transactionToEdit ? 'Editar Transação' : 'Nova Transação'}
+                {transactionToEdit ? t('transactions.edit_transaction') : t('transactions.new_transaction')}
             </h2>
             <button 
               onClick={onClose}
@@ -142,7 +144,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
         <div className="p-6 pt-2 overflow-y-auto">
             <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-white mb-1">Tipo</label>
+            <label className="block text-sm font-medium text-white mb-1">{t('transactions.type_label')}</label>
             <div className="flex space-x-4">
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input 
@@ -153,7 +155,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
                   onChange={handleChange}
                   className="form-radio text-purple-600 focus:ring-purple-500"
                 />
-                <span className="text-white">Receita</span>
+                <span className="text-white">{t('transactions.income')}</span>
               </label>
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input 
@@ -164,13 +166,13 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
                   onChange={handleChange}
                   className="form-radio text-red-500 focus:ring-red-500"
                 />
-                <span className="text-white">Despesa</span>
+                <span className="text-white">{t('transactions.expense')}</span>
               </label>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-white mb-1">Descrição</label>
+            <label className="block text-sm font-medium text-white mb-1">{t('transactions.description_label')}</label>
             <input 
               type="text" 
               name="description" 
@@ -182,7 +184,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-white mb-1">Valor (R$)</label>
+            <label className="block text-sm font-medium text-white mb-1">{t('transactions.amount_label')}</label>
             <input 
               type="number" 
               name="amount" 
@@ -196,7 +198,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-white mb-1">Data</label>
+            <label className="block text-sm font-medium text-white mb-1">{t('transactions.date_label')}</label>
             <input 
               type="date" 
               name="date" 
@@ -209,7 +211,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
 
           <div>
             <label className="block text-sm font-medium text-white mb-1">
-              {formData.type === 'income' ? 'Fonte' : 'Categoria'}
+              {t('transactions.source_label')}
             </label>
             <select 
               name="source" 
@@ -218,23 +220,23 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
               required
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
-              <option value="">Selecione...</option>
+              <option value="">{t('common.select')}</option>
               {(formData.type === 'income' ? incomeSources : expenseSources).map(source => (
                 <option key={source} value={source}>{source}</option>
               ))}
-              <option value="Other">Outro (Personalizado)</option>
+              <option value="Other">{t('transactions.other_source')}</option>
             </select>
           </div>
 
           {formData.source === 'Other' && (
             <div>
-               <label className="block text-sm font-medium text-gray-300 mb-1">Nome Personalizado</label>
+               <label className="block text-sm font-medium text-gray-300 mb-1">{t('transactions.custom_source_label')}</label>
                <input 
                   type="text" 
                   value={customSource} 
                   onChange={(e) => setCustomSource(e.target.value)}
                   required
-                  placeholder="Ex: Dividendos, Uber, etc."
+                  placeholder={t('transactions.custom_source_placeholder')}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
             </div>
@@ -243,7 +245,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
           {goals.length > 0 && (
             <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Vincular a Meta (Opcional)
+                    {t('transactions.goal_label')}
                 </label>
                 <select 
                     name="goalId" 
@@ -251,7 +253,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
                     onChange={handleChange}
                     className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
-                    <option value="">Nenhuma</option>
+                    <option value="">{t('common.none')}</option>
                     {goals.map(goal => (
                         <option key={goal.id} value={goal.id}>
                             {goal.name} (Atual: R$ {parseFloat(goal.currentAmount).toLocaleString()})
@@ -259,7 +261,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
                     ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                    Se selecionado, este valor será adicionado ao progresso da meta.
+                    {t('transactions.goal_help_text')}
                 </p>
             </div>
           )}
@@ -274,9 +276,9 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
                 className="form-checkbox text-purple-600 focus:ring-purple-500 w-5 h-5 rounded"
               />
               <div className="flex-1">
-                 <span className="text-white font-medium block">Recorrência Mensal</span>
-                 {!isPro && <span className="text-xs text-purple-400 font-bold flex items-center gap-1">🔒 Recurso PRO</span>}
-                 {isPro && <span className="text-xs text-green-400 font-bold">Ativado</span>}
+                 <span className="text-white font-medium block">{t('transactions.recurring_label')}</span>
+                 {!isPro && <span className="text-xs text-purple-400 font-bold flex items-center gap-1">🔒 {t('plans.pro_feature')}</span>}
+                 {isPro && <span className="text-xs text-green-400 font-bold">{t('common.activated')}</span>}
               </div>
             </label>
           </div>
@@ -285,7 +287,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
             type="submit" 
             className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-3 rounded-lg hover:shadow-lg hover:shadow-purple-500/30 transition-all mt-4"
           >
-            Salvar Transação
+            {t('transactions.save_button')}
           </button>
         </form>
         </div>

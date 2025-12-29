@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import CustomAlert from './CustomAlert';
 
 const TaxSimulatorModal = ({ isOpen, onClose }) => {
@@ -60,6 +62,67 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
   const simplesLimit = 4800000;
   
   const isOverLimit = mode === 'mei' ? annualProjection > meiLimit : annualProjection > simplesLimit;
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFontSize(22);
+    doc.setTextColor(112, 26, 117); // Purple
+    doc.text('Lumini I.A', 14, 20);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(100);
+    doc.text('Relatório de Simulação Fiscal', 14, 30);
+
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, 14, 36);
+
+    // Section: Input Data
+    doc.autoTable({
+        startY: 45,
+        head: [['Parâmetro', 'Valor']],
+        body: [
+            ['Regime Tributário', mode === 'mei' ? 'MEI (Microempreendedor Individual)' : 'Simples Nacional'],
+            ['Anexo (Se Simples)', mode === 'simples' ? (anexo === 'III' ? 'Anexo III (Serviços Gerais)' : 'Anexo V (Intelectual)') : 'N/A'],
+            ['Faturamento Mensal (Serviço)', `R$ ${parseFloat(revenue.service).toFixed(2)}`],
+            ['Faturamento Mensal (Comércio)', `R$ ${parseFloat(revenue.commerce).toFixed(2)}`],
+            ['Projeção Anual', `R$ ${annualProjection.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [112, 26, 117] }, // Purple
+    });
+
+    // Section: Results
+    const monthlyTax = calculateDAS();
+    const annualTax = monthlyTax * 12;
+
+    doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 10,
+        head: [['Resultado Estimado', 'Valor']],
+        body: [
+            ['Imposto Mensal (Estimado)', `R$ ${monthlyTax.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+            ['Custo Anual de Impostos', `R$ ${annualTax.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+            ['Status do Limite Anual', isOverLimit ? '⚠️ ACIMA DO LIMITE' : '✅ DENTRO DO LIMITE'],
+            ['Aliquota Efetiva (Aprox.)', `${((monthlyTax / (totalRevenue || 1)) * 100).toFixed(2)}%`],
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: [40, 40, 40] }, // Dark Gray
+    });
+
+    // Disclaimer
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text(
+        'Aviso: Esta simulação é apenas para fins informativos e não substitui o cálculo oficial de um contador.',
+        14,
+        doc.lastAutoTable.finalY + 15
+    );
+
+    doc.save('simulacao-fiscal-lumini.pdf');
+    showAlert('Sucesso', 'Relatório PDF gerado com sucesso!', 'success');
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -160,7 +223,7 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
           <button 
             onClick={() => {
                 if (isPro) {
-                    showAlert('Success', 'Generating PDF Report... (Mock)', 'success');
+                    generatePDF();
                 } else {
                     showAlert('Premium Feature', 'PDF Reports are available for PRO users only.', 'locked');
                 }

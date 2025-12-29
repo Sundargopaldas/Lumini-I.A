@@ -51,13 +51,13 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-white/20">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 transition-colors py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-white dark:bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-xl border border-slate-200 dark:border-white/20 transition-colors">
         <div>
-          <h2 className="mt-6 text-center text-4xl font-extrabold text-white tracking-tight">
+          <h2 className="mt-6 text-center text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight transition-colors">
             Join ✨ Lumini AI
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-300">
+          <p className="mt-2 text-center text-sm text-slate-600 dark:text-gray-300 transition-colors">
             Financial clarity for creators.
           </p>
         </div>
@@ -70,7 +70,7 @@ const Register = () => {
                 name="username"
                 type="text"
                 required
-                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-600 placeholder-gray-400 text-gray-900 bg-white/90 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-slate-300 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-400 text-slate-900 dark:text-white bg-white dark:bg-slate-800 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-all duration-200"
                 placeholder="Username"
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
@@ -84,7 +84,7 @@ const Register = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-600 placeholder-gray-400 text-gray-900 bg-white/90 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-slate-300 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-400 text-slate-900 dark:text-white bg-white dark:bg-slate-800 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-all duration-200"
                 placeholder="Email address"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -97,7 +97,7 @@ const Register = () => {
                 name="password"
                 type="password"
                 required
-                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-600 placeholder-gray-400 text-gray-900 bg-white/90 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-slate-300 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-400 text-slate-900 dark:text-white bg-white dark:bg-slate-800 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-all duration-200"
                 placeholder="Password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -110,7 +110,7 @@ const Register = () => {
                 name="confirmPassword"
                 type="password"
                 required
-                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-600 placeholder-gray-400 text-gray-900 bg-white/90 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-slate-300 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-400 text-slate-900 dark:text-white bg-white dark:bg-slate-800 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-all duration-200"
                 placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
@@ -121,7 +121,7 @@ const Register = () => {
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 transform hover:scale-[1.02]"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 transform hover:scale-[1.02] shadow-lg shadow-purple-200 dark:shadow-none"
             >
               Sign up
             </button>
@@ -129,9 +129,9 @@ const Register = () => {
         </form>
 
         <div className="text-center mt-4">
-            <p className="text-sm text-gray-300">
+            <p className="text-sm text-slate-600 dark:text-gray-300 transition-colors">
               Já tem uma conta?{' '}
-              <Link to="/login" className="font-medium text-purple-300 hover:text-purple-200 transition-colors">
+              <Link to="/login" className="font-medium text-purple-600 dark:text-purple-300 hover:text-purple-500 dark:hover:text-purple-200 transition-colors">
                 Fazer login
               </Link>
             </p>

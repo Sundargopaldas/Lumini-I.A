@@ -11,7 +11,8 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import 'jspdf-autotable';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import CustomAlert from '../components/CustomAlert';
 import FinancialPlanningModal from '../components/FinancialPlanningModal';
@@ -28,6 +29,7 @@ ChartJS.register(
 );
 
 const Reports = () => {
+  const { t, i18n } = useTranslation();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -94,7 +96,7 @@ const Reports = () => {
 
       const tMonth = date.getMonth();
       const tYear = date.getFullYear();
-      const monthYearKey = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+      const monthYearKey = date.toLocaleString(i18n.language, { month: 'short', year: 'numeric' });
 
       // Monthly totals (Filter by Selected Year for the trend chart)
       if (tYear === parseInt(selectedYear)) {
@@ -159,13 +161,13 @@ const Reports = () => {
         labels: Object.keys(monthlyMap),
         datasets: [
           {
-            label: 'Income',
+            label: t('reports.total_income'),
             data: Object.values(monthlyMap).map(d => d.income),
             backgroundColor: '#a855f7',
             borderRadius: 4,
           },
           {
-            label: 'Expense',
+            label: t('reports.total_expenses'),
             data: Object.values(monthlyMap).map(d => d.expense),
             backgroundColor: '#ef4444',
             borderRadius: 4,
@@ -173,11 +175,11 @@ const Reports = () => {
         ]
       }
     };
-  }, [transactions, selectedMonth, selectedYear]);
+  }, [transactions, selectedMonth, selectedYear, i18n.language, t]);
 
   const exportPDF = () => {
     if (!isPro) {
-        showAlert('Premium Feature', 'PDF Reports are available for PRO users only. Upgrade to unlock!', 'locked');
+        showAlert(t('reports.feature_locked'), t('reports.pdf_locked_msg'), 'locked');
         return;
     }
     const doc = new jsPDF();
@@ -185,17 +187,17 @@ const Reports = () => {
     // Header
     doc.setFontSize(20);
     doc.setTextColor(128, 90, 213); // Purple
-    doc.text('Lumini I.A - Financial Report', 14, 22);
+    doc.text('Lumini I.A - ' + t('reports.title'), 14, 22);
     
     doc.setFontSize(12);
     doc.setTextColor(100);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 32);
-    doc.text(`Period: ${selectedMonth === 'all' ? 'All Months' : new Date(0, selectedMonth).toLocaleString('default', { month: 'long' })} ${selectedYear}`, 14, 38);
+    doc.text(`${t('reports.monthly_overview')}: ${new Date().toLocaleDateString(i18n.language)}`, 14, 32);
+    doc.text(`${t('common.date') || 'Date'}: ${selectedMonth === 'all' ? t('reports.all_months') : new Date(0, selectedMonth).toLocaleString(i18n.language, { month: 'long' })} ${selectedYear}`, 14, 38);
 
     // Summary Section
     doc.autoTable({
         startY: 45,
-        head: [['Total Income', 'Total Expenses', 'Net Balance']],
+        head: [[t('reports.total_income'), t('reports.total_expenses'), t('reports.net_balance')]],
         body: [[
             `R$ ${summary.income.toFixed(2)}`,
             `R$ ${summary.expense.toFixed(2)}`,
@@ -206,10 +208,10 @@ const Reports = () => {
     });
 
     // Transactions Table
-    doc.text('Detailed Transactions', 14, doc.lastAutoTable.finalY + 15);
+    doc.text(t('transactions.title'), 14, doc.lastAutoTable.finalY + 15);
     
     const tableData = filteredTransactions.map(t => [
-        new Date(t.date).toLocaleDateString(),
+        new Date(t.date).toLocaleDateString(i18n.language),
         t.description,
         t.source || '-',
         t.type === 'income' ? `+ R$ ${parseFloat(t.amount).toFixed(2)}` : `- R$ ${Math.abs(parseFloat(t.amount)).toFixed(2)}`
@@ -217,7 +219,7 @@ const Reports = () => {
 
     doc.autoTable({
         startY: doc.lastAutoTable.finalY + 20,
-        head: [['Date', 'Description', 'Source/Category', 'Amount']],
+        head: [[t('common.date'), t('common.description'), t('reports.income_sources') + '/' + t('reports.expense_breakdown'), t('reports.net_balance')]], 
         body: tableData,
         theme: 'striped',
         styles: { fontSize: 10 },
@@ -264,19 +266,19 @@ const Reports = () => {
 
   const exportCSV = () => {
     if (!isPro) {
-        showAlert('Premium Feature', 'CSV Export is available for PRO users only. Upgrade to unlock!', 'locked');
+        showAlert(t('reports.feature_locked'), t('reports.csv_locked_msg'), 'locked');
         return;
     }
     // CSV Header
-    const headers = ['Date,Description,Type,Source,Amount,Goal'];
+    const headers = [`${t('common.date')},${t('common.description')},${t('reports.type')},${t('reports.source')},${t('plans.amount')},${t('reports.goal')}`];
     
     // CSV Rows
     const rows = filteredTransactions.map(t => {
-        const date = new Date(t.date).toLocaleDateString();
+        const date = new Date(t.date).toLocaleDateString(i18n.language);
         const amount = t.type === 'expense' ? -Math.abs(t.amount) : t.amount;
         // Escape commas in description to prevent CSV breakage
         const safeDesc = `"${t.description.replace(/"/g, '""')}"`; 
-        const safeSource = t.source || 'Uncategorized';
+        const safeSource = t.source || t('common.uncategorized') || 'Uncategorized';
         const safeGoal = t.Goal ? t.Goal.name : '';
         
         return `${date},${safeDesc},${t.type},${safeSource},${amount},${safeGoal}`;
@@ -318,26 +320,26 @@ const Reports = () => {
       />
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Advanced Reports</h1>
-            <p className="text-gray-400">Deep dive into your financial analytics.</p>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 transition-colors">{t('reports.title')}</h1>
+            <p className="text-slate-500 dark:text-gray-400">{t('reports.subtitle')}</p>
         </div>
         <div className="flex gap-2">
             <select 
                 value={selectedMonth} 
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-slate-700 text-white rounded-lg px-3 py-2 border border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none"
+                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
             >
-                <option value="all">All Months</option>
+                <option value="all">{t('reports.all_months')}</option>
                 {Array.from({ length: 12 }, (_, i) => (
                     <option key={i} value={i}>
-                        {new Date(0, i).toLocaleString('default', { month: 'long' })}
+                        {new Date(0, i).toLocaleString(i18n.language, { month: 'long' })}
                     </option>
                 ))}
             </select>
             <select 
                 value={selectedYear} 
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="bg-slate-700 text-white rounded-lg px-3 py-2 border border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none"
+                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
             >
                 <option value={2023}>2023</option>
                 <option value={2024}>2024</option>
@@ -348,49 +350,49 @@ const Reports = () => {
                     if (isPremium) {
                         setIsPlanningModalOpen(true);
                     } else {
-                        showAlert('Recurso Premium', 'O módulo de Planejamento Financeiro (Projeção de Fluxo de Caixa) é exclusivo do plano Premium.', 'locked');
+                        showAlert(t('reports.feature_locked'), t('reports.planning_locked_msg'), 'locked');
                     }
                 }}
-                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isPremium ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-700 text-gray-400 hover:text-white'}`}
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isPremium ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
-                <span>📈</span> Planning {!isPremium && '🔒'}
+                <span>📈</span> {t('reports.planning_btn')} {!isPremium && '🔒'}
             </button>
             <button 
                 onClick={exportCSV}
-                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isPro ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-700 text-gray-400 hover:text-white'}`}
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isPro ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
-                <span>📊</span> Export CSV {!isPro && '🔒'}
+                <span>📊</span> {t('reports.export_csv')} {!isPro && '🔒'}
             </button>
             <button 
                 onClick={exportPDF}
-                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isPro ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-slate-700 text-gray-400 hover:text-white'}`}
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isPro ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
-                <span>📄</span> Export PDF {!isPro && '🔒'}
+                <span>📄</span> {t('reports.export_pdf')} {!isPro && '🔒'}
             </button>
         </div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-xl">
-            <h3 className="text-slate-400 text-sm font-medium mb-1">Total Income</h3>
-            <p className="text-2xl font-bold text-green-400">R$ {summary.income.toFixed(2)}</p>
+        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl transition-colors">
+            <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">{t('reports.total_income')}</h3>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">R$ {summary.income.toFixed(2)}</p>
         </div>
-        <div className="bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-xl">
-            <h3 className="text-slate-400 text-sm font-medium mb-1">Total Expenses</h3>
-            <p className="text-2xl font-bold text-red-400">R$ {summary.expense.toFixed(2)}</p>
+        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl transition-colors">
+            <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">{t('reports.total_expenses')}</h3>
+            <p className="text-2xl font-bold text-red-600 dark:text-red-400">R$ {summary.expense.toFixed(2)}</p>
         </div>
-        <div className="bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-xl">
-            <h3 className="text-slate-400 text-sm font-medium mb-1">Net Balance</h3>
-            <p className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
+        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl transition-colors">
+            <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">{t('reports.net_balance')}</h3>
+            <p className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
                 R$ {summary.balance.toFixed(2)}
             </p>
         </div>
       </div>
       
       {/* Monthly Overview */}
-      <div className="bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-xl overflow-hidden">
-        <h2 className="text-xl font-bold text-white mb-6">Monthly Overview</h2>
+      <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden transition-colors">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 transition-colors">{t('reports.monthly_overview')}</h2>
         <div className="h-64 relative">
           <Bar options={chartOptions} data={monthlyData} />
         </div>
@@ -398,25 +400,25 @@ const Reports = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Income Breakdown */}
-        <div className="bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-xl overflow-hidden">
-          <h2 className="text-xl font-bold text-white mb-6">Income Sources</h2>
+        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden transition-colors">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 transition-colors">{t('reports.income_sources')}</h2>
           <div className="h-64 flex justify-center relative">
              {incomeData.labels.length > 0 ? (
                 <Doughnut options={doughnutOptions} data={incomeData} />
              ) : (
-                <p className="text-gray-400 self-center">No income data yet</p>
+                <p className="text-slate-400 dark:text-gray-400 self-center">{t('reports.no_income_data')}</p>
              )}
           </div>
         </div>
 
         {/* Expense Breakdown */}
-        <div className="bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-xl overflow-hidden">
-          <h2 className="text-xl font-bold text-white mb-6">Expense Breakdown</h2>
+        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden transition-colors">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 transition-colors">{t('reports.expense_breakdown')}</h2>
           <div className="h-64 flex justify-center relative">
             {expenseData.labels.length > 0 ? (
                 <Doughnut options={doughnutOptions} data={expenseData} />
              ) : (
-                <p className="text-gray-400 self-center">No expense data yet</p>
+                <p className="text-slate-400 dark:text-gray-400 self-center">{t('reports.no_expense_data')}</p>
              )}
           </div>
         </div>

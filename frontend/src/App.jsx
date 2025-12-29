@@ -12,6 +12,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Integrations from './pages/Integrations';
 import Settings from './pages/Settings';
+import SupportWidget from './components/SupportWidget';
 
 const PrivateRoute = ({ children }) => {
   try {
@@ -37,7 +38,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-slate-900 text-white">
+      <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-white transition-colors">
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -61,6 +62,7 @@ function App() {
                       <Route path="/settings" element={<Settings />} />
                     </Routes>
                 </div>
+                <SupportWidget />
               </ErrorBoundary>
             </PrivateRoute>
           } />

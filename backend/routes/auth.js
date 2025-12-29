@@ -13,7 +13,7 @@ const checkPremium = require('../middleware/checkPremium');
 // Configure Multer for Logo Upload
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const dir = 'uploads/logos';
+    const dir = path.join(__dirname, '../uploads/logos');
     if (!fs.existsSync(dir)){
         fs.mkdirSync(dir, { recursive: true });
     }
@@ -143,6 +143,8 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
+const { sendPasswordResetEmail } = require('../services/EmailService');
+
 // Forgot Password (Simulation)
 router.post('/forgot-password', async (req, res) => {
   try {
@@ -163,35 +165,9 @@ router.post('/forgot-password', async (req, res) => {
     // Configuração de envio de email
      if (process.env.EMAIL_USER && process.env.EMAIL_PASS && process.env.EMAIL_USER !== 'seu_email@gmail.com') {
        try {
-         const transporter = nodemailer.createTransport({
-           service: 'gmail',
-           auth: {
-             user: process.env.EMAIL_USER,
-             pass: process.env.EMAIL_PASS,
-           },
-         });
- 
-         const mailOptions = {
-          from: `"Lumini I.A Support" <${process.env.EMAIL_USER}>`,
-          to: email,
-          subject: 'Redefinição de Senha - Lumini I.A',
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2>Redefinição de Senha</h2>
-              <p>Você solicitou a redefinição de sua senha na plataforma Lumini I.A.</p>
-              <p>Clique no botão abaixo para criar uma nova senha:</p>
-              <a href="${resetLink}" style="display: inline-block; padding: 10px 20px; background-color: #7c3aed; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">Redefinir Senha</a>
-              <p>Se o botão não funcionar, copie e cole o link abaixo no seu navegador:</p>
-              <p>${resetLink}</p>
-              <p>Este link expira em 1 hora.</p>
-              <p>Se você não solicitou esta alteração, ignore este email.</p>
-            </div>
-          `
-        };
-
-        await transporter.sendMail(mailOptions);
-        console.log(`[SUCCESS] Email enviado para ${email}`);
-        return res.json({ message: 'Um email com as instruções foi enviado para você.' });
+         await sendPasswordResetEmail(user, resetLink);
+         console.log(`[SUCCESS] Email enviado para ${email}`);
+         return res.json({ message: 'Um email com as instruções foi enviado para você.' });
 
       } catch (emailError) {
         console.error('Erro ao enviar email:', emailError);
@@ -232,37 +208,49 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // Upload Logo
-router.post('/logo', auth, checkPremium, upload.single('logo'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'Nenhuma imagem enviada.' });
+router.post('/logo', auth, checkPremium, (req, res) => {
+  const uploadSingle = upload.single('logo');
+
+  uploadSingle(req, res, async (err) => {
+    if (err instanceof multer.MulterError) {
+      // A Multer error occurred when uploading.
+      return res.status(400).json({ message: `Erro de upload: ${err.message}` });
+    } else if (err) {
+      // An unknown error occurred when uploading.
+      return res.status(400).json({ message: err.message });
     }
 
-    const user = await User.findByPk(req.user.id);
-    if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
-
-    // Delete old logo if exists
-    if (user.logo) {
-      const oldPath = path.join('uploads/logos', user.logo);
-      if (fs.existsSync(oldPath)) {
-        fs.unlinkSync(oldPath);
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'Nenhuma imagem enviada.' });
       }
+
+      const user = await User.findByPk(req.user.id);
+      if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
+
+      // Delete old logo if exists
+      if (user.logo) {
+        const oldPath = path.join(__dirname, '../uploads/logos', user.logo);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+
+      // Update user
+      user.logo = req.file.filename;
+      await user.save();
+
+      res.json({ 
+          message: 'Logo atualizado com sucesso!', 
+          logo: user.logo,
+          logoUrl: `/uploads/logos/${user.logo}`
+      });
+
+    } catch (error) {
+      console.error('Logo upload error:', error);
+      res.status(500).json({ message: 'Erro ao fazer upload do logo.' });
     }
-
-    // Update user
-    user.logo = req.file.filename;
-    await user.save();
-
-    res.json({ 
-        message: 'Logo atualizado com sucesso!', 
-        logo: user.logo,
-        logoUrl: `/uploads/logos/${user.logo}`
-    });
-
-  } catch (error) {
-    console.error('Logo upload error:', error);
-    res.status(500).json({ message: 'Erro ao fazer upload do logo.' });
-  }
+  });
 });
 
 // Delete Logo
@@ -272,7 +260,7 @@ router.delete('/logo', auth, async (req, res) => {
       if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
   
       if (user.logo) {
-        const oldPath = path.join('uploads/logos', user.logo);
+        const oldPath = path.join(__dirname, '../uploads/logos', user.logo);
         if (fs.existsSync(oldPath)) {
           fs.unlinkSync(oldPath);
         }
@@ -286,6 +274,41 @@ router.delete('/logo', auth, async (req, res) => {
       console.error('Logo delete error:', error);
       res.status(500).json({ message: 'Erro ao remover logo.' });
     }
+});
+
+// Update Profile (Name, Address, CPF/CNPJ)
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const { name, address, cpfCnpj } = req.body;
+    const user = await User.findByPk(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (name !== undefined) user.name = name;
+    if (address !== undefined) user.address = address;
+    if (cpfCnpj !== undefined) user.cpfCnpj = cpfCnpj;
+
+    await user.save();
+
+    // Return updated user object
+    const updatedUser = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        plan: user.plan,
+        name: user.name,
+        address: user.address,
+        cpfCnpj: user.cpfCnpj,
+        logo: user.logo
+    };
+
+    res.json({ message: 'Profile updated successfully', user: updatedUser });
+  } catch (error) {
+    console.error('Profile Update Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 module.exports = router;

@@ -95,13 +95,13 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="p-6 pb-2 flex justify-between items-center shrink-0">
-          <h2 className="text-2xl font-bold text-white">Emitir NFS-e</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Emitir NFS-e</h2>
           <button 
             onClick={onClose}
-            className="text-white hover:text-gray-300 transition-colors bg-white/10 rounded-full p-2"
+            className="text-gray-500 dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition-colors bg-gray-100 dark:bg-white/10 rounded-full p-2"
           >
             ✕
           </button>
@@ -113,14 +113,14 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
             
             {/* Client Info */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-purple-400 uppercase tracking-wider">Dados do Tomador</h3>
+              <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Dados do Tomador</h3>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Nome / Razão Social</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome / Razão Social</label>
                 <input
                   type="text"
                   required
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Ex: Empresa Cliente Ltda"
                   value={formData.clientName}
                   onChange={e => setFormData({...formData, clientName: e.target.value})}
@@ -129,11 +129,11 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">CPF / CNPJ</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CPF / CNPJ</label>
                   <input
                     type="text"
                     required
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="00.000.000/0000-00"
                     value={formData.document}
                     onChange={handleDocumentChange}
@@ -141,10 +141,10 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Inscrição Estadual</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Inscrição Estadual</label>
                   <input
                     type="text"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="Ex: 123.456.789.111"
                     value={formData.stateRegistration}
                     onChange={e => setFormData({...formData, stateRegistration: e.target.value.replace(/[^0-9.-]/g, '')})}
@@ -153,11 +153,11 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                 <input
                   type="email"
                   required
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="cliente@email.com"
                   value={formData.email}
                   onChange={e => setFormData({...formData, email: e.target.value})}
@@ -166,10 +166,10 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">CEP</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CEP</label>
                 <input
                   type="text"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="00000-000"
                   value={formData.cep}
                   onChange={e => setFormData({...formData, cep: maskCEP(e.target.value)})}
@@ -177,10 +177,10 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Endereço</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Endereço</label>
                 <input
                   type="text"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Rua, Número"
                   value={formData.address}
                   onChange={e => setFormData({...formData, address: e.target.value})}
@@ -190,30 +190,30 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Bairro</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bairro</label>
                 <input
                   type="text"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Bairro"
                   value={formData.neighborhood}
                   onChange={e => setFormData({...formData, neighborhood: e.target.value})}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Cidade</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cidade</label>
                 <input
                   type="text"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Cidade"
                   value={formData.city}
                   onChange={e => setFormData({...formData, city: e.target.value})}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Estado</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
                 <input
                   type="text"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="UF"
                   maxLength="2"
                   value={formData.state}
@@ -223,18 +223,18 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
             </div>
             </div>
 
-            <div className="h-px bg-white/10 my-4"></div>
+            <div className="h-px bg-gray-200 dark:bg-white/10 my-4"></div>
 
             {/* Service Info */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-purple-400 uppercase tracking-wider">Serviço</h3>
+              <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Serviço</h3>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Descrição do Serviço</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descrição do Serviço</label>
                 <textarea
                   required
                   rows="3"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Ex: Desenvolvimento de Software..."
                   value={formData.serviceDescription}
                   onChange={e => setFormData({...formData, serviceDescription: e.target.value})}
@@ -243,11 +243,11 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Valor do Serviço</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Valor do Serviço</label>
                   <input
                     type="text"
                     required
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-right font-mono text-lg"
+                    className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-right font-mono text-lg"
                     placeholder="R$ 0,00"
                     value={formData.value}
                     onChange={handleCurrencyChange}
@@ -257,14 +257,41 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
                   <label className="flex items-center space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      className="form-checkbox h-5 w-5 text-purple-600 rounded bg-slate-800 border-slate-700"
+                      className="form-checkbox h-5 w-5 text-purple-600 rounded bg-gray-100 dark:bg-slate-800 border-gray-300 dark:border-slate-700"
                       checked={formData.issRetained}
                       onChange={e => setFormData({...formData, issRetained: e.target.checked})}
                     />
-                    <span className="text-gray-300 text-sm">ISS Retido?</span>
+                    <span className="text-gray-700 dark:text-gray-300 text-sm">ISS Retido?</span>
                   </label>
                 </div>
               </div>
+
+              {/* Tax Simulation Info Box */}
+              {formData.value && (
+                <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-3 border border-gray-200 dark:border-white/5">
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Simulação de Impostos (Estimado)</p>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                            <span className="block text-gray-600 dark:text-gray-500">PIS (0,65%)</span>
+                            <span className="text-gray-800 dark:text-gray-300">
+                                {(parseFloat(formData.value.replace(/[^\d,]/g, '').replace(',', '.') || 0) * 0.0065).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="block text-gray-600 dark:text-gray-500">COFINS (3%)</span>
+                            <span className="text-gray-800 dark:text-gray-300">
+                                {(parseFloat(formData.value.replace(/[^\d,]/g, '').replace(',', '.') || 0) * 0.03).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="block text-gray-600 dark:text-gray-500">ISS (5%)</span>
+                            <span className="text-gray-800 dark:text-gray-300">
+                                {(parseFloat(formData.value.replace(/[^\d,]/g, '').replace(',', '.') || 0) * 0.05).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+              )}
             </div>
 
             <div className="pt-4">

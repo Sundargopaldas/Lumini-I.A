@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import AddGoalModal from './AddGoalModal';
 import CustomAlert from './CustomAlert';
 
 const GoalsWidget = () => {
+  const { t } = useTranslation();
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,9 +32,15 @@ const GoalsWidget = () => {
   const fetchGoals = async () => {
     try {
       const response = await api.get('/goals');
-      setGoals(response.data);
+      if (Array.isArray(response.data)) {
+        setGoals(response.data);
+      } else {
+        console.error('Invalid goals data:', response.data);
+        setGoals([]);
+      }
     } catch (error) {
       console.error('Error fetching goals:', error);
+      setGoals([]);
     } finally {
       setLoading(false);
     }
@@ -48,34 +56,34 @@ const GoalsWidget = () => {
       fetchGoals();
     } catch (error) {
       console.error('Error adding goal:', error);
-      showAlert('Erro', 'Falha ao adicionar meta', 'error');
+      showAlert(t('common.error'), t('goals.add_error'), 'error');
     }
   };
 
   const handleDeleteGoal = (id) => {
-    showAlert('Excluir Meta', 'Tem certeza que deseja excluir esta meta?', 'confirm', async () => {
+    showAlert(t('goals.delete_title'), t('goals.delete_confirm'), 'confirm', async () => {
       try {
         await api.delete(`/goals/${id}`);
         fetchGoals();
       } catch (error) {
         console.error('Error deleting goal:', error);
-        showAlert('Erro', 'Falha ao excluir meta', 'error');
+        showAlert(t('common.error'), t('goals.delete_error'), 'error');
       }
     });
   };
 
-  if (loading) return <div className="animate-pulse bg-white/5 h-40 rounded-2xl"></div>;
+  if (loading) return <div className="animate-pulse bg-slate-100 dark:bg-white/5 h-40 rounded-2xl"></div>;
 
   const handleOpenModal = () => {
     if (!isPro && goals.length >= 3) {
-        showAlert('Limite Premium Atingido', 'Usuários do plano gratuito estão limitados a 3 metas financeiras.\n\nFaça upgrade para o PRO para rastrear sonhos ilimitados!', 'locked');
+        showAlert(t('goals.premium_limit_title'), t('goals.premium_limit_msg'), 'locked');
         return;
     }
     setIsModalOpen(true);
   };
 
   return (
-    <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl">
+    <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
       <CustomAlert 
         isOpen={alertState.isOpen}
         onClose={closeAlert}
@@ -85,20 +93,20 @@ const GoalsWidget = () => {
         onConfirm={alertState.onConfirm}
       />
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-white">Metas Financeiras</h2>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white transition-colors">{t('goals.title')}</h2>
         <button 
           onClick={handleOpenModal}
           className={`text-sm px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 ${
              !isPro && goals.length >= 3 
-                ? 'bg-slate-700 text-gray-400 hover:bg-slate-600' 
+                ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-gray-400 hover:bg-slate-300 dark:hover:bg-slate-600' 
                 : 'bg-purple-600 hover:bg-purple-500 text-white'
           }`}
         >
-          <span>{(!isPro && goals.length >= 3) ? '🔒' : '+'}</span> Nova Meta
+          <span>{(!isPro && goals.length >= 3) ? '🔒' : '+'}</span> {t('goals.new_goal')}
         </button>
       </div>
 
-      {goals.length === 0 ? (
+      {(!Array.isArray(goals) || goals.length === 0) ? (
         <div className="text-center py-8 text-gray-400">
           <p className="mb-2">No goals set yet.</p>
           <p className="text-sm">Start saving for your dreams!</p>
