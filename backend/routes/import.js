@@ -44,8 +44,31 @@ router.post('/ofx', authMiddleware, upload.single('file'), async (req, res) => {
         continue;
       }
 
-      // Try to auto-categorize (basic)
-      // TODO: Implement smarter categorization based on description keywords
+      // Smart Categorization
+      let categoryId = null;
+      const lowerDesc = t.description.toLowerCase();
+      
+      const KEYWORD_RULES = [
+        { keywords: ['uber', '99', 'taxi', 'posto', 'combustivel', 'estacionamento'], category: 'Transporte' },
+        { keywords: ['supermercado', 'atacad', 'carrefour', 'pao de acucar', 'restaurante', 'ifood', 'burger', 'mcdonalds', 'food'], category: 'Alimentação' },
+        { keywords: ['netflix', 'spotify', 'cinema', 'amazon prime', 'hbo'], category: 'Lazer' },
+        { keywords: ['amazon', 'magalu', 'mercado livre', 'shopee', 'shein'], category: 'Compras' },
+        { keywords: ['pharmacy', 'drogaria', 'farmacia', 'hospital', 'consultorio', 'medico'], category: 'Saúde' },
+        { keywords: ['salario', 'pagamento', 'recebimento'], category: 'Salário' },
+        { keywords: ['luz', 'agua', 'energia', 'internet', 'claro', 'vivo', 'tim'], category: 'Contas' }
+      ];
+
+      for (const rule of KEYWORD_RULES) {
+        if (rule.keywords.some(k => lowerDesc.includes(k))) {
+            // Find or create category
+            const [cat] = await Category.findOrCreate({
+                where: { name: rule.category, userId },
+                defaults: { type: 'expense', color: '#888888', icon: 'tag' } // Default values
+            });
+            categoryId = cat.id;
+            break; 
+        }
+      }
       
       await Transaction.create({
         userId,
@@ -54,7 +77,8 @@ router.post('/ofx', authMiddleware, upload.single('file'), async (req, res) => {
         date: t.date,
         description: t.description,
         fitId: t.fitId,
-        source: 'OFX Import'
+        source: 'OFX Import',
+        categoryId: categoryId
       });
       
       importedCount++;

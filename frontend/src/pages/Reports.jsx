@@ -11,7 +11,7 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import CustomAlert from '../components/CustomAlert';
@@ -195,7 +195,7 @@ const Reports = () => {
     doc.text(`${t('common.date') || 'Date'}: ${selectedMonth === 'all' ? t('reports.all_months') : new Date(0, selectedMonth).toLocaleString(i18n.language, { month: 'long' })} ${selectedYear}`, 14, 38);
 
     // Summary Section
-    doc.autoTable({
+    autoTable(doc, {
         startY: 45,
         head: [[t('reports.total_income'), t('reports.total_expenses'), t('reports.net_balance')]],
         body: [[
@@ -217,7 +217,7 @@ const Reports = () => {
         t.type === 'income' ? `+ R$ ${parseFloat(t.amount).toFixed(2)}` : `- R$ ${Math.abs(parseFloat(t.amount)).toFixed(2)}`
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
         startY: doc.lastAutoTable.finalY + 20,
         head: [[t('common.date'), t('common.description'), t('reports.income_sources') + '/' + t('reports.expense_breakdown'), t('reports.net_balance')]], 
         body: tableData,

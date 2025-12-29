@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { useTranslation } from 'react-i18next';
 import CertificateModal from '../components/CertificateModal';
 import IssueInvoiceModal from '../components/IssueInvoiceModal';

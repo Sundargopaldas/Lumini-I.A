@@ -179,8 +179,21 @@ const Settings = () => {
       />
 
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white transition-colors">{t('settings.title')}</h1>
-        <p className="text-slate-500 dark:text-gray-400 text-sm transition-colors">{t('settings.subtitle')}</p>
+        <div className="flex justify-between items-start">
+            <div>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white transition-colors">{t('settings.title')}</h1>
+                <p className="text-slate-500 dark:text-gray-400 text-sm transition-colors">{t('settings.subtitle')}</p>
+            </div>
+            <a 
+                href="/dashboard" 
+                className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                title="Fechar Configurações"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </a>
+        </div>
       </div>
 
       {/* Tabs */}

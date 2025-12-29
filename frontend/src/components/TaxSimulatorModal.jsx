@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import CustomAlert from './CustomAlert';
 
 const TaxSimulatorModal = ({ isOpen, onClose }) => {
@@ -80,7 +80,7 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
     doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, 14, 36);
 
     // Section: Input Data
-    doc.autoTable({
+    autoTable(doc, {
         startY: 45,
         head: [['Parâmetro', 'Valor']],
         body: [
@@ -98,7 +98,7 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
     const monthlyTax = calculateDAS();
     const annualTax = monthlyTax * 12;
 
-    doc.autoTable({
+    autoTable(doc, {
         startY: doc.lastAutoTable.finalY + 10,
         head: [['Resultado Estimado', 'Valor']],
         body: [
