@@ -3,12 +3,14 @@ import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import TransactionCard from '../components/TransactionCard';
 import AddTransactionModal from '../components/AddTransactionModal';
+import ImportModal from '../components/ImportModal';
 import CustomAlert from '../components/CustomAlert';
 
 const Transactions = () => {
   const { t } = useTranslation();
   const [transactions, setTransactions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [transactionToEdit, setTransactionToEdit] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -98,20 +100,29 @@ const Transactions = () => {
         onConfirm={alertState.onConfirm}
       />
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white transition-colors">{t('transactions.title')}</h1>
-        <button 
-          onClick={() => {
-            setTransactionToEdit(null);
-            setIsModalOpen(true);
-          }}
-          className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors shadow-lg shadow-purple-500/30 font-medium w-full sm:w-auto"
-        >
-          {t('transactions.new_transaction')}
-        </button>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{t('transactions.title')}</h1>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="bg-white dark:bg-slate-700 text-slate-700 dark:text-white px-4 py-2 rounded-lg font-semibold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors border border-slate-200 dark:border-slate-600 flex items-center gap-2"
+          >
+            <span>📥</span>
+            <span className="hidden sm:inline">{t('transactions.import')}</span>
+          </button>
+          <button
+            onClick={() => {
+              setTransactionToEdit(null);
+              setIsModalOpen(true);
+            }}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold shadow-lg shadow-purple-500/30 transition-all flex items-center gap-2"
+          >
+            <span>+</span>
+            {t('transactions.add_new')}
+          </button>
+        </div>
       </div>
 
-      {/* Filters and Search */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <input 
             type="text" 
@@ -160,7 +171,16 @@ const Transactions = () => {
         )}
       </div>
 
-      <AddTransactionModal 
+      <ImportModal 
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportSuccess={() => {
+          fetchTransactions();
+          showAlert(t('common.success'), t('transactions.import_complete'), 'success');
+        }}
+      />
+      
+      <AddTransactionModal
         isOpen={isModalOpen} 
         onClose={handleCloseModal} 
         onSave={handleSaveTransaction}

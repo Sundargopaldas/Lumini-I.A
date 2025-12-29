@@ -56,6 +56,8 @@ const goalRoutes = require('./routes/goals');
 const paymentRoutes = require('./routes/payments');
 const invoiceRoutes = require('./routes/invoices');
 const certificateRoutes = require('./routes/certificates');
+const aiRoutes = require('./routes/ai');
+const importRoutes = require('./routes/import');
 
 // Rate Limiting - Auth (Stricter)
 const authLimiter = rateLimit({
@@ -73,6 +75,8 @@ app.use('/api/goals', goalRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/certificates', certificateRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/import', importRoutes);
 
 app.get('/', (req, res) => {
   res.send('Lumini I.A Backend is running');
@@ -119,6 +123,15 @@ const startServer = async () => {
     } catch (err) {
         // Column likely exists
         console.log("Note: logo column check - " + err.message);
+    }
+
+    // Manual migration for fitId in Transactions (safe add)
+    try {
+        await sequelize.query("ALTER TABLE Transactions ADD COLUMN fitId VARCHAR(255);");
+        console.log("Added fitId column to Transactions table.");
+    } catch (err) {
+        // Column likely exists
+        console.log("Note: fitId column check - " + err.message);
     }
 
     console.log('Database synchronized.');

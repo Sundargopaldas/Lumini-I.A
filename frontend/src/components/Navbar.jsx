@@ -123,16 +123,7 @@ const Navbar = () => {
             >
                 💬 Support {!isPro && '🔒'}
             </button>
-            <Link 
-                to="/plans"
-                className={`px-3 py-1 rounded-full text-xs font-bold shadow-lg transition-all ${
-                  isPro 
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-purple-500/30 hover:shadow-purple-500/50' 
-                    : 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-pink-500/30 hover:shadow-pink-500/50'
-                }`}
-            >
-                {isPro ? (isPremium ? 'PREMIUM' : 'PRO') : 'UPGRADE'}
-            </Link>
+            {/* Plan Badge removed to reduce clutter as requested */}
             
             <Link to="/settings" className="flex items-center gap-2 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors group">
                 <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-full border border-slate-200 dark:border-slate-700 group-hover:border-purple-500 transition-colors">

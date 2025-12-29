@@ -36,6 +36,11 @@ const Transaction = sequelize.define('Transaction', {
     defaultValue: false,
     allowNull: false,
   },
+  fitId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    comment: 'Financial Institution Transaction ID for OFX imports'
+  },
   userId: {
     type: DataTypes.INTEGER,
     references: {

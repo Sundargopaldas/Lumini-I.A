@@ -6,6 +6,7 @@ import TransactionCard from '../components/TransactionCard';
 import GoalsWidget from '../components/GoalsWidget';
 import SubscriptionWidget from '../components/SubscriptionWidget';
 import TaxSimulatorModal from '../components/TaxSimulatorModal';
+import AIInsightsWidget from '../components/AIInsightsWidget';
 import api from '../services/api';
 
 const Dashboard = () => {
@@ -255,6 +256,9 @@ const Dashboard = () => {
           {meiPercentage > 80 && <span className="text-red-200 font-bold ml-1">{t('dashboard.limit_warning')}</span>}
         </p>
       </div>
+
+      {/* AI Insights Widget */}
+      <AIInsightsWidget />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
