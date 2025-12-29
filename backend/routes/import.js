@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const { Op } = require('sequelize');
 const Transaction = require('../models/Transaction');
 const Category = require('../models/Category');
 const authMiddleware = require('../middleware/auth');
@@ -47,27 +48,47 @@ router.post('/ofx', authMiddleware, upload.single('file'), async (req, res) => {
       // Smart Categorization
       let categoryId = null;
       const lowerDesc = t.description.toLowerCase();
-      
-      const KEYWORD_RULES = [
-        { keywords: ['uber', '99', 'taxi', 'posto', 'combustivel', 'estacionamento'], category: 'Transporte' },
-        { keywords: ['supermercado', 'atacad', 'carrefour', 'pao de acucar', 'restaurante', 'ifood', 'burger', 'mcdonalds', 'food'], category: 'Alimentação' },
-        { keywords: ['netflix', 'spotify', 'cinema', 'amazon prime', 'hbo'], category: 'Lazer' },
-        { keywords: ['amazon', 'magalu', 'mercado livre', 'shopee', 'shein'], category: 'Compras' },
-        { keywords: ['pharmacy', 'drogaria', 'farmacia', 'hospital', 'consultorio', 'medico'], category: 'Saúde' },
-        { keywords: ['salario', 'pagamento', 'recebimento'], category: 'Salário' },
-        { keywords: ['luz', 'agua', 'energia', 'internet', 'claro', 'vivo', 'tim'], category: 'Contas' }
-      ];
 
-      for (const rule of KEYWORD_RULES) {
-        if (rule.keywords.some(k => lowerDesc.includes(k))) {
-            // Find or create category
-            const [cat] = await Category.findOrCreate({
-                where: { name: rule.category, userId },
-                defaults: { type: 'expense', color: '#888888', icon: 'tag' } // Default values
-            });
-            categoryId = cat.id;
-            break; 
-        }
+      // 1. History-based (Simple match)
+      // Check if user has categorized a similar transaction before
+      // We search for transactions with the same description (or very similar)
+      const historicTransaction = await Transaction.findOne({
+        where: {
+            userId,
+            description: t.description,
+            categoryId: { [Op.ne]: null }
+        },
+        order: [['date', 'DESC']]
+      });
+
+      if (historicTransaction) {
+          categoryId = historicTransaction.categoryId;
+      } else {
+          // 2. Keyword-based (Fallback)
+          const KEYWORD_RULES = [
+            { keywords: ['uber', '99', 'taxi', 'posto', 'combustivel', 'gas', 'shell', 'ipiranga', 'parking', 'estacionamento'], category: 'Transport' },
+            { keywords: ['ifood', 'burger', 'mcdonald', 'restaurante', 'market', 'supermercado', 'carrefour', 'pao de acucar', 'food', 'coffee', 'padaria'], category: 'Food' },
+            { keywords: ['netflix', 'spotify', 'prime', 'hbo', 'disney', 'apple', 'cinema', 'game', 'steam'], category: 'Entertainment' },
+            { keywords: ['amazon', 'mercado livre', 'shopee', 'shein', 'magalu', 'store', 'shop'], category: 'Shopping' },
+            { keywords: ['farmacia', 'drogaria', 'hospital', 'medico', 'doctor', 'pharmacy', 'saude'], category: 'Health' },
+            { keywords: ['salario', 'salary', 'pagamento', 'deposit', 'remuneracao'], category: 'Salary' },
+            { keywords: ['luz', 'agua', 'energia', 'internet', 'claro', 'vivo', 'tim', 'eletropaulo', 'sabesp', 'aluguel', 'condominio'], category: 'Housing' },
+            { keywords: ['adobe', 'google', 'aws', 'jetbrains', 'hostgator', 'software'], category: 'Software' },
+            { keywords: ['dell', 'samsung', 'apple store', 'kabum', 'eletronico'], category: 'Equipment' }
+          ];
+
+          for (const rule of KEYWORD_RULES) {
+            if (rule.keywords.some(k => lowerDesc.includes(k))) {
+                // Find or create category (Global)
+                // Note: Category model does NOT have userId, so we treat them as global/shared
+                const [cat] = await Category.findOrCreate({
+                    where: { name: rule.category },
+                    defaults: { type: 'expense', name: rule.category } 
+                });
+                categoryId = cat.id;
+                break; 
+            }
+          }
       }
       
       await Transaction.create({
