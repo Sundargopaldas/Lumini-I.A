@@ -1,0 +1,371 @@
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+require('dotenv').config();
+
+// Access your API key as an environment variable (see "Set up your API key" above)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+const fs = require('fs');
+const path = require('path');
+
+const logFile = path.join(__dirname, '../gemini-debug.log');
+
+const logDebug = (msg) => {
+    const timestamp = new Date().toISOString();
+    fs.appendFileSync(logFile, `[${timestamp}] ${msg}\n`);
+};
+
+const generateFinancialInsights = async (user, transactions, goals) => {
+  try {
+    logDebug('Starting generation...');
+    logDebug(`User: ${user?.id} - ${user?.username}`);
+    logDebug(`Transactions count: ${transactions?.length}`);
+    
+    // Choose a model
+    // Robust fallback strategy: Iterate through candidates until one works
+    const modelCandidates = [
+        "gemini-1.5-pro",
+        "gemini-1.5-flash", 
+        "gemini-1.5-flash-001", 
+        "gemini-1.5-flash-8b", 
+        "gemini-2.0-flash-exp", 
+        "gemini-pro", 
+        "gemini-1.0-pro"
+    ];
+
+    let lastError = null;
+
+    for (const modelName of modelCandidates) {
+        try {
+            logDebug(`Attempting model: ${modelName}`);
+            const model = genAI.getGenerativeModel({ model: modelName });
+
+            // Prepare Context (Summarized)
+            const transactionSummary = transactions.map(t => 
+                `- ${t.date}: ${t.description} (${t.type}) - R$ ${t.amount} [${t.source || 'Other'}]`
+            ).join('\n');
+
+            const goalsSummary = goals.map(g => 
+                `- ${g.name}: R$ ${g.currentAmount} / R$ ${g.targetAmount} (Deadline: ${g.deadline})`
+            ).join('\n');
+
+            const prompt = `
+              Você é o "Lumini IA", um consultor financeiro pessoal de elite, especializado em finanças pessoais e empresariais para brasileiros.
+              
+              Perfil do Usuário:
+              - Nome: ${user.username}
+              - Plano: ${user.plan} (Se for PRO/PREMIUM, seja mais detalhado)
+              
+              Dados Financeiros Recentes (Últimos 30 dias):
+              ${transactionSummary}
+              
+              Metas Financeiras:
+              ${goalsSummary}
+              
+              SUA TAREFA:
+              Analise os dados acima e forneça 3 insights PODEROSOS e acionáveis.
+              
+              Regras de Resposta:
+              1. Use linguagem natural, empática mas profissional (Português do Brasil).
+              2. Use formatação Markdown (**negrito**) para destacar valores e ações.
+              3. Seja específico. Não diga "economize mais", diga "Se cortar o iFood pela metade, você atinge a meta X em 2 meses".
+              4. Se o usuário estiver no vermelho, dê um alerta de segurança urgente.
+              5. Se o usuário estiver bem, sugira investimentos ou otimização fiscal.
+              6. Mantenha a resposta concisa (máximo 3 parágrafos curtos ou bullet points).
+              
+              Retorne APENAS o texto da resposta, formatado em Markdown.
+            `;
+
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const text = response.text();
+            
+            logDebug(`Success with model: ${modelName}`);
+            return text;
+
+        } catch (error) {
+            logDebug(`Failed with model ${modelName}: ${error.message}`);
+            lastError = error;
+            
+            // If it's a 404 (Not Found) or 503 (Overloaded) or 429 (Quota), we try the next one.
+            // Especially for 429, different models might have different quotas.
+            if (error.message?.includes('404') || error.message?.includes('not found')) {
+                continue; // Try next model
+            }
+            if (error.message?.includes('429') || error.message?.includes('quota')) {
+                 logDebug(`Quota exceeded for ${modelName}, trying next...`);
+                 continue; // Try next model
+            }
+            // For other errors, maybe we should stop? No, let's try others just in case.
+        }
+    }
+
+    // If we get here, all models failed. 
+    // Instead of throwing an error, we fall back to "Local Intelligence" (Rule-based)
+    // This ensures the user ALWAYS gets a response, even if the AI is down.
+    logDebug("All Gemini models failed. Switching to Local Intelligence (Offline Mode).");
+    return generateLocalInsights(user, transactions, goals);
+
+  } catch (error) {
+    logDebug(`ERROR: ${error.message}`);
+    // If even local fallback fails (unlikely), then return error.
+    return generateLocalInsights(user, transactions, goals); 
+  }
+};
+
+// ==========================================
+// LOCAL INTELLIGENCE (OFFLINE MODE)
+// ==========================================
+const generateLocalInsights = (user, transactions, goals) => {
+    // 1. Calculate Totals
+    const totalSpent = transactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+    
+    const totalIncome = transactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const balance = totalIncome - totalSpent;
+
+    // 2. Identify Top Expense (Simple proxy for category since we might not have categories populated correctly yet)
+    // Group by source or description if possible, here we just find the biggest single expense for simplicity
+    const sortedExpenses = transactions
+        .filter(t => t.type === 'expense')
+        .sort((a, b) => Number(b.amount) - Number(a.amount));
+    
+    const biggestExpense = sortedExpenses.length > 0 ? sortedExpenses[0] : null;
+
+    // 3. Goals Analysis
+    const activeGoals = goals.filter(g => g.currentAmount < g.targetAmount);
+    const goalAlert = activeGoals.length > 0 
+        ? `Foque na meta **${activeGoals[0].name}**. Faltam R$ ${(activeGoals[0].targetAmount - activeGoals[0].currentAmount).toFixed(2)}.`
+        : "Você está sem metas ativas no momento. Que tal criar uma nova?";
+
+    // 4. Generate Insights
+    let insight1, insight2, insight3;
+
+    // Insight 1: Cash Flow
+    if (balance < 0) {
+        insight1 = `🚨 **Atenção Imediata**: Seu saldo recente está negativo em **R$ ${Math.abs(balance).toFixed(2)}**. É crucial revisar seus gastos supérfluos esta semana para não entrar no cheque especial.`;
+    } else {
+        insight1 = `✅ **Saúde Financeira**: Parabéns! Você gastou menos do que ganhou recentemente (Saldo positivo: **R$ ${balance.toFixed(2)}**). Considere investir 30% desse excedente.`;
+    }
+
+    // Insight 2: Top Expense
+    if (biggestExpense) {
+        insight2 = `📉 **Maior Gasto**: Notei uma saída significativa de **R$ ${Number(biggestExpense.amount).toFixed(2)}** em *${biggestExpense.description}*. Avalie se este é um gasto recorrente que pode ser renegociado.`;
+    } else {
+        insight2 = `🔍 **Análise de Gastos**: Ainda não tenho dados suficientes de despesas para apontar ofensores. Continue registrando suas transações!`;
+    }
+
+    // Insight 3: Strategy
+    insight3 = `🎯 **Foco no Futuro**: ${goalAlert} Lembre-se: consistência é a chave para grandes resultados.`;
+
+    return `
+### ✨ Análise Executiva (Lumini Essential)
+
+Realizei uma varredura quantitativa nos seus dados e identifiquei os seguintes pontos-chave para sua gestão financeira:
+
+1. ${insight1}
+
+2. ${insight2}
+
+3. ${insight3}
+
+---
+*Nota: Esta é uma análise numérica de alta precisão. Para insights comportamentais mais complexos, o módulo avançado estará disponível em breve.*
+    `.trim();
+};
+
+const chatWithAI = async (user, transactions, goals, userMessage, history = []) => {
+    try {
+        logDebug(`Starting chat for user: ${user.username}`);
+        
+        // Prepare Context
+        const transactionSummary = transactions.map(t => 
+            `- ${t.date}: ${t.description} (${t.type}) - R$ ${t.amount} [${t.source || 'Other'}]`
+        ).join('\n');
+
+        const goalsSummary = goals.map(g => 
+            `- ${g.name}: R$ ${g.currentAmount} / R$ ${g.targetAmount} (Deadline: ${g.deadline})`
+        ).join('\n');
+
+        const systemContext = `
+        Você é o "Lumini IA", um assistente financeiro pessoal inteligente.
+        
+        CONTEXTO DO USUÁRIO:
+        - Nome: ${user.username}
+        - Plano: ${user.plan}
+        
+        DADOS FINANCEIROS RECENTES:
+        ${transactionSummary}
+        
+        METAS:
+        ${goalsSummary}
+        
+        SUA PERSONALIDADE:
+        - Educado, profissional, mas acessível.
+        - Focado em ajudar o usuário a economizar e investir melhor.
+        - Respostas curtas e diretas (máximo 2-3 parágrafos).
+        - Use emojis moderadamente.
+        - Se o usuário perguntar algo fora de finanças, tente relacionar com dinheiro ou decline educadamente.
+        `;
+
+        // Model Selection Logic (Reused)
+        const modelCandidates = [
+            "gemini-1.5-pro",
+            "gemini-1.5-flash", 
+            "gemini-1.5-flash-001", 
+            "gemini-1.5-flash-8b", 
+            "gemini-2.0-flash-exp", 
+            "gemini-pro", 
+            "gemini-1.0-pro"
+        ];
+
+        for (const modelName of modelCandidates) {
+            try {
+                logDebug(`Chat attempt with model: ${modelName}`);
+                const model = genAI.getGenerativeModel({ model: modelName });
+
+                // Construct History for Gemini
+                // We inject the system context into the first message or as a system instruction
+                // For broad compatibility, we'll prepend it to the history or the current message logic.
+                
+                // If history is empty, this is the first message.
+                // If history exists, we need to respect it.
+                
+                let chatHistory = [];
+                
+                if (history.length > 0) {
+                    // Map frontend history to Gemini format
+                    // Frontend format: { role: 'user' | 'model', text: '...' }
+                    // Gemini format: { role: 'user' | 'model', parts: [{ text: '...' }] }
+                    chatHistory = history.map(msg => ({
+                        role: msg.role === 'ai' ? 'model' : 'user', // Map 'ai' to 'model'
+                        parts: [{ text: msg.text }]
+                    }));
+                }
+
+                const chat = model.startChat({
+                    history: chatHistory,
+                    generationConfig: {
+                        maxOutputTokens: 1000,
+                    },
+                });
+
+                // If it's the very first message of the session, prepending context is easy.
+                // But since we are stateless, we might be sending "history" that doesn't include the hidden system context.
+                // Strategy: Always append the system context to the *current* message prompt as a "Reminder".
+                // Or better: Send it as a separate part of the message.
+                
+                const fullPrompt = `
+                [CONTEXTO DO SISTEMA - INVISÍVEL AO USUÁRIO]
+                ${systemContext}
+                [FIM DO CONTEXTO]
+
+                Mensagem do Usuário: ${userMessage}
+                `;
+
+                const result = await chat.sendMessage(fullPrompt);
+                const response = await result.response;
+                const text = response.text();
+                
+                logDebug(`Chat success with model: ${modelName}`);
+                return text;
+
+            } catch (error) {
+                logDebug(`Chat failed with model ${modelName}: ${error.message}`);
+                if (error.message?.includes('404') || error.message?.includes('not found') || error.message?.includes('429')) {
+                    continue;
+                }
+            }
+        }
+
+        throw new Error("All models failed to respond to chat.");
+
+    } catch (error) {
+        logDebug(`CHAT ERROR: ${error.message}`);
+        return chatWithLocalIntelligence(user, transactions, goals, userMessage);
+    }
+};
+
+const chatWithLocalIntelligence = (user, transactions, goals, message) => {
+    const msg = message.toLowerCase();
+    
+    // Simple Keyword Matching
+    if (msg.includes('olá') || msg.includes('oi') || msg.includes('hello')) {
+        return `Olá, ${user.username}! Como posso ajudar com suas finanças hoje? (Estou operando em modo offline/local)`;
+    }
+
+    if (msg.includes('gastei') || msg.includes('gasto') || msg.includes('despesa')) {
+        const totalSpent = transactions
+            .filter(t => t.type === 'expense')
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+        return `Analisando seus dados locais, vejo que você gastou **R$ ${totalSpent.toFixed(2)}** nos últimos 45 dias.`;
+    }
+
+    if (msg.includes('imposto') || msg.includes('irpf') || msg.includes('leão')) {
+        const totalIncome = transactions
+            .filter(t => t.type === 'income')
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+        
+        // Estimativa Simplificada (Tabela Mensal 2024/2025)
+        let tax = 0;
+        let base = totalIncome; 
+        
+        // Simulação básica progressiva
+        if (base <= 2259.20) {
+            tax = 0;
+        } else if (base <= 2826.65) {
+            tax = (base * 0.075) - 169.44;
+        } else if (base <= 3751.05) {
+            tax = (base * 0.15) - 381.44;
+        } else if (base <= 4664.68) {
+            tax = (base * 0.225) - 662.77;
+        } else {
+            tax = (base * 0.275) - 896.00;
+        }
+        
+        tax = Math.max(0, tax);
+
+        return `Baseado na sua renda recente de **R$ ${totalIncome.toFixed(2)}**, a estimativa simplificada do imposto mensal seria de aproximadamente **R$ ${tax.toFixed(2)}**.\n\n⚠️ *Atenção: Este é um cálculo aproximado sem considerar deduções legais.*\n\nPara um cálculo exato e oficial, use nosso **Simulador de Impostos** no painel principal.`;
+    }
+
+    if (msg.includes('ganhei') || msg.includes('renda') || msg.includes('receita')) {
+        const totalIncome = transactions
+            .filter(t => t.type === 'income')
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+        return `Sua renda registrada no período foi de **R$ ${totalIncome.toFixed(2)}**.`;
+    }
+
+    if (msg.includes('saldo')) {
+         const totalSpent = transactions
+            .filter(t => t.type === 'expense')
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+        const totalIncome = transactions
+            .filter(t => t.type === 'income')
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+        const balance = totalIncome - totalSpent;
+        return `Seu saldo no período analisado é de **R$ ${balance.toFixed(2)}**.`;
+    }
+
+    if (msg.includes('economizar') || msg.includes('gastar menos') || msg.includes('poupar')) {
+        return "Para gastar menos, comece revisando suas **Despesas** no menu lateral para identificar gastos supérfluos. Você também pode definir **Metas** de economia. Quer saber quanto você já gastou este mês?";
+    }
+
+    if (msg.includes('balanço') || msg.includes('resumo') || msg.includes('relatório')) {
+        const totalSpent = transactions
+            .filter(t => t.type === 'expense')
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+        const totalIncome = transactions
+            .filter(t => t.type === 'income')
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+        const balance = totalIncome - totalSpent;
+
+        return `📊 **Balanço dos últimos 45 dias:**\n\n🟢 Receitas: R$ ${totalIncome.toFixed(2)}\n🔴 Despesas: R$ ${totalSpent.toFixed(2)}\n\n💰 **Saldo Líquido: R$ ${balance.toFixed(2)}**\n\n_Para detalhes completos, acesse a aba Relatórios._`;
+    }
+
+    return "Entendo sua preocupação. Como sou uma IA, às vezes posso ter instabilidades de conexão, mas seus dados estão seguros.\n\nNo momento, estou operando em **Modo Local** (offline) e posso te responder sobre:\n- Saldo atual\n- Resumo de gastos\n\nSe preferir falar com um humano, clique no ícone do **WhatsApp** no topo desta janela de chat. 👆";
+};
+
+module.exports = { generateFinancialInsights, chatWithAI, chatWithLocalIntelligence };

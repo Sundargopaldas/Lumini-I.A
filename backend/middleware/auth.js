@@ -4,6 +4,7 @@ const authMiddleware = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
 
   if (!token) {
+    console.log('[Auth] No token provided');
     return res.status(401).json({ message: 'No token, authorization denied' });
   }
 
@@ -12,6 +13,7 @@ const authMiddleware = (req, res, next) => {
     req.user = decoded.user;
     next();
   } catch (err) {
+    console.error('[Auth] Token invalid:', err.message);
     res.status(401).json({ message: 'Token is not valid' });
   }
 };

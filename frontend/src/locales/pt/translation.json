@@ -54,7 +54,12 @@
     "custom_source_label": "Nome Personalizado",
     "custom_source_placeholder": "Ex: Dividendos, Uber, etc.",
     "goal_help_text": "Se selecionado, este valor será adicionado ao progresso da meta.",
-    "save_button": "Salvar Transação"
+    "save_button": "Salvar Transação",
+    "emit_nfe": "Emitir NF-e",
+    "nfe_emitted": "NF-e Emitida",
+    "nfe_success": "NF-e emitida com sucesso!",
+    "nfe_error": "Erro ao emitir NF-e",
+    "copy_key": "Copiar Chave de Acesso"
   },
   "reports": {
     "title": "Relatórios Avançados",
@@ -240,7 +245,9 @@
     "expenses_month": "Despesas (Este Mês)",
     "top_expense": "Maior despesa",
     "balance_evolution": "Evolução do Saldo (6 Meses)",
-    "no_chart_data": "Sem dados para o gráfico",
+    "no_chart_data": "Dados insuficientes para exibir o gráfico.",
+    "revenue": "Receita",
+    "income_source": "Receita por Fonte",
     "recent_transactions": "Transações Recentes",
     "view_all": "Ver Todas",
     "no_transactions": "Nenhuma transação ainda."
@@ -265,7 +272,14 @@
     "limit_reached": "Limite Atingido",
     "nubank_desc": "Sincronize suas despesas e faturas de cartão de crédito automaticamente.",
     "hotmart_desc": "Importe suas vendas de produtos digitais em tempo real.",
-    "youtube_desc": "Acompanhe sua receita do AdSense diretamente."
+    "youtube_desc": "Acompanhe sua receita do AdSense diretamente.",
+    "pluggy_desc": "Conecte qualquer banco via Open Finance (Itaú, Bradesco, etc).",
+    "stripe_desc": "Receba pagamentos globais via cartão.",
+    "asaas_desc": "Automação de boletos e Pix com taxas reduzidas.",
+    "mobile_app": "App Mobile (Em breve)",
+    "mobile_app_desc": "Versão nativa para iOS e Android.",
+    "marketplace": "Marketplace de Contadores (Em breve)",
+    "marketplace_desc": "Encontre o contador ideal para o seu negócio."
   },
   "invoices": {
     "title": "Notas Fiscais (NFS-e)",
@@ -361,9 +375,14 @@
     "save_new_password": "Salvar Nova Senha",
     "back_to_login": "Voltar para o Login"
   },
+  "chat": {
+    "chat_placeholder": "Digite sua dúvida financeira...",
+    "chat_send": "Enviar",
+    "chat_typing": "Lumini está digitando..."
+  },
   "support": {
-    "tooltip": "Suporte Premium",
-    "chat_with_expert": "Falar com Especialista",
-    "whatsapp_message": "Olá! Sou assinante Pro/Premium e preciso de ajuda com a plataforma."
+    "whatsapp_message": "Olá, preciso de ajuda com o Lumini.",
+    "tooltip": "Falar com Especialista",
+    "chat_with_expert": "Falar com Especialista"
   }
 }

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import TrendChart from '../components/TrendChart';
+import SourceChart from '../components/SourceChart';
 import TransactionCard from '../components/TransactionCard';
 import GoalsWidget from '../components/GoalsWidget';
 import SubscriptionWidget from '../components/SubscriptionWidget';
@@ -201,6 +202,43 @@ const Dashboard = () => {
     };
   }, [transactions]);
 
+  // Source Chart Data
+  const sourceData = useMemo(() => {
+      if (!transactions.length) return null;
+
+      const incomeBySource = {};
+      transactions.forEach(t => {
+          if (t.type === 'income') {
+              const source = t.source || 'Manual';
+              incomeBySource[source] = (incomeBySource[source] || 0) + parseFloat(t.amount);
+          }
+      });
+
+      const labels = Object.keys(incomeBySource);
+      const data = Object.values(incomeBySource);
+      
+      // Colors for different sources
+      const backgroundColors = [
+          '#8b5cf6', // Violet
+          '#3b82f6', // Blue
+          '#10b981', // Emerald
+          '#f59e0b', // Amber
+          '#ef4444', // Red
+          '#ec4899', // Pink
+      ];
+
+      return {
+          labels,
+          datasets: [
+              {
+                  data,
+                  backgroundColor: backgroundColors.slice(0, labels.length),
+                  borderWidth: 0,
+              },
+          ],
+      };
+  }, [transactions]);
+
   const meiLimit = 81000;
   const meiPercentage = Math.min((metrics.annualRevenue / meiLimit) * 100, 100);
 
@@ -237,8 +275,9 @@ const Dashboard = () => {
           <h2 className="text-white font-semibold text-lg">{t('dashboard.mei_tracker')}</h2>
           <button 
             onClick={() => setIsTaxModalOpen(true)}
-            className="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-full transition-colors"
+            className="text-sm bg-white text-purple-700 hover:bg-gray-100 font-bold px-4 py-2 rounded-full shadow-lg transition-all transform hover:scale-105 flex items-center gap-2"
           >
+            <span>📊</span>
             {t('dashboard.simulate_taxes')}
           </button>
         </div>
@@ -291,9 +330,24 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className="space-y-6">
-          <GoalsWidget />
+        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{t('dashboard.income_source')}</h2>
+            <div className="h-64">
+                {sourceData ? (
+                    <SourceChart data={sourceData} />
+                ) : (
+                    <p className="text-slate-500 dark:text-gray-400 text-center mt-10">{t('dashboard.no_chart_data')}</p>
+                )}
+            </div>
+        </div>
+      </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+            <GoalsWidget />
+        </div>
+
+        <div className="space-y-6">
           <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
             <div className="flex justify-between items-center mb-4">
                <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('dashboard.recent_transactions')}</h2>

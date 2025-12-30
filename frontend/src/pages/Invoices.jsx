@@ -132,73 +132,107 @@ const Invoices = () => {
   const generatePDF = async (invoice) => {
     const doc = new jsPDF();
     
+    // Helper to draw barcode (Mock implementation of Interleaved 2 of 5 visual)
+    const drawBarcode = (x, y, width, height, code) => {
+        doc.setFillColor(0, 0, 0);
+        
+        // Calculate total units to ensure it fills the width exactly
+        // Even digit: 2 units bar + 1 unit gap = 3 units
+        // Odd digit: 1 unit bar + 1 unit gap = 2 units
+        const totalUnits = code.split('').reduce((acc, d) => acc + (parseInt(d, 10) % 2 === 0 ? 3 : 2), 0);
+        const thin = width / totalUnits; 
+
+        let currentX = x;
+        
+        for (let i = 0; i < code.length; i++) {
+            const val = parseInt(code[i], 10);
+            const isEven = val % 2 === 0;
+            const barW = (isEven ? 2 : 1) * thin; 
+            
+            doc.rect(currentX, y, barW, height, 'F');
+            currentX += barW + thin; // Gap
+        }
+        
+        // Code text
+        doc.setFontSize(9);
+        doc.setFont('courier', 'bold');
+        doc.text(code.match(/.{1,4}/g).join(' '), x + (width/2), y + height + 4, { align: 'center' });
+    };
+
     // --- HEADER ---
-    doc.setDrawColor(200, 200, 220); // Softer border
-    doc.setFillColor(79, 70, 229); // Brand Indigo
+    doc.setDrawColor(0, 0, 0); 
+    // Impactful Color: Dark Charcoal / Black (User requested "Impactful", "Blue is ugly")
+    doc.setFillColor(30, 41, 59); // Slate 800
     doc.rect(10, 10, 190, 28, 'F');
     doc.rect(10, 10, 190, 28);
     
     doc.setTextColor(255, 255, 255); // White Text
-    doc.setFontSize(14);
+    doc.setFontSize(16); // Larger
     doc.setFont('helvetica', 'bold');
-    // doc.text('PREFEITURA MUNICIPAL DE SÃO PAULO', 105, 18, { align: 'center' });
-    doc.setFontSize(14);
-    doc.text(t('invoices.pdf.nfse_title'), 105, 20, { align: 'center' });
-    doc.setFontSize(8);
+    doc.text(t('invoices.pdf.nfse_title').toUpperCase(), 105, 22, { align: 'center' });
+    
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     const rpsText = t('invoices.pdf.rps_text', { 
-        number: invoice.id, 
-        date: new Date(invoice.date).toLocaleDateString(i18n.language) 
+        number: invoice.id.toString().padStart(6, '0'), 
+        date: new Date(invoice.date || new Date()).toLocaleDateString(i18n.language) 
     });
     doc.text(rpsText, 105, 32, { align: 'center' });
     
-    doc.setTextColor(60, 60, 60); // Reset to Dark Gray
+    doc.setTextColor(30, 41, 59); // Dark Text
 
     // --- INFO ROW ---
-    let y = 40;
-    doc.rect(10, y, 190, 14);
+    let y = 42;
+    doc.rect(10, y, 190, 16);
     
     // Vertical dividers
-    doc.line(73, y, 73, y+14);
-    doc.line(136, y, 136, y+14);
+    doc.line(73, y, 73, y+16);
+    doc.line(136, y, 136, y+16);
 
     // Col 1: Numero
-    doc.setFontSize(7);
-    doc.text(t('invoices.pdf.note_number'), 41.5, y+4, { align: 'center' });
-    doc.setFontSize(11);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139); // Slate 500
+    doc.text(t('invoices.pdf.note_number'), 41.5, y+5, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setTextColor(30, 41, 59);
     doc.setFont('helvetica', 'bold');
-    doc.text(invoice.id, 41.5, y+10, { align: 'center' });
+    doc.text(invoice.id.toString().padStart(8, '0'), 41.5, y+12, { align: 'center' });
 
     // Col 2: Data Emissao
-    doc.setFontSize(7);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
     doc.setFont('helvetica', 'normal');
-    doc.text(t('invoices.pdf.issue_date'), 104.5, y+4, { align: 'center' });
-    doc.setFontSize(10);
+    doc.text(t('invoices.pdf.issue_date'), 104.5, y+5, { align: 'center' });
+    doc.setFontSize(11);
+    doc.setTextColor(30, 41, 59);
     doc.setFont('helvetica', 'bold');
-    // Use invoice issue date, fallback to now
     const issueDate = invoice.date ? new Date(invoice.date) : new Date();
-    doc.text(`${issueDate.toLocaleDateString(i18n.language)} ${issueDate.toLocaleTimeString(i18n.language)}`, 104.5, y+10, { align: 'center' });
+    doc.text(`${issueDate.toLocaleDateString(i18n.language)} ${issueDate.toLocaleTimeString(i18n.language)}`, 104.5, y+12, { align: 'center' });
 
     // Col 3: Codigo Verificacao
-    doc.setFontSize(7);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
     doc.setFont('helvetica', 'normal');
-    doc.text(t('invoices.pdf.verification_code'), 168, y+4, { align: 'center' });
-    doc.setFontSize(10);
+    doc.text(t('invoices.pdf.verification_code'), 168, y+5, { align: 'center' });
+    doc.setFontSize(11);
+    doc.setTextColor(30, 41, 59);
     doc.setFont('helvetica', 'bold');
-    // Generate a mock hash for verification code
-    const mockHash = `A${invoice.id}B-2025-${Math.floor(Math.random() * 1000)}`;
-    doc.text(mockHash, 168, y+10, { align: 'center' });
+    const mockHash = `A${invoice.id}B-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`;
+    doc.text(mockHash, 168, y+12, { align: 'center' });
 
     // --- PRESTADOR ---
-    y += 16;
-    doc.rect(10, y, 190, 35);
-    doc.setFillColor(238, 242, 255); // Light Indigo
-    doc.rect(10, y, 190, 6, 'F');
-    doc.setFontSize(8);
+    y += 20;
+    doc.rect(10, y, 190, 38);
+    // Header Bar
+    doc.setFillColor(241, 245, 249); // Slate 100 (Light Gray)
+    doc.rect(10, y, 190, 7, 'F');
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(79, 70, 229); // Brand Indigo
-    doc.text(t('invoices.pdf.provider_title'), 105, y+4, { align: 'center' });
-    doc.setTextColor(60, 60, 60); // Reset
+    doc.setTextColor(30, 41, 59); // Slate 800
+    doc.text(t('invoices.pdf.provider_title').toUpperCase(), 105, y+5, { align: 'center' });
+    
+    // ... Logo Logic ...
+
 
     // Logo Logic
     let logoAdded = false;
@@ -235,12 +269,12 @@ const Invoices = () => {
     // --- TOMADOR ---
     y += 37;
     doc.rect(10, y, 190, 30);
-    doc.setFillColor(238, 242, 255);
+    doc.setFillColor(241, 245, 249); // Slate 100
     doc.rect(10, y, 190, 6, 'F');
-    doc.setFontSize(8);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(79, 70, 229);
-    doc.text(t('invoices.pdf.client_title'), 105, y+4, { align: 'center' });
+    doc.setTextColor(30, 41, 59); // Slate 800
+    doc.text(t('invoices.pdf.client_title').toUpperCase(), 105, y+5, { align: 'center' });
     doc.setTextColor(60, 60, 60);
 
     doc.setFontSize(9);
@@ -256,12 +290,12 @@ const Invoices = () => {
     y += 32;
     // Calculate height based on text length
     doc.rect(10, y, 190, 50);
-    doc.setFillColor(238, 242, 255);
+    doc.setFillColor(241, 245, 249); // Slate 100
     doc.rect(10, y, 190, 6, 'F');
-    doc.setFontSize(8);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(79, 70, 229);
-    doc.text(t('invoices.pdf.service_desc_title'), 105, y+4, { align: 'center' });
+    doc.setTextColor(30, 41, 59); // Slate 800
+    doc.text(t('invoices.pdf.service_desc_title').toUpperCase(), 105, y+5, { align: 'center' });
     doc.setTextColor(60, 60, 60);
     
     doc.setFont('helvetica', 'normal');
@@ -275,7 +309,7 @@ const Invoices = () => {
     doc.rect(10, y, 190, 20);
     
     // Header Row
-    doc.setFillColor(238, 242, 255);
+    doc.setFillColor(241, 245, 249); // Slate 100
     doc.rect(10, y, 190, 6, 'F');
     
     const colWidth = 190/6;
@@ -283,7 +317,7 @@ const Invoices = () => {
     
     doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(79, 70, 229);
+    doc.setTextColor(30, 41, 59); // Slate 800
     headers.forEach((h, i) => {
         doc.text(h, 10 + (i * colWidth) + (colWidth/2), y+4, { align: 'center' });
         // Vertical lines
@@ -305,7 +339,8 @@ const Invoices = () => {
     
     vals.forEach((v, i) => {
         doc.text(v, 10 + (i * colWidth) + (colWidth/2), y+12, { align: 'center' });
-        if(i > 0) doc.line(10 + (i * colWidth), y+6, 10 + (i * colWidth), y+20);
+        // Vertical lines should stop at the separator line (y+14) to not cross the Total text
+        if(i > 0) doc.line(10 + (i * colWidth), y+6, 10 + (i * colWidth), y+14);
     });
     
     doc.line(10, y+14, 200, y+14); // Separator
@@ -313,7 +348,7 @@ const Invoices = () => {
     // Total Line
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text('VALOR TOTAL DA NOTA:', 130, y+18);
+    doc.text('VALOR TOTAL DA NOTA:', 110, y+18);
     doc.text(valor.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}), 195, y+18, { align: 'right' });
 
     // --- RODAPÉ ---
@@ -323,8 +358,16 @@ const Invoices = () => {
     doc.text('Documento emitido por ME ou EPP optante pelo Simples Nacional.', 105, y, { align: 'center' });
     doc.text('Não gera direito a crédito fiscal de IPI.', 105, y+4, { align: 'center' });
     
+    // --- BARCODE ---
+    y += 8;
+    // Use invoice Access Key if available, or generate a valid-looking 44 digit mock
+    const randomDigits = (len) => Array.from({length: len}, () => Math.floor(Math.random()*10)).join('');
+    const accessKey = invoice.nfeAccessKey || `35${new Date().getFullYear()}${randomDigits(38)}`;
+    drawBarcode(50, y, 110, 15, accessKey); // Centered barcode
+
     // Save
     doc.save(`NFS-e-${invoice.id}.pdf`);
+
   };
 
   if (!isPremium) {

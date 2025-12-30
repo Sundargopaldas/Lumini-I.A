@@ -5,6 +5,44 @@ const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 const Goal = require('../models/Goal');
 
+const nfeService = require('../services/nfeService');
+
+// Emit NF-e for a transaction
+router.post('/:id/emit-nfe', auth, async (req, res) => {
+    try {
+        const transaction = await Transaction.findOne({
+            where: { id: req.params.id, userId: req.user.id }
+        });
+
+        if (!transaction) {
+            return res.status(404).json({ message: 'Transaction not found' });
+        }
+
+        const user = await User.findByPk(req.user.id);
+
+        try {
+            const nfeResult = await nfeService.emitNfe(transaction, user);
+            
+            // Update Transaction
+            transaction.nfeStatus = 'emitted';
+            transaction.nfeUrl = nfeResult.pdfUrl;
+            transaction.nfeAccessKey = nfeResult.nfeAccessKey;
+            await transaction.save();
+
+            res.json({ message: 'NF-e emitted successfully', nfeUrl: nfeResult.pdfUrl, nfeAccessKey: nfeResult.nfeAccessKey });
+        } catch (serviceError) {
+            console.error('NF-e Service Error:', serviceError);
+            transaction.nfeStatus = 'error';
+            await transaction.save();
+            return res.status(400).json({ message: serviceError.message });
+        }
+
+    } catch (err) {
+        console.error('Server Error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Get all transactions for the user
 router.get('/', auth, async (req, res) => {
   try {

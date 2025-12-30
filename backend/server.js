@@ -98,51 +98,55 @@ const startServer = async () => {
         await sequelize.query("ALTER TABLE Users ADD COLUMN cpfCnpj VARCHAR(255);");
         console.log("Added cpfCnpj column to Users table.");
     } catch (err) {
-        // Column likely exists
-        console.log("Note: cpfCnpj column check - " + err.message);
+        if (!err.original || err.original.code !== 'ER_DUP_FIELDNAME') {
+             // Ignore duplicate column error, log others
+             console.log("Note: cpfCnpj column check - " + err.message);
+        }
     }
 
-    // Manual migration for name and address
+    // Manual migration for NfeStatus (safe add)
     try {
-        await sequelize.query("ALTER TABLE Users ADD COLUMN name VARCHAR(255);");
-        console.log("Added name column to Users table.");
+        await sequelize.query("ALTER TABLE Transactions ADD COLUMN nfeStatus ENUM('pending', 'emitted', 'error') DEFAULT 'pending';");
+        console.log("Added nfeStatus column to Transactions table.");
     } catch (err) {
-         // Ignore if exists
-    }
-    try {
-        await sequelize.query("ALTER TABLE Users ADD COLUMN address VARCHAR(255);");
-        console.log("Added address column to Users table.");
-    } catch (err) {
-         // Ignore if exists
+        // Ignore if exists
     }
 
-    // Manual migration for logo (safe add)
     try {
-        await sequelize.query("ALTER TABLE Users ADD COLUMN logo VARCHAR(255);");
-        console.log("Added logo column to Users table.");
+        await sequelize.query("ALTER TABLE Transactions ADD COLUMN nfeUrl VARCHAR(255);");
+        console.log("Added nfeUrl column to Transactions table.");
     } catch (err) {
-        // Column likely exists
-        console.log("Note: logo column check - " + err.message);
+        // Ignore if exists
     }
 
-    // Manual migration for fitId in Transactions (safe add)
+    // Manual migration for Logo
     try {
-        await sequelize.query("ALTER TABLE Transactions ADD COLUMN fitId VARCHAR(255);");
-        console.log("Added fitId column to Transactions table.");
+      await sequelize.query("ALTER TABLE Users ADD COLUMN logo VARCHAR(255);");
+      console.log("Added logo column to Users table.");
     } catch (err) {
-        // Column likely exists
-        console.log("Note: fitId column check - " + err.message);
+      if (!err.original || err.original.code !== 'ER_DUP_FIELDNAME') {
+           console.log("Note: logo column check - " + err.message);
+      }
     }
 
+    // Manual migration for fitId (Financial Institution ID)
+    try {
+      await sequelize.query("ALTER TABLE Transactions ADD COLUMN fitId VARCHAR(255);");
+      console.log("Added fitId column to Transactions table.");
+    } catch (err) {
+      if (!err.original || err.original.code !== 'ER_DUP_FIELDNAME') {
+           console.log("Note: fitId column check - " + err.message);
+      }
+    }
+    
     console.log('Database synchronized.');
 
     const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
-    
-    // Handle errors
-    server.on('error', (error) => {
-       console.error('Server error:', error);
+
+    server.on('error', (e) => {
+        console.error('Server error:', e);
     });
 
   } catch (error) {
@@ -150,13 +154,18 @@ const startServer = async () => {
   }
 };
 
-startServer();
+process.on('exit', (code) => {
+    console.log(`Process exiting with code: ${code}`);
+});
+
+process.on('SIGINT', () => {
+    console.log('Received SIGINT. Exiting...');
+    process.exit();
+});
 
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
+    console.error('Uncaught Exception:', err);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
+startServer();
 

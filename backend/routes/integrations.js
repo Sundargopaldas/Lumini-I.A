@@ -6,6 +6,9 @@ const User = require('../models/User');
 const Integration = require('../models/Integration');
 const BankingService = require('../services/BankingService');
 const YouTubeService = require('../services/YouTubeService');
+const PluggyService = require('../services/PluggyService');
+const StripeService = require('../services/StripeService');
+const AsaasService = require('../services/AsaasService');
 
 // Get all connected integrations
 router.get('/', auth, async (req, res) => {
@@ -107,6 +110,15 @@ router.post('/sync', auth, async (req, res) => {
             source: t.category, 
             date: t.date
         }));
+    } else if (provider === 'Open Finance' || provider === 'Pluggy') {
+        const pluggyData = await PluggyService.fetchTransactions();
+        newTransactions = pluggyData;
+    } else if (provider === 'Stripe') {
+        const stripeData = await StripeService.fetchRecentPayments();
+        newTransactions = stripeData;
+    } else if (provider === 'Asaas') {
+        const asaasData = await AsaasService.fetchReceivables();
+        newTransactions = asaasData;
     } else if (provider === 'YouTube') {
         const ytData = await YouTubeService.getChannelRevenue('CHANNEL_ID_MOCK');
         newTransactions = ytData.transactions;

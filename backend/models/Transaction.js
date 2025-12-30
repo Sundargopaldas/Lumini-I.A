@@ -21,6 +21,20 @@ const Transaction = sequelize.define('Transaction', {
     type: DataTypes.STRING,
     allowNull: true, // e.g., 'Hotmart', 'YouTube', 'Client'
   },
+  nfeStatus: {
+    type: DataTypes.ENUM('pending', 'emitted', 'error'),
+    defaultValue: 'pending',
+    allowNull: true
+  },
+  nfeUrl: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  nfeAccessKey: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    comment: '44-digit Access Key (Chave de Acesso)'
+  },
   type: {
     type: DataTypes.STRING, // 'income' or 'expense'
     allowNull: false,

@@ -12,7 +12,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Integrations from './pages/Integrations';
 import Settings from './pages/Settings';
-import SupportWidget from './components/SupportWidget';
+import WhatsAppWidget from './components/WhatsAppWidget';
 
 const PrivateRoute = ({ children }) => {
   try {
@@ -62,7 +62,9 @@ function App() {
                       <Route path="/settings" element={<Settings />} />
                     </Routes>
                 </div>
-                <SupportWidget />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                    <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
               </ErrorBoundary>
             </PrivateRoute>
           } />

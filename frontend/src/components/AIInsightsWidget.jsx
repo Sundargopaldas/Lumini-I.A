@@ -2,6 +2,36 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useTranslation } from 'react-i18next';
 
+// Simple Markdown Renderer Component (if package not available, we can fallback to simple text or just basic replacement)
+// For now, let's assume we render text with line breaks and basic bolding if ReactMarkdown isn't installed.
+// Or better, let's process the text to replace ** with <b>
+
+const SimpleMarkdown = ({ text }) => {
+    if (!text) return null;
+    
+    // Split by newlines
+    const lines = text.split('\n');
+    
+    return (
+        <div className="space-y-1">
+            {lines.map((line, i) => {
+                // Replace **bold** with <strong>bold</strong>
+                const parts = line.split(/(\*\*.*?\*\*)/g);
+                return (
+                    <p key={i} className="min-h-[1rem]">
+                        {parts.map((part, j) => {
+                            if (part.startsWith('**') && part.endsWith('**')) {
+                                return <strong key={j} className="text-purple-300">{part.slice(2, -2)}</strong>;
+                            }
+                            return part;
+                        })}
+                    </p>
+                );
+            })}
+        </div>
+    );
+};
+
 const AIInsightsWidget = () => {
   const { t } = useTranslation();
   const [insights, setInsights] = useState([]);
@@ -11,15 +41,15 @@ const AIInsightsWidget = () => {
   useEffect(() => {
     const fetchInsights = async () => {
       try {
-        // Simulate a slight delay for the "AI Thinking" effect
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        const response = await api.get('/ai/insights');
+        setLoading(true);
+        // Remove simulated delay, real API takes time
+        // Increase timeout for AI request as it might take longer
+        const response = await api.get('/ai/insights', { timeout: 30000 });
         setInsights(response.data);
         setLoading(false);
       } catch (err) {
         console.error('Failed to fetch AI insights', err);
-        setError('Failed to load insights');
+        setError('Não foi possível conectar ao Consultor IA no momento.');
         setLoading(false);
       }
     };
@@ -32,6 +62,7 @@ const AIInsightsWidget = () => {
       case 'warning': return '⚠️';
       case 'success': return '✅';
       case 'ai_prediction': return '🔮';
+      case 'ai_consultant': return '🤖';
       default: return '💡';
     }
   };
@@ -41,6 +72,7 @@ const AIInsightsWidget = () => {
       case 'warning': return 'bg-red-500/10 border-red-500/20 text-red-200';
       case 'success': return 'bg-green-500/10 border-green-500/20 text-green-200';
       case 'ai_prediction': return 'bg-purple-500/10 border-purple-500/20 text-purple-200';
+      case 'ai_consultant': return 'bg-indigo-500/10 border-indigo-500/20 text-indigo-100';
       default: return 'bg-blue-500/10 border-blue-500/20 text-blue-200';
     }
   };
@@ -57,7 +89,7 @@ const AIInsightsWidget = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
         </div>
-        <h2 className="text-xl font-bold text-white">Lumini I.A - Insights</h2>
+        <h2 className="text-xl font-bold text-white">Consultor IA</h2>
         {loading && (
             <span className="flex h-3 w-3 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
@@ -70,7 +102,7 @@ const AIInsightsWidget = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full py-8 space-y-3">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
-            <p className="text-slate-400 text-sm animate-pulse">Analisando seus padrões financeiros...</p>
+            <p className="text-slate-400 text-sm animate-pulse">Consultando a Inteligência Artificial...</p>
           </div>
         ) : error ? (
           <div className="text-center py-8 text-red-400">
@@ -84,9 +116,15 @@ const AIInsightsWidget = () => {
             >
               <div className="flex items-start gap-3">
                 <span className="text-xl mt-0.5">{getIcon(insight.type)}</span>
-                <div>
-                  <h3 className="font-bold text-sm mb-1">{insight.title}</h3>
-                  <p className="text-xs opacity-90 leading-relaxed">{insight.message}</p>
+                <div className="w-full">
+                  <h3 className="font-bold text-sm mb-2">{insight.title}</h3>
+                  {insight.isMarkdown ? (
+                      <div className="text-xs opacity-90 leading-relaxed text-slate-200">
+                          <SimpleMarkdown text={insight.message} />
+                      </div>
+                  ) : (
+                      <p className="text-xs opacity-90 leading-relaxed">{insight.message}</p>
+                  )}
                 </div>
               </div>
             </div>

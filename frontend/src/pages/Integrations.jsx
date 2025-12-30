@@ -30,6 +30,35 @@ const Integrations = () => {
   };
 
   const integrations = [
+    // Phase 2: Open Finance & Payments
+    {
+      id: 'pluggy',
+      name: 'Open Finance',
+      type: 'Bank',
+      logo: 'https://docs.pluggy.ai/img/logo.png',
+      color: 'bg-blue-600',
+      description: t('integrations.pluggy_desc'),
+      isNew: true
+    },
+    {
+      id: 'stripe',
+      name: 'Stripe',
+      type: 'Payment',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg',
+      color: 'bg-indigo-600',
+      description: t('integrations.stripe_desc'),
+      isNew: true
+    },
+    {
+      id: 'asaas',
+      name: 'Asaas',
+      type: 'Payment',
+      logo: 'https://cdn.icon-icons.com/icons2/2699/PNG/512/asaas_logo_icon_169993.png',
+      color: 'bg-blue-500',
+      description: t('integrations.asaas_desc'),
+      isNew: true
+    },
+    // Existing
     {
       id: 'nubank',
       name: 'Nubank',
@@ -54,6 +83,31 @@ const Integrations = () => {
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/2560px-YouTube_full-color_icon_%282017%29.svg.png',
       color: 'bg-red-600',
       description: t('integrations.youtube_desc')
+    }
+  ];
+
+  const roadmapItems = [
+    {
+        id: 'mobile',
+        name: t('integrations.mobile_app'),
+        description: t('integrations.mobile_app_desc'),
+        type: 'Roadmap',
+        icon: (
+            <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+        )
+    },
+    {
+        id: 'marketplace',
+        name: t('integrations.marketplace'),
+        description: t('integrations.marketplace_desc'),
+        type: 'Roadmap',
+        icon: (
+            <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+        )
     }
   ];
 
@@ -221,7 +275,14 @@ const Integrations = () => {
                  />
               </div>
               <div className="flex justify-between items-start mb-2">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{integration.name}</h3>
+                <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">{integration.name}</h3>
+                    {integration.isNew && (
+                        <span className="text-xs font-bold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800">
+                            Novo
+                        </span>
+                    )}
+                </div>
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 px-2 py-1 rounded border border-gray-200 dark:border-none">{integration.type}</span>
               </div>
               <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">{integration.description}</p>
@@ -273,6 +334,38 @@ const Integrations = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Roadmap Section */}
+      <div className="mt-16 pt-8 border-t border-gray-200 dark:border-white/10">
+        <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('integrations.roadmap_title') || "Em Breve (Roadmap)"}</h2>
+            <span className="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-bold uppercase tracking-wider">
+                Fase 3
+            </span>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {roadmapItems.map((item) => (
+                <div key={item.id} className="group relative overflow-hidden bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/50 border-dashed rounded-2xl p-6 flex items-start gap-4 opacity-75 hover:opacity-100 transition-all hover:bg-slate-100 dark:hover:bg-slate-800/50">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white dark:bg-slate-700 shadow-sm text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                        {item.icon}
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-700 dark:text-gray-200 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+                            {item.name}
+                        </h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                            {item.description}
+                        </p>
+                        <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse"></span>
+                            Em Desenvolvimento
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
       </div>
     </div>
   );

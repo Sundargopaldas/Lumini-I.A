@@ -5,9 +5,10 @@ import CustomAlert from './CustomAlert';
 
 const TaxSimulatorModal = ({ isOpen, onClose }) => {
   const [revenue, setRevenue] = useState({ service: 0, commerce: 0 });
+  const [irpfData, setIrpfData] = useState({ grossIncome: 0, dependents: 0, otherDeductions: 0 });
   
   // Advanced Mode State
-  const [mode, setMode] = useState('mei'); // 'mei' or 'simples'
+  const [mode, setMode] = useState('mei'); // 'mei', 'simples', 'irpf'
   const [anexo, setAnexo] = useState('III'); // 'III' or 'V' for Simples Nacional
 
   // Custom Alert State
@@ -33,30 +34,89 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   // 2025 MEI Values (Estimated)
-  // INSS (5% of min wage R$ 1502) = 75.10
-  // ICMS (Commerce) = 1.00
-  // ISS (Service) = 5.00
-  const INSS = 75.10;
+  const INSS_MEI = 75.10;
   const ICMS = 1.00;
   const ISS = 5.00;
 
+  // Helper to parse BRL currency (e.g. "1.000,00" -> 1000.00)
+  const parseMoney = (value) => {
+    if (typeof value === 'number') return value;
+    if (!value) return 0;
+    // Remove non-numeric/dot/comma
+    const cleanStr = value.toString().replace(/[^0-9.,]/g, '');
+    // If it has a comma, treat as BRL (dot=thousand, comma=decimal)
+    if (cleanStr.includes(',')) {
+        return parseFloat(cleanStr.replace(/\./g, '').replace(',', '.')) || 0;
+    }
+    // If no comma, but has dots:
+    // "1.000" -> 1000 (Treat dot as thousand separator preference in BRL context)
+    // But "1.5" -> 1.5 (Standard JS)
+    // To solve "4.500" issue, let's assume if it looks like thousands (3 digits after dot), it's thousands.
+    // But simplest is: just treat dot as thousand separator if we are strictly BRL.
+    // However, let's stick to a hybrid safe approach:
+    // If user types "1000.50", we want 1000.50.
+    // If user types "1.000", we want 1000.
+    // Let's rely on the user using comma for decimal as hinted by placeholder.
+    // Fallback to standard parseFloat if no comma.
+    return parseFloat(cleanStr) || 0;
+  };
+
+  // IRPF Calculation Helper
+  const calculateIRPF = () => {
+    const gross = parseMoney(irpfData.grossIncome);
+    
+    // 1. Calculate INSS (2024 Progressive Table)
+    let inss = 0;
+    if (gross <= 1412.00) inss = gross * 0.075;
+    else if (gross <= 2666.68) inss = (1412 * 0.075) + ((gross - 1412) * 0.09);
+    else if (gross <= 4000.03) inss = (1412 * 0.075) + ((2666.68 - 1412) * 0.09) + ((gross - 2666.68) * 0.12);
+    else if (gross <= 7786.02) inss = (1412 * 0.075) + ((2666.68 - 1412) * 0.09) + ((4000.03 - 2666.68) * 0.12) + ((gross - 4000.03) * 0.14);
+    else inss = (1412 * 0.075) + ((2666.68 - 1412) * 0.09) + ((4000.03 - 2666.68) * 0.12) + ((7786.02 - 4000.03) * 0.14); // Teto
+
+    // 2. Calculate Base Calculation
+    const deductionDependents = (parseInt(irpfData.dependents) || 0) * 189.59;
+    const baseCalc = gross - inss - deductionDependents - parseMoney(irpfData.otherDeductions);
+
+
+    // 3. Apply IRPF Table (2024/2025)
+    let irpf = 0;
+    if (baseCalc <= 2259.20) {
+        irpf = 0;
+    } else if (baseCalc <= 2826.65) {
+        irpf = (baseCalc * 0.075) - 169.44;
+    } else if (baseCalc <= 3751.05) {
+        irpf = (baseCalc * 0.15) - 381.44;
+    } else if (baseCalc <= 4664.68) {
+        irpf = (baseCalc * 0.225) - 662.77;
+    } else {
+        irpf = (baseCalc * 0.275) - 896.00;
+    }
+
+    return {
+        inss: inss,
+        baseCalc: Math.max(0, baseCalc),
+        irpf: Math.max(0, irpf),
+        netIncome: gross - inss - Math.max(0, irpf)
+    };
+  };
+
   const calculateDAS = () => {
     if (mode === 'mei') {
-        let total = INSS;
-        if (revenue.commerce > 0) total += ICMS;
-        if (revenue.service > 0) total += ISS;
+        let total = INSS_MEI;
+        if (parseMoney(revenue.commerce) > 0) total += ICMS;
+        if (parseMoney(revenue.service) > 0) total += ISS;
         return total;
-    } else {
+    } else if (mode === 'simples') {
         // Simples Nacional Logic (Simplified)
-        // Anexo III: ~6% starting
-        // Anexo V: ~15.5% starting
-        const totalRev = parseFloat(revenue.service) + parseFloat(revenue.commerce);
+        const totalRev = parseMoney(revenue.service) + parseMoney(revenue.commerce);
         const rate = anexo === 'III' ? 0.06 : 0.155;
         return totalRev * rate;
+    } else {
+        return 0; // Handled by calculateIRPF
     }
   };
 
-  const totalRevenue = parseFloat(revenue.service) + parseFloat(revenue.commerce);
+  const totalRevenue = parseMoney(revenue.service) + parseMoney(revenue.commerce);
   const annualProjection = totalRevenue * 12;
   const meiLimit = 81000;
   const simplesLimit = 4800000;
@@ -65,6 +125,8 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
 
   const generatePDF = () => {
     const doc = new jsPDF();
+    const companyName = user.name || 'Nome da Empresa Não Informado';
+    const documentId = user.cpfCnpj || 'CPF/CNPJ Não Informado';
 
     // Header
     doc.setFontSize(22);
@@ -73,55 +135,115 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
     
     doc.setFontSize(14);
     doc.setTextColor(100);
-    doc.text('Relatório de Simulação Fiscal', 14, 30);
+    doc.text(mode === 'irpf' ? 'Simulação de Imposto de Renda (IRPF)' : 'Relatório de Simulação Fiscal', 14, 30);
 
+    // Company Info
     doc.setFontSize(10);
-    doc.setTextColor(150);
-    doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, 14, 36);
+    doc.setTextColor(80);
+    doc.text(`Empresa/Usuário: ${companyName}`, 14, 38);
+    doc.text(`CPF/CNPJ: ${documentId}`, 14, 43);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString()} às ${new Date().toLocaleTimeString()}`, 14, 48);
 
-    // Section: Input Data
-    autoTable(doc, {
-        startY: 45,
-        head: [['Parâmetro', 'Valor']],
-        body: [
-            ['Regime Tributário', mode === 'mei' ? 'MEI (Microempreendedor Individual)' : 'Simples Nacional'],
-            ['Anexo (Se Simples)', mode === 'simples' ? (anexo === 'III' ? 'Anexo III (Serviços Gerais)' : 'Anexo V (Intelectual)') : 'N/A'],
-            ['Faturamento Mensal (Serviço)', `R$ ${parseFloat(revenue.service).toFixed(2)}`],
-            ['Faturamento Mensal (Comércio)', `R$ ${parseFloat(revenue.commerce).toFixed(2)}`],
-            ['Projeção Anual', `R$ ${annualProjection.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
-        ],
-        theme: 'grid',
-        headStyles: { fillColor: [112, 26, 117] }, // Purple
-    });
+    if (mode === 'irpf') {
+        const result = calculateIRPF();
+        
+        // Input Data
+        autoTable(doc, {
+            startY: 55,
+            head: [['Parâmetro', 'Valor']],
+            body: [
+                ['Renda Bruta Mensal', `R$ ${parseMoney(irpfData.grossIncome).toFixed(2)}`],
+                ['Dependentes', irpfData.dependents],
+                ['Outras Deduções', `R$ ${parseMoney(irpfData.otherDeductions).toFixed(2)}`],
+            ],
+            theme: 'grid',
+            headStyles: { fillColor: [112, 26, 117] },
+        });
 
-    // Section: Results
-    const monthlyTax = calculateDAS();
-    const annualTax = monthlyTax * 12;
+        // Results
+        autoTable(doc, {
+            startY: doc.lastAutoTable.finalY + 10,
+            head: [['Detalhamento', 'Valor']],
+            body: [
+                ['Desconto INSS (Estimado)', `R$ ${result.inss.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+                ['Base de Cálculo', `R$ ${result.baseCalc.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+                ['Imposto de Renda (IRPF)', `R$ ${result.irpf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+                ['Salário Líquido', `R$ ${result.netIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+                ['Alíquota Efetiva', `${((result.irpf / (parseMoney(irpfData.grossIncome) || 1)) * 100).toFixed(2)}%`],
+            ],
+            theme: 'striped',
+            headStyles: { fillColor: [40, 40, 40] },
+        });
+    } else {
+        // MEI/Simples Logic
+        autoTable(doc, {
+            startY: 55,
+            head: [['Parâmetro', 'Valor']],
+            body: [
+                ['Regime Tributário', mode === 'mei' ? 'MEI (Microempreendedor Individual)' : 'Simples Nacional'],
+                ['Anexo (Se Simples)', mode === 'simples' ? (anexo === 'III' ? 'Anexo III (Serviços Gerais)' : 'Anexo V (Intelectual)') : 'N/A'],
+                ['Faturamento Mensal (Serviço)', `R$ ${parseMoney(revenue.service).toFixed(2)}`],
+                ['Faturamento Mensal (Comércio)', `R$ ${parseMoney(revenue.commerce).toFixed(2)}`],
+                ['Projeção Anual', `R$ ${annualProjection.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+            ],
+            theme: 'grid',
+            headStyles: { fillColor: [112, 26, 117] },
+        });
 
-    autoTable(doc, {
-        startY: doc.lastAutoTable.finalY + 10,
-        head: [['Resultado Estimado', 'Valor']],
-        body: [
-            ['Imposto Mensal (Estimado)', `R$ ${monthlyTax.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
-            ['Custo Anual de Impostos', `R$ ${annualTax.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
-            ['Status do Limite Anual', isOverLimit ? '⚠️ ACIMA DO LIMITE' : '✅ DENTRO DO LIMITE'],
-            ['Aliquota Efetiva (Aprox.)', `${((monthlyTax / (totalRevenue || 1)) * 100).toFixed(2)}%`],
-        ],
-        theme: 'striped',
-        headStyles: { fillColor: [40, 40, 40] }, // Dark Gray
-    });
+        const monthlyTax = calculateDAS();
+        const annualTax = monthlyTax * 12;
 
-    // Disclaimer
-    doc.setFontSize(8);
-    doc.setTextColor(150);
+        autoTable(doc, {
+            startY: doc.lastAutoTable.finalY + 10,
+            head: [['Resultado Estimado', 'Valor']],
+            body: [
+                ['Imposto Mensal (Estimado)', `R$ ${monthlyTax.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+                ['Custo Anual de Impostos', `R$ ${annualTax.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+                ['Status do Limite Anual', isOverLimit ? '⚠️ ACIMA DO LIMITE' : '✅ DENTRO DO LIMITE'],
+                ['Aliquota Efetiva (Aprox.)', `${((monthlyTax / (totalRevenue || 1)) * 100).toFixed(2)}%`],
+            ],
+            theme: 'striped',
+            headStyles: { fillColor: [40, 40, 40] },
+        });
+    }
+
+    // Professional Disclaimer & Signature Area
+    const finalY = doc.lastAutoTable.finalY + 20;
+    
+    doc.setLineWidth(0.5);
+    doc.setDrawColor(200);
+    doc.line(14, finalY, 196, finalY); // Horizontal separator
+
+    doc.setFontSize(9);
+    doc.setTextColor(80);
     doc.text(
-        'Aviso: Esta simulação é apenas para fins informativos e não substitui o cálculo oficial de um contador.',
+        'Este documento foi gerado pela plataforma Lumini I.A para fins de planejamento e estimativa fiscal.',
         14,
-        doc.lastAutoTable.finalY + 15
+        finalY + 10
+    );
+    doc.text(
+        'Os valores são calculados com base nas tabelas vigentes, mas podem sofrer variações conforme legislação específica.',
+        14,
+        finalY + 15
+    );
+    doc.text(
+        'Recomendamos que este relatório seja validado pelo seu contador antes da emissão de guias oficiais.',
+        14,
+        finalY + 20
     );
 
-    doc.save('simulacao-fiscal-lumini.pdf');
-    showAlert('Sucesso', 'Relatório PDF gerado com sucesso!', 'success');
+    // Accountant Signature Section
+    doc.setDrawColor(0);
+    doc.line(14, finalY + 45, 100, finalY + 45); // Signature line
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    doc.text('Validação do Contador Responsável', 14, finalY + 52);
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text('Carimbo / Assinatura', 14, finalY + 57);
+
+    doc.save(`lumini-relatorio-fiscal-${mode}.pdf`);
+    showAlert('Sucesso', 'Relatório profissional gerado com sucesso!', 'success');
   };
 
   return (
@@ -133,7 +255,7 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
         message={alertState.message}
         type={alertState.type}
       />
-      <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+      <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl relative max-h-[90vh] overflow-y-auto">
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
@@ -141,13 +263,13 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
           ✕
         </button>
         
-        <h2 className="text-2xl font-bold text-white mb-6">Tax Simulator (Advanced)</h2>
+        <h2 className="text-2xl font-bold text-white mb-6">Central Fiscal Lumini</h2>
         
         {/* Mode Toggle */}
         <div className="flex bg-slate-800 rounded-lg p-1 mb-6">
             <button 
                 onClick={() => setMode('mei')}
-                className={`flex-1 py-1 rounded-md text-sm font-medium transition-colors ${mode === 'mei' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                className={`flex-1 py-1 rounded-md text-xs sm:text-sm font-medium transition-colors ${mode === 'mei' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}
             >
                 MEI
             </button>
@@ -156,81 +278,156 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
                     if (isPro) {
                         setMode('simples');
                     } else {
-                        showAlert('Premium Feature', 'Simples Nacional simulation is a PRO feature. Upgrade to unlock!', 'locked');
+                        showAlert('Premium Feature', 'Simulação Simples Nacional é exclusiva PRO.', 'locked');
                     }
                 }}
-                className={`flex-1 py-1 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${mode === 'simples' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'} ${!isPro ? 'opacity-75' : ''}`}
+                className={`flex-1 py-1 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-1 ${mode === 'simples' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'} ${!isPro ? 'opacity-75' : ''}`}
             >
-                Simples Nacional
+                Simples
                 {!isPro && <span>🔒</span>}
+            </button>
+            <button 
+                onClick={() => setMode('irpf')}
+                className={`flex-1 py-1 rounded-md text-xs sm:text-sm font-medium transition-colors ${mode === 'irpf' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+                IRPF (Pessoa Física)
             </button>
         </div>
 
         <div className="space-y-4">
-          {mode === 'simples' && (
-              <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Anexo (Service Type)</label>
-                  <select 
-                    value={anexo}
-                    onChange={(e) => setAnexo(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
-                  >
-                      <option value="III">Anexo III (General Services - 6%)</option>
-                      <option value="V">Anexo V (Intellectual Services - 15.5%)</option>
-                  </select>
-              </div>
+          
+          {/* MEI / SIMPLES INPUTS */}
+          {(mode === 'mei' || mode === 'simples') && (
+            <>
+                {mode === 'simples' && (
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Anexo (Tipo de Serviço)</label>
+                        <select 
+                            value={anexo}
+                            onChange={(e) => setAnexo(e.target.value)}
+                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                        >
+                            <option value="III">Anexo III (Serviços Gerais - 6%)</option>
+                            <option value="V">Anexo V (Intelectual - 15.5%)</option>
+                        </select>
+                    </div>
+                )}
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">Faturamento Mensal (Serviço)</label>
+                    <input 
+                    type="text" 
+                    value={revenue.service === 0 ? '' : revenue.service}
+                    onChange={(e) => setRevenue({...revenue, service: e.target.value.replace(/[^0-9.,]/g, '')})}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Ex: 4.500,00"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">Faturamento Mensal (Comércio)</label>
+                    <input 
+                    type="text" 
+                    value={revenue.commerce === 0 ? '' : revenue.commerce}
+                    onChange={(e) => setRevenue({...revenue, commerce: e.target.value.replace(/[^0-9.,]/g, '')})}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Ex: 2.000,00"
+                    />
+                </div>
+
+                <div className="bg-slate-800 p-4 rounded-lg space-y-3 mt-4">
+                    <div className="flex justify-between items-center border-b border-slate-700 pb-2">
+                        <span className="text-gray-300">Imposto Mensal (Estimado):</span>
+                        <span className="text-xl font-bold text-white">R$ {calculateDAS().toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-gray-300">Projeção Anual:</span>
+                        <span className={`font-bold ${isOverLimit ? 'text-red-400' : 'text-green-400'}`}>
+                            R$ {annualProjection.toLocaleString()}
+                        </span>
+                    </div>
+                    {isOverLimit && (
+                        <p className="text-xs text-red-400 mt-2">
+                            Aviso: Você pode exceder o limite anual do {mode === 'mei' ? 'MEI' : 'Simples Nacional'}.
+                        </p>
+                    )}
+                </div>
+            </>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Monthly Service Revenue (R$)</label>
-            <input 
-              type="number" 
-              value={revenue.service}
-              onChange={(e) => setRevenue({...revenue, service: e.target.value})}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="0.00"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Monthly Commerce Revenue (R$)</label>
-            <input 
-              type="number" 
-              value={revenue.commerce}
-              onChange={(e) => setRevenue({...revenue, commerce: e.target.value})}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="0.00"
-            />
-          </div>
+          {/* IRPF INPUTS */}
+          {mode === 'irpf' && (
+             <>
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">Renda Bruta Mensal (Salário)</label>
+                    <input 
+                    type="text" 
+                    value={irpfData.grossIncome === 0 ? '' : irpfData.grossIncome}
+                    onChange={(e) => setIrpfData({...irpfData, grossIncome: e.target.value.replace(/[^0-9.,]/g, '')})}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Ex: 5.000,00"
+                    />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Dependentes</label>
+                        <input 
+                        type="number" 
+                        value={irpfData.dependents}
+                        onChange={(e) => setIrpfData({...irpfData, dependents: e.target.value})}
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="0"
+                        min="0"
+                        step="1"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Outras Deduções</label>
+                        <input 
+                        type="text" 
+                        value={irpfData.otherDeductions === 0 ? '' : irpfData.otherDeductions}
+                        onChange={(e) => setIrpfData({...irpfData, otherDeductions: e.target.value.replace(/[^0-9.,]/g, '')})}
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Ex: 150,00"
+                        />
+                    </div>
+                </div>
 
-          <div className="bg-slate-800 p-4 rounded-lg space-y-3 mt-4">
-            <div className="flex justify-between items-center border-b border-slate-700 pb-2">
-                <span className="text-gray-300">Estimated Monthly Tax:</span>
-                <span className="text-xl font-bold text-white">R$ {calculateDAS().toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-                <span className="text-gray-300">Annual Projection:</span>
-                <span className={`font-bold ${isOverLimit ? 'text-red-400' : 'text-green-400'}`}>
-                    R$ {annualProjection.toLocaleString()}
-                </span>
-            </div>
-            {isOverLimit && (
-                <p className="text-xs text-red-400 mt-2">
-                    Warning: You might exceed the {mode === 'mei' ? 'MEI' : 'Simples Nacional'} annual limit.
-                </p>
-            )}
-          </div>
+                {(() => {
+                    const res = calculateIRPF();
+                    return (
+                        <div className="bg-slate-800 p-4 rounded-lg space-y-3 mt-4">
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-300 text-sm">(-) INSS Estimado:</span>
+                                <span className="text-white">R$ {res.inss.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center border-b border-slate-700 pb-2">
+                                <span className="text-gray-300 text-sm">Base de Cálculo:</span>
+                                <span className="text-white">R$ {res.baseCalc.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center pt-1">
+                                <span className="text-gray-300 font-bold">Imposto a Pagar (IRPF):</span>
+                                <span className="text-xl font-bold text-red-400">R$ {res.irpf.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-300 text-sm">Salário Líquido Est.:</span>
+                                <span className="text-green-400 font-bold">R$ {res.netIncome.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    );
+                })()}
+             </>
+          )}
 
           <button 
             onClick={() => {
                 if (isPro) {
                     generatePDF();
                 } else {
-                    showAlert('Premium Feature', 'PDF Reports are available for PRO users only.', 'locked');
+                    showAlert('Recurso Premium', 'A exportação de PDF é exclusiva para usuários PRO.', 'locked');
                 }
             }}
             className={`w-full bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-700 transition-all mt-4 border border-slate-700 flex justify-center items-center gap-2 ${!isPro ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
-            Export PDF Report
+            Exportar Relatório PDF
             {!isPro && <span>🔒</span>}
           </button>
 
@@ -238,7 +435,7 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
             onClick={onClose}
             className="w-full bg-purple-600 text-white font-bold py-3 rounded-lg hover:bg-purple-700 transition-all mt-2"
           >
-            Close Simulator
+            Fechar Simulador
           </button>
         </div>
       </div>
