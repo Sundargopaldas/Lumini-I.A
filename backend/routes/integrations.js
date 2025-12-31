@@ -114,7 +114,7 @@ router.post('/sync', auth, async (req, res) => {
         const pluggyData = await PluggyService.fetchTransactions();
         newTransactions = pluggyData;
     } else if (provider === 'Stripe') {
-        const stripeData = await StripeService.fetchRecentPayments();
+        const stripeData = await StripeService.fetchRecentPayments(integration.apiKey);
         newTransactions = stripeData;
     } else if (provider === 'Asaas') {
         const asaasData = await AsaasService.fetchReceivables();

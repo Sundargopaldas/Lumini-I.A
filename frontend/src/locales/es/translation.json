@@ -263,7 +263,15 @@
     "limit_reached": "Límite Alcanzado",
     "nubank_desc": "Sincroniza tus gastos y facturas de tarjeta de crédito automáticamente.",
     "hotmart_desc": "Importa tus ventas de productos digitales en tiempo real.",
-    "youtube_desc": "Rastrea tus ingresos de AdSense directamente."
+    "youtube_desc": "Rastrea tus ingresos de AdSense directamente.",
+    "pluggy_desc": "Conecta cualquier banco vía Open Finance.",
+    "stripe_desc": "Recibe pagos globales vía tarjeta.",
+    "asaas_desc": "Automatización de boletos y Pix con tarifas reducidas.",
+    "roadmap_title": "Próximamente (Roadmap)",
+    "mobile_app": "App Móvil (Próximamente)",
+    "mobile_app_desc": "Versión nativa para iOS y Android.",
+    "marketplace": "Mercado de Contadores (Próximamente)",
+    "marketplace_desc": "Encuentra el contador ideal para tu negocio."
   },
   "invoices": {
     "title": "Facturas (NFS-e)",

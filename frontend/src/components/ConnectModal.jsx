@@ -117,22 +117,18 @@ const ConnectModal = ({ isOpen, onClose, integration, onConnect }) => {
                    <div>
                      <label className="text-xs text-slate-500 dark:text-gray-500 block mb-1 transition-colors">API Key / Access Token</label>
                      <input 
-                       type="password" 
-                       placeholder="ak_live_xxxxxxxxxxxx"
+                       type="text" 
                        value={apiKey}
                        onChange={(e) => setApiKey(e.target.value)}
-                       className="w-full bg-slate-50 dark:bg-black/30 border border-slate-300 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 transition-colors font-mono text-sm"
+                       placeholder="Paste your API Key here"
+                       className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                      />
                    </div>
 
                    <button 
                     onClick={handleConnect}
-                    disabled={loading || !apiKey.trim()}
-                    className={`w-full mt-6 font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2 ${
-                        loading || !apiKey.trim() 
-                        ? 'bg-slate-200 dark:bg-gray-600 cursor-not-allowed text-slate-400 dark:text-gray-400' 
-                        : 'bg-purple-600 hover:bg-purple-700 text-white'
-                    }`}
+                    disabled={loading || !apiKey}
+                    className="w-full mt-6 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-gray-200 text-white dark:text-black font-bold py-3 rounded-lg transition-all"
                   >
                     {loading ? 'Verifying...' : 'Connect Platform'}
                   </button>

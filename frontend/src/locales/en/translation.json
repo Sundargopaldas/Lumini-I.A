@@ -262,7 +262,15 @@
     "limit_reached": "Limit Reached",
     "nubank_desc": "Sync your expenses and credit card bills automatically.",
     "hotmart_desc": "Import your digital product sales in real-time.",
-    "youtube_desc": "Track your AdSense revenue directly."
+    "youtube_desc": "Track your AdSense revenue directly.",
+    "pluggy_desc": "Connect any bank via Open Finance.",
+    "stripe_desc": "Receive global payments via card.",
+    "asaas_desc": "Automation of invoices and Pix with reduced fees.",
+    "roadmap_title": "Coming Soon (Roadmap)",
+    "mobile_app": "Mobile App (Coming Soon)",
+    "mobile_app_desc": "Native version for iOS and Android.",
+    "marketplace": "Accountant Marketplace (Coming Soon)",
+    "marketplace_desc": "Find the perfect accountant for your business."
   },
   "invoices": {
     "title": "Invoices (NFS-e)",

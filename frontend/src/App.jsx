@@ -11,6 +11,8 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Integrations from './pages/Integrations';
+import Marketplace from './pages/Marketplace';
+import MobileApp from './pages/MobileApp';
 import Settings from './pages/Settings';
 import WhatsAppWidget from './components/WhatsAppWidget';
 
@@ -59,6 +61,8 @@ function App() {
                       <Route path="/plans" element={<Plans />} />
                       <Route path="/checkout" element={<Checkout />} />
                       <Route path="/integrations" element={<Integrations />} />
+                      <Route path="/marketplace" element={<Marketplace />} />
+                      <Route path="/mobile-app" element={<MobileApp />} />
                       <Route path="/settings" element={<Settings />} />
                     </Routes>
                 </div>
