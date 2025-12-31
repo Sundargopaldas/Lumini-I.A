@@ -13,6 +13,7 @@ import ResetPassword from './pages/ResetPassword';
 import Integrations from './pages/Integrations';
 import Marketplace from './pages/Marketplace';
 import MobileApp from './pages/MobileApp';
+import Admin from './pages/Admin';
 import Settings from './pages/Settings';
 import WhatsAppWidget from './components/WhatsAppWidget';
 
@@ -31,6 +32,22 @@ const PrivateRoute = ({ children }) => {
     console.error('Auth Error:', error);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    return <Navigate to="/login" replace />;
+  }
+};
+
+const AdminRoute = ({ children }) => {
+  try {
+    const userStr = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    
+    if (!userStr || !token || userStr === 'undefined') {
+      return <Navigate to="/login" replace />;
+    }
+
+    const user = JSON.parse(userStr);
+    return user && user.isAdmin ? children : <Navigate to="/dashboard" replace />;
+  } catch (error) {
     return <Navigate to="/login" replace />;
   }
 };
@@ -63,6 +80,11 @@ function App() {
                       <Route path="/integrations" element={<Integrations />} />
                       <Route path="/marketplace" element={<Marketplace />} />
                       <Route path="/mobile-app" element={<MobileApp />} />
+                      <Route path="/admin" element={
+                        <AdminRoute>
+                          <Admin />
+                        </AdminRoute>
+                      } />
                       <Route path="/settings" element={<Settings />} />
                     </Routes>
                 </div>

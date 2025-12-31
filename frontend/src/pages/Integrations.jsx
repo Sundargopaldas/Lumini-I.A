@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import ConnectModal from '../components/ConnectModal';
@@ -102,7 +103,9 @@ const Integrations = () => {
         id: 'marketplace',
         name: t('integrations.marketplace'),
         description: t('integrations.marketplace_desc'),
-        type: 'Roadmap',
+        type: 'Feature',
+        path: '/marketplace',
+        status: 'available',
         icon: (
             <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -347,23 +350,52 @@ const Integrations = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {roadmapItems.map((item) => (
-                <div key={item.id} className="group relative overflow-hidden bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/50 border-dashed rounded-2xl p-6 flex items-start gap-4 opacity-75 hover:opacity-100 transition-all hover:bg-slate-100 dark:hover:bg-slate-800/50">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white dark:bg-slate-700 shadow-sm text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                        {item.icon}
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-700 dark:text-gray-200 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
-                            {item.name}
-                        </h3>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                            {item.description}
-                        </p>
-                        <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse"></span>
-                            Em Desenvolvimento
+                item.path ? (
+                    <Link 
+                        key={item.id} 
+                        to={item.path}
+                        className="group relative overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 flex items-start gap-4 hover:shadow-xl hover:border-purple-500/50 transition-all transform hover:-translate-y-1"
+                    >
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 shadow-sm group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                            {item.icon}
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors flex items-center gap-2">
+                                {item.name}
+                                <span className="text-[10px] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800 uppercase tracking-wider">
+                                    Disponível
+                                </span>
+                            </h3>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
+                                {item.description}
+                            </p>
+                            <div className="mt-4 flex items-center text-sm font-semibold text-purple-600 dark:text-purple-400">
+                                Acessar Agora
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                </svg>
+                            </div>
+                        </div>
+                    </Link>
+                ) : (
+                    <div key={item.id} className="group relative overflow-hidden bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/50 border-dashed rounded-2xl p-6 flex items-start gap-4 opacity-75 hover:opacity-100 transition-all hover:bg-slate-100 dark:hover:bg-slate-800/50 cursor-not-allowed">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white dark:bg-slate-700 shadow-sm text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                            {item.icon}
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-700 dark:text-gray-200 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+                                {item.name}
+                            </h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                                {item.description}
+                            </p>
+                            <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse"></span>
+                                Em Desenvolvimento
+                            </div>
                         </div>
                     </div>
-                </div>
+                )
             ))}
         </div>
       </div>

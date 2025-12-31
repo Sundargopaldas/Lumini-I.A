@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { validateCPF, validateCNPJ, validateStateRegistration, validateEmail } from '../utils/validators';
 
 const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
   const [loading, setLoading] = useState(false);
@@ -18,10 +19,12 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
     issRetained: false
   };
   const [formData, setFormData] = useState(initialFormState);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (isOpen) {
       setFormData(initialFormState);
+      setErrors({});
     }
   }, [isOpen]);
 
@@ -75,6 +78,39 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate fields
+    const newErrors = {};
+    const doc = formData.document.replace(/\D/g, '');
+    
+    if (doc.length === 11) {
+        if (!validateCPF(doc)) {
+            newErrors.document = 'CPF inválido';
+        }
+    } else if (doc.length === 14) {
+        if (!validateCNPJ(doc)) {
+            newErrors.document = 'CNPJ inválido';
+        }
+    } else {
+        newErrors.document = 'Documento inválido (CPF ou CNPJ)';
+    }
+
+    if (formData.stateRegistration) {
+        if (!validateStateRegistration(formData.stateRegistration)) {
+            newErrors.stateRegistration = 'Inscrição Estadual inválida';
+        }
+    }
+
+    if (!validateEmail(formData.email)) {
+        newErrors.email = 'Email inválido';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        return;
+    }
+    
+    setErrors({});
     setLoading(true);
     
     // Simulate API call
@@ -133,22 +169,30 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
                   <input
                     type="text"
                     required
-                    className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className={`w-full bg-white dark:bg-slate-800 border rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${errors.document ? 'border-red-500' : 'border-gray-300 dark:border-slate-700'}`}
                     placeholder="00.000.000/0000-00"
                     value={formData.document}
-                    onChange={handleDocumentChange}
+                    onChange={(e) => {
+                        handleDocumentChange(e);
+                        if (errors.document) setErrors({...errors, document: null});
+                    }}
                     maxLength="18"
                   />
+                  {errors.document && <p className="text-red-500 text-xs mt-1">{errors.document}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Inscrição Estadual</label>
                   <input
                     type="text"
-                    className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className={`w-full bg-white dark:bg-slate-800 border rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${errors.stateRegistration ? 'border-red-500' : 'border-gray-300 dark:border-slate-700'}`}
                     placeholder="Ex: 123.456.789.111"
                     value={formData.stateRegistration}
-                    onChange={e => setFormData({...formData, stateRegistration: e.target.value.replace(/[^0-9.-]/g, '')})}
+                    onChange={(e) => {
+                        setFormData({...formData, stateRegistration: e.target.value.replace(/[^0-9.-]/g, '')});
+                        if (errors.stateRegistration) setErrors({...errors, stateRegistration: null});
+                    }}
                   />
+                  {errors.stateRegistration && <p className="text-red-500 text-xs mt-1">{errors.stateRegistration}</p>}
                 </div>
               </div>
               
@@ -157,11 +201,15 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
                 <input
                   type="email"
                   required
-                  className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className={`w-full bg-white dark:bg-slate-800 border rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${errors.email ? 'border-red-500' : 'border-gray-300 dark:border-slate-700'}`}
                   placeholder="cliente@email.com"
                   value={formData.email}
-                  onChange={e => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) => {
+                      setFormData({...formData, email: e.target.value});
+                      if (errors.email) setErrors({...errors, email: null});
+                  }}
                 />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
 
             <div className="grid grid-cols-2 gap-4">

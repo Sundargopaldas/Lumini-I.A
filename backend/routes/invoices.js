@@ -7,6 +7,7 @@ const { sendInvoiceEmail } = require('../services/EmailService');
 const auth = require('../middleware/auth');
 const checkPremium = require('../middleware/checkPremium');
 const { Op } = require('sequelize');
+const { validateCPF, validateCNPJ, validateStateRegistration } = require('../utils/validators');
 
 // List Invoices (Protected + Premium Only)
 router.get('/', auth, checkPremium, async (req, res) => {
@@ -54,6 +55,29 @@ router.post('/', auth, checkPremium, async (req, res) => {
       serviceDescription, 
       value 
     } = req.body;
+
+    // --- Validation ---
+    if (!document) {
+        return res.status(400).json({ message: 'Documento (CPF/CNPJ) é obrigatório.' });
+    }
+
+    const cleanDoc = document.replace(/\D/g, '');
+    let isValidDoc = false;
+
+    if (cleanDoc.length === 11) {
+        isValidDoc = validateCPF(cleanDoc);
+    } else if (cleanDoc.length === 14) {
+        isValidDoc = validateCNPJ(cleanDoc);
+    }
+
+    if (!isValidDoc) {
+        return res.status(400).json({ message: 'CPF ou CNPJ inválido.' });
+    }
+
+    if (stateRegistration && !validateStateRegistration(stateRegistration)) {
+        return res.status(400).json({ message: 'Inscrição Estadual inválida.' });
+    }
+    // ------------------
 
     // Construct address only with present fields
     const addressParts = [];

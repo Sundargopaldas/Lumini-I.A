@@ -45,6 +45,7 @@ require('./models/Goal');
 require('./models/Integration');
 require('./models/Invoice');
 require('./models/Certificate');
+require('./models/Accountant');
 
 // Routes Placeholder
 const authRoutes = require('./routes/auth');
@@ -58,6 +59,7 @@ const invoiceRoutes = require('./routes/invoices');
 const certificateRoutes = require('./routes/certificates');
 const aiRoutes = require('./routes/ai');
 const importRoutes = require('./routes/import');
+const accountantRoutes = require('./routes/accountants');
 
 // Rate Limiting - Auth (Stricter)
 const authLimiter = rateLimit({
@@ -77,6 +79,7 @@ app.use('/api/invoices', invoiceRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/import', importRoutes);
+app.use('/api/accountants', accountantRoutes);
 
 app.get('/', (req, res) => {
   res.send('Lumini I.A Backend is running');

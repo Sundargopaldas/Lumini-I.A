@@ -1,15 +1,26 @@
 const nodemailer = require('nodemailer');
 
 // Configure Transporter
-// For Gmail: use App Password (not your login password)
-// For testing: use Ethereal.email or similar
-const transporter = nodemailer.createTransport({
-    service: 'gmail', // or 'hotmail', 'yahoo', etc.
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
+// Supports both Gmail (simple) and Professional SMTP (Zoho, Outlook, AWS SES, etc.)
+const transporterConfig = process.env.EMAIL_HOST 
+    ? {
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT || '587'),
+        secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        }
+    } 
+    : {
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        }
+    };
+
+const transporter = nodemailer.createTransport(transporterConfig);
 
 /**
  * Send Cancellation Confirmation Email
@@ -23,12 +34,17 @@ const sendCancellationEmail = async (user, reason) => {
         return;
     }
 
+    const logoUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png`;
+
     const mailOptions = {
         from: process.env.EMAIL_FROM || `"Equipe Lumini I.A" <${process.env.EMAIL_USER}>`,
         to: user.email,
         subject: 'Confirmação de Cancelamento de Assinatura',
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <img src="${logoUrl}" alt="Lumini I.A" style="width: 50px; height: 50px;">
+                </div>
                 <h2 style="color: #4a5568;">Cancelamento Recebido</h2>
                 <p>Olá, ${user.name || 'Usuário'},</p>
                 <p>Recebemos sua solicitação de cancelamento da assinatura <strong>Lumini I.A</strong>.</p>
@@ -124,18 +140,21 @@ const sendWelcomeEmail = async (user, planName) => {
 const sendPasswordResetEmail = async (user, resetLink) => {
     if (!user.email) return;
 
+    const logoUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png`;
+
     const mailOptions = {
         from: process.env.EMAIL_FROM || `"Equipe Lumini I.A" <${process.env.EMAIL_USER}>`,
         to: user.email,
         subject: 'Redefinição de Senha - Lumini I.A',
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-              <div style="background: #6d28d9; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+              <div style="background: linear-gradient(135deg, #6d28d9 0%, #4f46e5 100%); padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                  <img src="${logoUrl}" alt="Lumini I.A" style="width: 60px; height: 60px; margin-bottom: 10px; display: inline-block;">
                   <h2 style="color: white; margin: 0;">Redefinição de Senha</h2>
               </div>
-              <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-                  <p>Olá, <strong>${user.name || user.username || 'Usuário'}</strong>,</p>
-                  <p>Você solicitou a redefinição de sua senha na plataforma Lumini I.A.</p>
+              <div style="padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; background-color: white;">
+                  <p style="font-size: 16px;">Olá, <strong>${user.name || user.username || 'Usuário'}</strong>,</p>
+                  <p style="line-height: 1.6;">Você solicitou a redefinição de sua senha na plataforma Lumini I.A.</p>
                   <p>Clique no botão abaixo para criar uma nova senha:</p>
                   <p style="text-align: center; margin: 30px 0;">
                     <a href="${resetLink}" style="background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Redefinir Senha</a>

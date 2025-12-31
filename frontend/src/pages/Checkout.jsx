@@ -279,6 +279,7 @@ const CheckoutForm = ({ plan }) => {
 };
 
 const Checkout = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { plan } = location.state || {};

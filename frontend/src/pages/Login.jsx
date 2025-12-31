@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import Logo from '../components/Logo';
 import CustomAlert from '../components/CustomAlert';
 
 const Login = () => {
@@ -58,9 +59,10 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 transition-colors py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white dark:bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-xl border border-slate-200 dark:border-white/20 transition-colors">
         <div className="flex flex-col items-center justify-center text-center">
-          <div className="mt-6">
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <Logo className="w-12 h-12" />
             <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight transition-colors">
-              ✨ Lumini AI
+              Lumini I.A
             </h2>
           </div>
           <p className="mt-2 text-center text-sm text-slate-600 dark:text-gray-300 transition-colors">

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/ThemeContext';
+import Logo from './Logo';
 
 const SimpleMarkdown = ({ text }) => {
     if (!text) return null;
@@ -98,9 +99,7 @@ const AIChatWidget = () => {
                     <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 flex justify-between items-center shrink-0">
                         <div className="flex items-center gap-2">
                             <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                                </svg>
+                                <Logo className="h-5 w-5" />
                             </div>
                             <div>
                                 <h3 className="text-white font-bold text-sm">Lumini Chat</h3>
