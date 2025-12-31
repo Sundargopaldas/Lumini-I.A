@@ -341,9 +341,10 @@ const Reports = () => {
                 onChange={(e) => setSelectedYear(e.target.value)}
                 className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
             >
-                <option value={2023}>2023</option>
-                <option value={2024}>2024</option>
-                <option value={2025}>2025</option>
+                {Array.from({ length: 5 }, (_, i) => {
+                    const year = new Date().getFullYear() - 2 + i;
+                    return <option key={year} value={year}>{year}</option>;
+                })}
             </select>
             <button 
                 onClick={() => {

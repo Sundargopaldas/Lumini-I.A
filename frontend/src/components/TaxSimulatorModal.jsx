@@ -33,7 +33,7 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  // 2025 MEI Values (Estimated)
+  // 2025/2026 MEI Values (Estimated)
   const INSS_MEI = 75.10;
   const ICMS = 1.00;
   const ISS = 5.00;
