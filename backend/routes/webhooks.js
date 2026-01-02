@@ -4,6 +4,10 @@ const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 const Invoice = require('../models/Invoice');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const AsaasService = require('../services/AsaasService');
+
+// Use environment variable or fallback to the Sandbox key provided by user for testing
+const ASAAS_API_KEY = process.env.ASAAS_API_KEY || '$aact_hmlg_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6Ojk2ZmFiZmE1LTUzZGYtNGQ0Ny04NjVjLTU3MTg4MmJlZDI3Mjo6JGFhY2hfMWY0NWJkNTEtYjBkZi00NWE3LWE5NjAtZTYzOWE3ZDllM2Q1';
 
 // Stripe Webhook Handler
 // This ensures that plan updates happen even if the user closes the browser
@@ -57,9 +61,7 @@ router.post('/stripe', express.raw({type: 'application/json'}), async (req, res)
       break;
       
     case 'customer.subscription.updated':
-      const sub = event.data.object;
       // Logic to handle plan changes (upgrade/downgrade)
-      // Usually we look at sub.items.data[0].price.id
       break;
       
     case 'customer.subscription.deleted':
@@ -74,9 +76,6 @@ router.post('/stripe', express.raw({type: 'application/json'}), async (req, res)
         if (customer && customer.email) {
             await User.update({ plan: 'free' }, { where: { email: customer.email } });
             console.log(`[Stripe Webhook] User ${customer.email} downgraded to FREE.`);
-            
-            // Optional: Send final confirmation email that plan has ended
-            // await sendCancellationEmail({ email: customer.email, name: customer.name }, 'Período de assinatura encerrado.');
         } else {
             console.log(`[Stripe Webhook] Could not find user email for customer ${customerId}`);
         }
@@ -92,14 +91,76 @@ router.post('/stripe', express.raw({type: 'application/json'}), async (req, res)
   res.send();
 });
 
+// Asaas Webhook Handler
+router.post('/asaas', express.json(), async (req, res) => {
+  try {
+    const { event, payment } = req.body;
+    const token = req.headers['asaas-access-token'];
+    
+    // Optional: Verify token if configured
+    // if (token !== process.env.ASAAS_WEBHOOK_TOKEN) ...
+
+    console.log(`[Asaas Webhook] Event: ${event} for Payment: ${payment?.id}`);
+
+    if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
+        let newPlan = 'pro';
+        // Determine plan based on description or value
+        if (payment.description && payment.description.toLowerCase().includes('premium')) {
+            newPlan = 'premium';
+        } else if (payment.value >= 90) {
+            newPlan = 'premium';
+        } else if (payment.value >= 40) {
+            newPlan = 'pro';
+        }
+
+        // Fetch Customer to get email
+        if (payment.customer) {
+            try {
+                const asaasService = new AsaasService();
+                const customerData = await asaasService.getCustomerById(ASAAS_API_KEY, payment.customer);
+                
+                if (customerData && customerData.email) {
+                    const email = customerData.email;
+                    
+                    // Update User Plan
+                    const user = await User.findOne({ where: { email } });
+                    if (user) {
+                        user.plan = newPlan;
+                        await user.save();
+                        console.log(`[Asaas Webhook] User ${email} plan updated to ${newPlan} via Asaas.`);
+                        
+                        // Create Transaction Record
+                        await Transaction.create({
+                            description: `Assinatura Lumini ${newPlan.charAt(0).toUpperCase() + newPlan.slice(1)} (Asaas)`,
+                            amount: payment.value,
+                            type: 'income',
+                            source: 'Asaas',
+                            date: new Date(),
+                            userId: user.id
+                        });
+                    } else {
+                        console.warn(`[Asaas Webhook] User with email ${email} not found in local DB.`);
+                    }
+                }
+            } catch (custErr) {
+                console.error(`[Asaas Webhook] Failed to fetch customer ${payment.customer}:`, custErr.message);
+            }
+        }
+    }
+
+    res.json({ received: true });
+  } catch (error) {
+    console.error('[Asaas Webhook] Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 // Webhook Receiver for Hotmart (Simulation)
-// In a real scenario, Hotmart sends a POST request here when a sale occurs.
 router.post('/hotmart', async (req, res) => {
   try {
     const { prod_name, price, email, status } = req.body;
     
-    // 1. Identify User (In real life, we'd map the email or use an API Key in headers)
-    // For simulation, we'll try to find a user by email, or default to the first user if not found
+    // 1. Identify User
     let user = await User.findOne({ where: { email } });
     
     // Fallback for demo: if no user matches, assign to the first PRO user found
@@ -124,7 +185,6 @@ router.post('/hotmart', async (req, res) => {
         });
 
         // Create Invoice (NFS-e)
-        // Simulate extracting buyer info from webhook payload
         const buyerName = req.body.first_name || 'Cliente Hotmart';
         const buyerDoc = req.body.doc || '000.000.000-00';
         const buyerEmail = req.body.email || 'cliente@email.com';
@@ -144,17 +204,6 @@ router.post('/hotmart', async (req, res) => {
             issueDate: new Date(),
             externalReference: req.body.hottok || 'hotmart-ref'
         });
-
-        // Send Email
-        if (buyerEmail) {
-            sendInvoiceEmail(buyerEmail, {
-                id: newInvoice.id,
-                clientName: buyerName,
-                serviceDescription: `Curso Online: ${prod_name}`,
-                amount: price,
-                issueDate: newInvoice.issueDate
-            });
-        }
         
         console.log(`[Webhook] Processed sale for ${user.email}: ${prod_name} - R$ ${price}`);
         console.log(`[Webhook] Invoice #${newInvoice.id} generated automatically.`);

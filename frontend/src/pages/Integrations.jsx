@@ -54,7 +54,7 @@ const Integrations = () => {
       id: 'asaas',
       name: 'Asaas',
       type: 'Payment',
-      logo: 'https://cdn.icon-icons.com/icons2/2699/PNG/512/asaas_logo_icon_169993.png',
+      logo: 'https://cdn-icons-png.flaticon.com/512/10095/10095689.png', // Logo atualizado
       color: 'bg-blue-500',
       description: t('integrations.asaas_desc'),
       isNew: true

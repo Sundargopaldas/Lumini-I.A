@@ -166,7 +166,10 @@
     "server_processing_error": "Erro ao processar a assinatura no servidor.",
     "plan_confirmed": "Plano Confirmado!",
     "free_plan_success": "Você está no plano Básico (Grátis).",
-    "card_name_placeholder": "COMO NO CARTAO"
+    "card_name_placeholder": "COMO NO CARTAO",
+    "card_number": "Número do Cartão",
+    "expiry": "Validade",
+    "cvc": "CVC"
   },
   "addons": {
     "accountant_name": "Sócio Contador",

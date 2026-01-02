@@ -19,10 +19,39 @@ const Dashboard = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-        setUser(JSON.parse(storedUser));
-    }
+    // 1. Load initial user from LocalStorage
+    const loadUser = () => {
+        try {
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                setUser(JSON.parse(storedUser));
+            }
+        } catch (e) {
+            console.error('Error parsing user from storage', e);
+        }
+    };
+    
+    loadUser();
+
+    // 2. Fetch fresh user data from API to ensure plan is up-to-date
+    const refreshUserData = async () => {
+        try {
+            const response = await api.get('/auth/me');
+            if (response.data) {
+                console.log('Refreshing user data from API:', response.data);
+                setUser(response.data);
+                localStorage.setItem('user', JSON.stringify(response.data));
+            }
+        } catch (error) {
+            console.error('Error refreshing user data:', error);
+        }
+    };
+
+    refreshUserData();
+
+    // Listen for storage changes
+    window.addEventListener('storage', loadUser);
+    return () => window.removeEventListener('storage', loadUser);
   }, []);
 
   const fetchTransactions = async () => {

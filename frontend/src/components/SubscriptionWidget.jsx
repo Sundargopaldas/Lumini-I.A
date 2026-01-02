@@ -1,7 +1,37 @@
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import api from '../services/api';
 
 const SubscriptionWidget = ({ user }) => {
   if (!user) return null;
+
+  // Local state to handle sync updates
+  const [localUser, setLocalUser] = useState(user);
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+     setLocalUser(user);
+  }, [user]);
+
+  const handleSync = async () => {
+      setSyncing(true);
+      try {
+          const res = await api.get('/auth/me');
+          if (res.data) {
+              localStorage.setItem('user', JSON.stringify(res.data));
+              setLocalUser(res.data);
+              // Dispatch storage event to notify other components
+              window.dispatchEvent(new Event('storage'));
+              alert('Plano sincronizado com sucesso!');
+              window.location.reload(); // Force full reload
+          }
+      } catch (e) {
+          console.error('Sync error', e);
+          alert('Erro ao sincronizar. Tente novamente.');
+      } finally {
+          setSyncing(false);
+      }
+  };
 
   const getPlanColor = (plan) => {
     switch (plan) {
@@ -21,7 +51,7 @@ const SubscriptionWidget = ({ user }) => {
     }
   };
 
-  const plan = user.plan || 'free';
+  const plan = localUser.plan || 'free';
   const isFree = plan === 'free';
 
   return (
@@ -55,13 +85,24 @@ const SubscriptionWidget = ({ user }) => {
                   Fazer Upgrade 🚀
                 </Link>
              ) : (
-                <Link 
-                  to="/plans" 
-                  className="w-full md:w-auto px-6 py-3 bg-white/20 text-white rounded-xl font-semibold hover:bg-white/30 transition-colors border border-white/30 text-center"
-                >
-                  Gerenciar Assinatura
-                </Link>
+                <div className="flex gap-2">
+                    <Link 
+                      to="/plans" 
+                      className="px-6 py-3 bg-white/20 text-white rounded-xl font-semibold hover:bg-white/30 transition-colors border border-white/30 text-center"
+                    >
+                      Gerenciar
+                    </Link>
+                </div>
              )}
+             
+             <button
+                onClick={handleSync}
+                disabled={syncing}
+                className="px-4 py-3 bg-transparent text-white/70 hover:text-white text-sm font-medium hover:bg-white/10 rounded-xl transition-colors border border-transparent hover:border-white/20"
+                title="Sincronizar Status"
+             >
+                {syncing ? '↻ ...' : '↻'}
+             </button>
           </div>
         </div>
 

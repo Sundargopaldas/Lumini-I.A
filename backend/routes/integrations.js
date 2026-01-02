@@ -117,7 +117,7 @@ router.post('/sync', auth, async (req, res) => {
         const stripeData = await StripeService.fetchRecentPayments(integration.apiKey);
         newTransactions = stripeData;
     } else if (provider === 'Asaas') {
-        const asaasData = await AsaasService.fetchReceivables();
+        const asaasData = await AsaasService.fetchReceivables(integration.apiKey);
         newTransactions = asaasData;
     } else if (provider === 'YouTube') {
         const ytData = await YouTubeService.getChannelRevenue('CHANNEL_ID_MOCK');
@@ -135,10 +135,15 @@ router.post('/sync', auth, async (req, res) => {
       ];
     }
 
+    console.log(`[Sync] Found ${newTransactions.length} transactions from ${provider}`);
+
     // Insert into DB
     const createdTransactions = await Promise.all(newTransactions.map(t => {
+      // Filter out fields that are not in the Transaction model to avoid Sequelize errors
+      const { method, ...transactionData } = t;
+      
       return Transaction.create({
-        ...t,
+        ...transactionData,
         userId: req.user.id
       });
     }));
@@ -149,8 +154,12 @@ router.post('/sync', auth, async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('[Sync Error] Full Trace:', err);
+    console.error('[Sync Error] Message:', err.message);
+    res.status(500).json({ 
+        message: 'Server Error during sync',
+        error: err.message 
+    });
   }
 });
 

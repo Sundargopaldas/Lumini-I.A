@@ -31,6 +31,34 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isPro = ['pro', 'premium', 'agency'].includes(user.plan);
 
+  // Preload Logo for PDF
+  const [logoBase64, setLogoBase64] = useState(null);
+
+  React.useEffect(() => {
+    const loadImage = async () => {
+      try {
+        const img = new Image();
+        img.src = '/logo.svg';
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 200; 
+          canvas.height = 200;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, 200, 200);
+          try {
+            const dataUrl = canvas.toDataURL('image/png');
+            setLogoBase64(dataUrl);
+          } catch (e) {
+            console.warn('Could not convert logo to base64', e);
+          }
+        };
+      } catch (error) {
+        console.error('Error loading logo for PDF:', error);
+      }
+    };
+    loadImage();
+  }, []);
+
   if (!isOpen) return null;
 
   // 2025/2026 MEI Values (Estimated)
@@ -123,34 +151,8 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
   
   const isOverLimit = mode === 'mei' ? annualProjection > meiLimit : annualProjection > simplesLimit;
 
-  // Preload Logo for PDF
-  const [logoBase64, setLogoBase64] = useState(null);
+  // REMOVED: Moved hooks (logoBase64 state and effect) to top of component to avoid "Rendered more hooks" error
 
-  React.useEffect(() => {
-    const loadImage = async () => {
-      try {
-        const img = new Image();
-        img.src = '/logo.svg';
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          // Set a reasonable size for the canvas to ensure quality
-          canvas.width = 200; 
-          canvas.height = 200;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, 200, 200);
-          try {
-            const dataUrl = canvas.toDataURL('image/png');
-            setLogoBase64(dataUrl);
-          } catch (e) {
-            console.warn('Could not convert logo to base64', e);
-          }
-        };
-      } catch (error) {
-        console.error('Error loading logo for PDF:', error);
-      }
-    };
-    loadImage();
-  }, []);
 
   const generatePDF = () => {
     const doc = new jsPDF();

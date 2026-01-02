@@ -91,7 +91,7 @@ const Plans = () => {
     {
       name: 'Pro',
       displayName: t('plans.pro') || 'Pro',
-      price: 'R$ 29',
+      price: 'R$ 49',
       period: t('plans.month'),
       description: t('plans.pro_desc'),
       features: [
@@ -197,6 +197,8 @@ const Plans = () => {
           </div>
         )})}
       </div>
+
+      {/* Test Plan (Removed) */}
 
       {/* Histórico de Faturas */}
       {invoices.length > 0 && (
