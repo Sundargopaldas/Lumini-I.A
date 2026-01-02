@@ -71,7 +71,7 @@ router.post('/register', async (req, res) => {
     res.status(201).json({ message: 'User created successfully' });
   } catch (error) {
     console.error('Registration Error:', error);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -181,12 +181,18 @@ router.post('/forgot-password', async (req, res) => {
 
       } catch (emailError) {
         console.error('Erro ao enviar email:', emailError);
-        // Fallback para desenvolvimento se o email falhar (opcional, pode ser removido em prod)
-        return res.status(500).json({ message: 'Erro ao enviar email: ' + emailError.message, devLink: resetLink });
+        // Fallback para desenvolvimento
+        if (process.env.NODE_ENV === 'development') {
+             return res.status(500).json({ message: 'Erro ao enviar email: ' + emailError.message, devLink: resetLink });
+        }
+        return res.status(500).json({ message: 'Erro ao enviar email. Tente novamente mais tarde.' });
       }
     } else {
        // Modo de desenvolvimento sem email configurado
        console.log('[DEV] Email não configurado. Retornando link diretamente.');
+       if (process.env.NODE_ENV === 'production') {
+            return res.status(500).json({ message: 'Serviço de email não configurado.' });
+       }
        return res.json({ message: 'Email não configurado. Use o link abaixo (Dev Mode).', resetLink });
     }
   } catch (error) {

@@ -15,6 +15,8 @@ import Marketplace from './pages/Marketplace';
 import MobileApp from './pages/MobileApp';
 import Admin from './pages/Admin';
 import Settings from './pages/Settings';
+import Terms from './pages/Terms';
+import Footer from './components/Footer';
 import WhatsAppWidget from './components/WhatsAppWidget';
 
 const PrivateRoute = ({ children }) => {
@@ -86,8 +88,10 @@ function App() {
                         </AdminRoute>
                       } />
                       <Route path="/settings" element={<Settings />} />
+                      <Route path="/terms" element={<Terms />} />
                     </Routes>
                 </div>
+                <Footer />
                 <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
                     <div className="pointer-events-auto"><WhatsAppWidget /></div>
                 </div>
