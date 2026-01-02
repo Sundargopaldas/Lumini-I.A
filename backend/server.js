@@ -141,6 +141,16 @@ const startServer = async () => {
            console.log("Note: fitId column check - " + err.message);
       }
     }
+
+    // Manual migration for accountantId (Link to Accountant)
+    try {
+      await sequelize.query("ALTER TABLE Users ADD COLUMN accountantId INTEGER REFERENCES Accountants(id);");
+      console.log("Added accountantId column to Users table.");
+    } catch (err) {
+      if (!err.original || err.original.code !== 'ER_DUP_FIELDNAME') {
+           console.log("Note: accountantId column check - " + err.message);
+      }
+    }
     
     console.log('Database synchronized.');
 

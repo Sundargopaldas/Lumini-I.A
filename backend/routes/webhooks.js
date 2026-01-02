@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Invoice = require('../models/Invoice');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const AsaasService = require('../services/AsaasService');
+const { sendWelcomeEmail, sendInvoiceEmail } = require('../services/EmailService');
 
 // Use environment variable or fallback to the Sandbox key provided by user for testing
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY || '$aact_hmlg_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6Ojk2ZmFiZmE1LTUzZGYtNGQ0Ny04NjVjLTU3MTg4MmJlZDI3Mjo6JGFhY2hfMWY0NWJkNTEtYjBkZi00NWE3LWE5NjAtZTYzOWE3ZDllM2Q1';
@@ -55,8 +56,32 @@ router.post('/stripe', express.raw({type: 'application/json'}), async (req, res)
             newPlan = 'premium';
         }
 
-        await User.update({ plan: newPlan }, { where: { email } });
-        console.log(`[Stripe Webhook] User ${email} plan updated to ${newPlan}`);
+        try {
+            const user = await User.findOne({ where: { email } });
+            if (user) {
+                const oldPlan = user.plan;
+                user.plan = newPlan;
+                await user.save();
+                console.log(`[Stripe Webhook] User ${email} plan updated to ${newPlan}`);
+
+                // Send Invoice Email
+                await sendInvoiceEmail(user, {
+                    amount: (session.amount_paid / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                    description: `Assinatura Lumini ${newPlan === 'premium' ? 'Premium' : 'Pro'}`,
+                    method: 'Cartão de Crédito (Stripe)',
+                    date: new Date().toLocaleDateString('pt-BR')
+                });
+
+                // Send Welcome Email if upgrade
+                if (oldPlan !== newPlan) {
+                    await sendWelcomeEmail(user, newPlan === 'premium' ? 'Premium' : 'Pro');
+                }
+            } else {
+                console.warn(`[Stripe Webhook] User ${email} not found.`);
+            }
+        } catch (err) {
+            console.error(`[Stripe Webhook] Error updating user ${email}:`, err);
+        }
       }
       break;
       
@@ -116,8 +141,7 @@ router.post('/asaas', express.json(), async (req, res) => {
         // Fetch Customer to get email
         if (payment.customer) {
             try {
-                const asaasService = new AsaasService();
-                const customerData = await asaasService.getCustomerById(ASAAS_API_KEY, payment.customer);
+                const customerData = await AsaasService.getCustomerById(ASAAS_API_KEY, payment.customer);
                 
                 if (customerData && customerData.email) {
                     const email = customerData.email;
@@ -125,6 +149,7 @@ router.post('/asaas', express.json(), async (req, res) => {
                     // Update User Plan
                     const user = await User.findOne({ where: { email } });
                     if (user) {
+                        const oldPlan = user.plan;
                         user.plan = newPlan;
                         await user.save();
                         console.log(`[Asaas Webhook] User ${email} plan updated to ${newPlan} via Asaas.`);
@@ -138,6 +163,20 @@ router.post('/asaas', express.json(), async (req, res) => {
                             date: new Date(),
                             userId: user.id
                         });
+
+                        // Send Invoice Email
+                        await sendInvoiceEmail(user, {
+                            amount: payment.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                            description: `Assinatura Lumini ${newPlan === 'premium' ? 'Premium' : 'Pro'}`,
+                            method: payment.billingType || 'Asaas',
+                            date: new Date().toLocaleDateString('pt-BR')
+                        });
+
+                        // Send Welcome Email if upgrade
+                        if (oldPlan !== newPlan) {
+                            await sendWelcomeEmail(user, newPlan === 'premium' ? 'Premium' : 'Pro');
+                        }
+
                     } else {
                         console.warn(`[Asaas Webhook] User with email ${email} not found in local DB.`);
                     }

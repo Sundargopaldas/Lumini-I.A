@@ -92,6 +92,18 @@ const Marketplace = () => {
     window.location.href = `mailto:${email}`;
   };
 
+  const handleLink = async (accountantId) => {
+    if (!confirm('Deseja vincular seu perfil a este contador? Ele terá acesso de leitura aos seus dados.')) return;
+
+    try {
+      await api.post('/accountants/link', { accountantId });
+      showAlert('Contador vinculado com sucesso!', 'success');
+    } catch (error) {
+      console.error('Error linking accountant:', error);
+      showAlert('Erro ao vincular contador.', 'error');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
       
@@ -173,12 +185,18 @@ const Marketplace = () => {
                       ))}
                     </div>
 
-                    <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                    <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center gap-2">
                       <button 
                         onClick={() => handleContact(acc.email)}
                         className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
                       >
                         Entrar em Contato
+                      </button>
+                      <button 
+                        onClick={() => handleLink(acc.id)}
+                        className="flex-1 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 py-2 rounded-lg font-medium text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                      >
+                        Vincular Perfil
                       </button>
                     </div>
                   </div>

@@ -44,6 +44,14 @@ const User = sequelize.define('User', {
     type: DataTypes.ENUM('free', 'pro', 'premium', 'agency'),
     defaultValue: 'free',
   },
+  accountantId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+        model: 'Accountants', // Note: Sequelize table name might be pluralized automatically
+        key: 'id'
+    }
+  },
   createdAt: {
     type: DataTypes.DATE,
     allowNull: true,

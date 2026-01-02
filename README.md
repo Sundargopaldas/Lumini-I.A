@@ -39,6 +39,14 @@
 - **Connect Your Accounts:** Seamlessly integrate with banks (Nubank, Inter) and platforms (Hotmart, YouTube, Adsense).
 - **Automated Sync:** Fetch transactions automatically to save time on manual entry.
 
+#### 🤝 Accountant Connection
+- **Link Your Accountant:** Securely grant your accountant access to your financial reports and dashboard.
+- **Accountant Dashboard:** Dedicated interface for accountants to manage multiple client portfolios efficiently.
+
+#### 🌟 Why Lumini I.A?
+- **Specialized for Creators:** Built specifically for the unique needs of the creator economy (AdSense, Publis, etc.).
+- **Modern Interface:** A clean, intuitive experience that stands out from traditional accounting software.
+
 ---
 
 ## 💎 Plans & Pricing

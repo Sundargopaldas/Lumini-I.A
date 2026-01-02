@@ -13,11 +13,14 @@ import ResetPassword from './pages/ResetPassword';
 import Integrations from './pages/Integrations';
 import Marketplace from './pages/Marketplace';
 import MobileApp from './pages/MobileApp';
+import Diferenciais from './pages/Diferenciais';
 import Admin from './pages/Admin';
 import Settings from './pages/Settings';
 import Terms from './pages/Terms';
 import Footer from './components/Footer';
 import WhatsAppWidget from './components/WhatsAppWidget';
+
+import AccountantDashboard from './pages/AccountantDashboard';
 
 const PrivateRoute = ({ children }) => {
   try {
@@ -81,7 +84,9 @@ function App() {
                       <Route path="/checkout" element={<Checkout />} />
                       <Route path="/integrations" element={<Integrations />} />
                       <Route path="/marketplace" element={<Marketplace />} />
+                      <Route path="/accountant-dashboard" element={<AccountantDashboard />} />
                       <Route path="/mobile-app" element={<MobileApp />} />
+                      <Route path="/diferenciais" element={<Diferenciais />} />
                       <Route path="/admin" element={
                         <AdminRoute>
                           <Admin />

@@ -83,23 +83,29 @@ const Navbar = () => {
           <Logo className="w-8 h-8" />
           <span>Lumini I.A</span>
         </Link>
-            <div className="hidden md:ml-6 md:flex md:space-x-8">
-              <Link to="/dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors">
-                {t('sidebar.dashboard')}
-              </Link>
-              <Link to="/transactions" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors">
-                {t('sidebar.transactions')}
-              </Link>
-              <Link to="/reports" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors">
-                {t('sidebar.reports')}
-              </Link>
-              <Link to="/invoices" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors">
-                {t('sidebar.invoices')}
-              </Link>
-              <Link to="/integrations" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors">
-                {t('sidebar.integrations')}
-              </Link>
-            </div>
+            <div className="hidden md:ml-6 md:flex md:space-x-2 lg:space-x-6 xl:space-x-8">
+            <Link to="/dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+              {t('sidebar.dashboard')}
+            </Link>
+            <Link to="/transactions" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+              {t('sidebar.transactions')}
+            </Link>
+            <Link to="/reports" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+              {t('sidebar.reports')}
+            </Link>
+            <Link to="/marketplace" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+              Marketplace
+            </Link>
+            <Link to="/accountant-dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+              Área do Contador
+            </Link>
+            <Link to="/invoices" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+              Notas Fiscais
+            </Link>
+            <Link to="/integrations" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+              {t('sidebar.integrations')}
+            </Link>
+          </div>
           </div>
           
           <div className="hidden md:flex items-center space-x-4">
@@ -121,9 +127,9 @@ const Navbar = () => {
                         showAlert('Recurso Premium', 'O Gerente de Conta Dedicado e Consultoria Mensal são exclusivos do plano Premium. Faça o upgrade!', 'locked');
                     }
                 }}
-                className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium transition-colors"
+                className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium transition-colors flex items-center gap-1 whitespace-nowrap"
             >
-                💬 Support {!isPro && '🔒'}
+                💬 Suporte {!isPro && '🔒'}
             </button>
             {/* Plan Badge removed to reduce clutter as requested */}
             

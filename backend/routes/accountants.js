@@ -146,4 +146,130 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
+const User = require('../models/User');
+
+// POST /api/accountants/link - Link current user to an accountant
+router.post('/link', authMiddleware, async (req, res) => {
+    try {
+        const { accountantId } = req.body;
+        const userId = req.user.id;
+
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const accountant = await Accountant.findByPk(accountantId);
+        if (!accountant) {
+            return res.status(404).json({ message: 'Accountant not found' });
+        }
+
+        user.accountantId = accountantId;
+        await user.save();
+
+        res.json({ message: 'Contador vinculado com sucesso!', accountant });
+    } catch (error) {
+        console.error('Error linking accountant:', error);
+        res.status(500).json({ message: 'Erro ao vincular contador' });
+    }
+});
+
+// GET /api/accountants/clients - List clients linked to the current accountant (Logged in as Accountant User)
+router.get('/clients', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // Find the Accountant profile associated with this user
+        const accountantProfile = await Accountant.findOne({ where: { userId } });
+        
+        if (!accountantProfile) {
+            return res.status(403).json({ message: 'Você não possui um perfil de contador.' });
+        }
+
+        // Find all users linked to this accountant
+        const clients = await User.findAll({
+            where: { accountantId: accountantProfile.id },
+            attributes: ['id', 'name', 'email', 'plan', 'createdAt'] // Limit exposed data
+        });
+
+        res.json(clients);
+    } catch (error) {
+        console.error('Error fetching clients:', error);
+        res.status(500).json({ message: 'Erro ao buscar clientes' });
+    }
+});
+
+const Transaction = require('../models/Transaction');
+const { Op } = require('sequelize');
+
+// GET /api/accountants/clients/:clientId/report - Get financial summary for a client
+router.get('/clients/:clientId/report', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { clientId } = req.params;
+
+        // Verify Accountant Profile
+        const accountantProfile = await Accountant.findOne({ where: { userId } });
+        if (!accountantProfile) {
+            return res.status(403).json({ message: 'Acesso negado. Perfil de contador não encontrado.' });
+        }
+
+        // Verify Link
+        const client = await User.findOne({
+            where: { 
+                id: clientId,
+                accountantId: accountantProfile.id
+            }
+        });
+
+        if (!client) {
+            return res.status(403).json({ message: 'Acesso negado. Este usuário não está vinculado ao seu escritório.' });
+        }
+
+        // Fetch Financial Data (Current Month)
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const transactions = await Transaction.findAll({
+            where: {
+                userId: clientId,
+                date: {
+                    [Op.gte]: startOfMonth
+                }
+            }
+        });
+
+        const revenue = transactions
+            .filter(t => t.type === 'income')
+            .reduce((acc, t) => acc + Number(t.amount), 0);
+
+        const expenses = transactions
+            .filter(t => t.type === 'expense')
+            .reduce((acc, t) => acc + Number(t.amount), 0);
+
+        res.json({
+            client: {
+                name: client.name,
+                email: client.email,
+                cpfCnpj: client.cpfCnpj
+            },
+            period: {
+                month: startOfMonth.toLocaleString('pt-BR', { month: 'long' }),
+                year: startOfMonth.getFullYear()
+            },
+            financials: {
+                revenue,
+                expenses,
+                netIncome: revenue - expenses,
+                transactionCount: transactions.length
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching client report:', error);
+        res.status(500).json({ message: 'Erro ao gerar relatório do cliente' });
+    }
+});
+
 module.exports = router;

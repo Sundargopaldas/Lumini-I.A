@@ -178,11 +178,52 @@ const sendPasswordResetEmail = async (user, resetLink) => {
 };
 
 /**
- * Send Invoice Email (Placeholder for future implementation)
+ * Send Invoice Email (Payment Received)
+ * @param {Object} user - User object containing email and name
+ * @param {Object} invoiceData - Details of the invoice/payment
  */
-const sendInvoiceEmail = async (toEmail, invoiceData) => {
-    // Implementation for invoice email
-    console.log(`[Mock] Invoice email sent to ${toEmail}`);
+const sendInvoiceEmail = async (user, invoiceData) => {
+    if (!user.email) return;
+
+    const logoUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png`;
+    const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard`;
+
+    const mailOptions = {
+        from: process.env.EMAIL_FROM || `"Equipe Lumini I.A" <${process.env.EMAIL_USER}>`,
+        to: user.email,
+        subject: 'Fatura Paga com Sucesso! ✅',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                <div style="background: #10b981; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                    <h2 style="color: white; margin: 0;">Pagamento Confirmado</h2>
+                </div>
+                <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; background-color: white;">
+                    <p>Olá, <strong>${user.name || 'Cliente'}</strong>,</p>
+                    <p>Recebemos o pagamento da sua fatura. Seu acesso aos recursos premium continua ativo!</p>
+                    
+                    <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                        <p style="margin: 5px 0;"><strong>Descrição:</strong> ${invoiceData.description || 'Assinatura Lumini I.A'}</p>
+                        <p style="margin: 5px 0;"><strong>Valor:</strong> ${invoiceData.amount}</p>
+                        <p style="margin: 5px 0;"><strong>Data:</strong> ${invoiceData.date || new Date().toLocaleDateString('pt-BR')}</p>
+                        <p style="margin: 5px 0;"><strong>Forma de Pagamento:</strong> ${invoiceData.method || 'Cartão/Boleto'}</p>
+                    </div>
+
+                    <p style="text-align: center; margin: 30px 0;">
+                        <a href="${dashboardUrl}" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Acessar Painel</a>
+                    </p>
+                    
+                    <p style="font-size: 12px; color: #666; margin-top: 30px;">Esta é uma mensagem automática, por favor não responda.</p>
+                </div>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Invoice email sent to ${user.email}`);
+    } catch (error) {
+        console.error('Error sending invoice email:', error);
+    }
 };
 
 module.exports = {

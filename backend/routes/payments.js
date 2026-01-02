@@ -130,6 +130,13 @@ router.post('/create-subscription-asaas', auth, async (req, res) => {
                 logDebug(`DB Updated: ${userToUpdate.email} -> ${targetPlan}`);
                 console.log(`[Asaas] Updated user ${userToUpdate.email} to plan ${targetPlan} (Subscription ID: ${subscription.id})`);
                 
+                // Send Welcome Email
+                try {
+                    sendWelcomeEmail(userToUpdate, targetPlan === 'premium' ? 'Premium' : 'Pro');
+                } catch (emailErr) {
+                    console.error('Error triggering welcome email:', emailErr);
+                }
+
                 // Return full user object for immediate frontend update
                 res.json({
                     subscriptionId: subscription.id,
