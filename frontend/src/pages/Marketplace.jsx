@@ -9,6 +9,7 @@ const Marketplace = () => {
   const { t } = useTranslation();
   const [accountants, setAccountants] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null); // New state to track current user
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -17,14 +18,32 @@ const Marketplace = () => {
     specialty: '',
     description: '',
     tags: '',
+    crc: '',
     image: null // Changed to handle file object
   });
-  const [alert, setAlert] = useState({ show: false, message: '', type: 'success' });
+  const [crcError, setCrcError] = useState('');
+  const [alert, setAlert] = useState({ 
+    show: false, 
+    message: '', 
+    type: 'success',
+    title: '',
+    onConfirm: null 
+  });
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchAccountants();
+    fetchCurrentUser(); // Fetch user to know linking status
   }, []);
+
+  const fetchCurrentUser = async () => {
+    try {
+        const response = await api.get('/auth/me');
+        setCurrentUser(response.data);
+    } catch (error) {
+        console.error('Error fetching current user:', error);
+    }
+  };
 
   const fetchAccountants = async () => {
     try {
@@ -39,9 +58,27 @@ const Marketplace = () => {
     }
   };
 
+  const validateCRC = (crc) => {
+    // Regex for CRC: UF-000000/O-0 (Example: SP-123456/O-0)
+    // UF: 2 uppercase letters
+    // Number: 6 digits
+    // Type: O (Original), P (Provisional), S (Secondary)
+    // Digit: 1 digit
+    const crcRegex = /^[A-Z]{2}-\d{6}\/[A-Z]-\d$/;
+    return crcRegex.test(crc);
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    if (name === 'crc') {
+      if (value && !validateCRC(value)) {
+        setCrcError('Formato inválido. Ex: SP-123456/O-0');
+      } else {
+        setCrcError('');
+      }
+    }
   };
 
   const handleFileChange = (e) => {
@@ -62,6 +99,7 @@ const Marketplace = () => {
       data.append('specialty', formData.specialty);
       data.append('description', formData.description);
       data.append('tags', formData.tags); // Will be parsed by backend
+      data.append('crc', formData.crc);
       if (formData.image) {
         data.append('image', formData.image);
       }
@@ -74,7 +112,7 @@ const Marketplace = () => {
 
       showAlert('Escritório cadastrado com sucesso! Aguardando aprovação.', 'success');
       setShowModal(false);
-      setFormData({ name: '', email: '', phone: '', specialty: '', description: '', tags: '', image: null });
+      setFormData({ name: '', email: '', phone: '', specialty: '', description: '', tags: '', crc: '', image: null });
     } catch (error) {
       console.error('Error registering accountant:', error);
       showAlert(error.response?.data?.message || 'Erro ao cadastrar escritório', 'error');
@@ -83,29 +121,106 @@ const Marketplace = () => {
     }
   };
 
-  const showAlert = (message, type) => {
-    setAlert({ show: true, message, type });
-    setTimeout(() => setAlert({ show: false, message: '', type: 'success' }), 5000);
+  const showAlert = (message, type = 'info', title = '', onConfirm = null) => {
+    setAlert({ 
+        show: true, 
+        message, 
+        type, 
+        title: title || (type === 'error' ? 'Erro' : (type === 'success' ? 'Sucesso' : 'Atenção')),
+        onConfirm 
+    });
   };
 
   const handleContact = (email) => {
+    if (!email) {
+        showAlert('Email de contato não disponível.', 'error');
+        return;
+    }
     window.location.href = `mailto:${email}`;
   };
 
-  const handleLink = async (accountantId) => {
-    if (!confirm('Deseja vincular seu perfil a este contador? Ele terá acesso de leitura aos seus dados.')) return;
-
-    try {
-      await api.post('/accountants/link', { accountantId });
-      showAlert('Contador vinculado com sucesso!', 'success');
-    } catch (error) {
-      console.error('Error linking accountant:', error);
-      showAlert('Erro ao vincular contador.', 'error');
+  const handleLink = (accountantId) => {
+    if (!accountantId) {
+        showAlert('Erro interno: ID do contador não encontrado.', 'error');
+        return;
     }
+
+    showAlert(
+        'Deseja vincular seu perfil a este contador? Ele terá acesso de leitura aos seus dados.',
+        'confirm',
+        'Vincular Contador',
+        async () => {
+            try {
+                console.log('Linking to accountant:', accountantId);
+                // Optimistic Update
+                setCurrentUser(prev => ({ ...prev, accountantId }));
+                
+                await api.post('/accountants/link', { accountantId });
+                
+                // Force a fresh fetch
+                const response = await api.get('/auth/me');
+                if (response.data) {
+                    console.log('User state updated after link:', response.data);
+                    setCurrentUser(response.data);
+                    
+                    // Also update localStorage to keep Navbar in sync
+                    const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+                    localStorage.setItem('user', JSON.stringify({ ...localUser, ...response.data }));
+                }
+
+                showAlert('Contador vinculado com sucesso!', 'success', 'Sucesso');
+            } catch (error) {
+                console.error('Error linking accountant:', error);
+                await fetchCurrentUser(); // Revert state
+                showAlert('Erro ao vincular contador.', 'error', 'Erro');
+            }
+        }
+    );
+  };
+
+  const handleUnlink = () => {
+    showAlert(
+        'Tem certeza que deseja desvincular seu contador atual? Ele perderá acesso aos seus dados.',
+        'confirm',
+        'Desvincular Contador',
+        async () => {
+            try {
+                // Optimistic Update
+                setCurrentUser(prev => ({ ...prev, accountantId: null }));
+
+                await api.post('/accountants/unlink');
+                
+                // Force a fresh fetch
+                const response = await api.get('/auth/me');
+                if (response.data) {
+                    console.log('User state updated after unlink:', response.data);
+                    setCurrentUser(response.data);
+                    
+                    // Also update localStorage to keep Navbar in sync
+                    const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+                    localStorage.setItem('user', JSON.stringify({ ...localUser, ...response.data }));
+                }
+                
+                showAlert('Vínculo removido com sucesso!', 'success', 'Sucesso');
+            } catch (error) {
+                console.error('Error unlinking accountant:', error);
+                await fetchCurrentUser(); // Revert state
+                showAlert('Erro ao desvincular contador.', 'error', 'Erro');
+            }
+        }
+    );
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+      <CustomAlert 
+        isOpen={alert.show}
+        onClose={() => setAlert(prev => ({ ...prev, show: false }))}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+        onConfirm={alert.onConfirm}
+      />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
         {/* Header */}
@@ -166,10 +281,27 @@ const Marketplace = () => {
                         )}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-lg text-slate-800 dark:text-white">{acc.name}</h3>
+                        <div className="flex items-center gap-1">
+                          <h3 className="font-semibold text-lg text-slate-800 dark:text-white">{acc.name}</h3>
+                          {acc.verified && (
+                            <div className="group relative">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block px-2 py-1 bg-slate-800 text-white text-xs rounded whitespace-nowrap z-10">
+                                Verificado
+                              </span>
+                            </div>
+                          )}
+                        </div>
                         <span className="inline-block px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs rounded-full font-medium mt-1">
                           {acc.specialty}
                         </span>
+                        {acc.crc && (
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            CRC: {acc.crc}
+                          </div>
+                        )}
                       </div>
                     </div>
                     
@@ -178,7 +310,14 @@ const Marketplace = () => {
                     </p>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {acc.tags && (Array.isArray(acc.tags) ? acc.tags : JSON.parse(acc.tags)).map((tag, idx) => (
+                      {acc.tags && (() => {
+                          try {
+                              const parsed = Array.isArray(acc.tags) ? acc.tags : JSON.parse(acc.tags);
+                              return Array.isArray(parsed) ? parsed : [];
+                          } catch (e) {
+                              return typeof acc.tags === 'string' ? acc.tags.split(',').map(t => t.trim()) : [];
+                          }
+                      })().map((tag, idx) => (
                         <span key={idx} className="text-xs px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded">
                           {tag}
                         </span>
@@ -192,12 +331,33 @@ const Marketplace = () => {
                       >
                         Entrar em Contato
                       </button>
-                      <button 
-                        onClick={() => handleLink(acc.id)}
-                        className="flex-1 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 py-2 rounded-lg font-medium text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                      >
-                        Vincular Perfil
-                      </button>
+                      
+                      {/* Ensure types match for comparison */}
+                      {String(currentUser?.accountantId) === String(acc.id) ? (
+                        <button 
+                            onClick={handleUnlink}
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"
+                        >
+                            Desvincular
+                        </button>
+                      ) : (
+                        <button 
+                            onClick={() => handleLink(acc.id)}
+                            disabled={!!currentUser?.accountantId}
+                            className={`flex-1 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm ${
+                                // Convert both to String/Number to avoid type mismatch
+                                String(currentUser?.accountantId) === String(acc.id)
+                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700' 
+                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                            }`}
+                            title={currentUser?.accountantId ? 'Você já possui um contador vinculado' : ''}
+                        >
+                            {/* Explicit check for already linked same ID */}
+                            {String(currentUser?.accountantId) === String(acc.id) 
+                                ? 'Vinculado' 
+                                : (currentUser?.accountantId ? 'Indisponível' : 'Vincular Perfil')}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -265,6 +425,19 @@ const Marketplace = () => {
                       className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Número do CRC</label>
+                  <input
+                    type="text"
+                    name="crc"
+                    value={formData.crc}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-2 rounded-lg border ${crcError ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none`}
+                    placeholder="Ex: SP-123456/O-0"
+                  />
+                  {crcError && <p className="text-red-500 text-xs mt-1">{crcError}</p>}
                 </div>
 
                 <div>
@@ -346,13 +519,6 @@ const Marketplace = () => {
           </div>
         )}
       </AnimatePresence>
-
-      <CustomAlert 
-        isOpen={alert.show} 
-        message={alert.message} 
-        type={alert.type} 
-        onClose={() => setAlert({ ...alert, show: false })} 
-      />
     </div>
   );
 };

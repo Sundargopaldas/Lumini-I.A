@@ -44,20 +44,20 @@ const CustomAlert = ({ isOpen, onClose, title, message, type = 'info', onConfirm
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <div 
-        className={`w-full max-w-sm rounded-xl border p-6 shadow-2xl transform transition-all scale-100 animate-in zoom-in-95 duration-200 bg-white dark:bg-slate-900 ${getColors()}`}
+        className={`w-full max-w-sm rounded-xl border p-6 shadow-2xl bg-white dark:bg-slate-900 ${getColors()}`}
       >
         <div className="flex flex-col items-center text-center gap-4">
           <div className="text-4xl">{getIcon()}</div>
           
           <div className="space-y-2">
-            <h3 className="text-xl font-bold">{title}</h3>
-            <div className="text-sm opacity-90 whitespace-pre-line break-words">{message}</div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h3>
+            <div className="text-sm opacity-90 whitespace-pre-line break-words text-slate-700 dark:text-slate-300">{message}</div>
           </div>
 
           <div className="flex gap-3 w-full mt-4">
-            {onConfirm ? (
+            {(type === 'confirm') ? (
                 <>
                     <button
                         onClick={onClose}
@@ -67,8 +67,13 @@ const CustomAlert = ({ isOpen, onClose, title, message, type = 'info', onConfirm
                     </button>
                     <button
                         onClick={() => {
-                            onConfirm();
                             onClose();
+                            if (onConfirm && typeof onConfirm === 'function') {
+                                // Small delay to prevent state race conditions
+                                setTimeout(() => {
+                                    onConfirm();
+                                }, 200);
+                            }
                         }}
                         className="flex-1 py-2 px-4 rounded-lg bg-purple-600 hover:bg-purple-700 transition-colors font-semibold text-sm text-white shadow-lg shadow-purple-500/20"
                     >

@@ -3,7 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 // Initialize Stripe with the Secret Key
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy');
 const AsaasService = require('../services/AsaasService');
 
 // Use environment variable or fallback to the Sandbox key provided by user for testing

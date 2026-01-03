@@ -90,6 +90,14 @@ const AIInsightsWidget = () => {
             </svg>
         </div>
         <h2 className="text-xl font-bold text-white">Consultor IA</h2>
+        
+        {/* Creator Mode Badge */}
+        {insights.some(i => i.message && (i.message.includes('Creator Insight') || i.message.includes('AdSense'))) && (
+             <span className="ml-2 px-2 py-0.5 bg-gradient-to-r from-rose-500 to-orange-500 rounded text-[10px] uppercase font-bold text-white tracking-wider shadow-sm border border-white/10">
+                Creator Mode
+             </span>
+        )}
+
         {loading && (
             <span className="flex h-3 w-3 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>

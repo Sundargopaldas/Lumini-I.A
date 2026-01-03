@@ -34,6 +34,10 @@ const Accountant = sequelize.define('Accountant', {
     type: DataTypes.STRING, // Stored as comma-separated string or JSON
     allowNull: true
   },
+  crc: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   image: {
     type: DataTypes.STRING,
     allowNull: true

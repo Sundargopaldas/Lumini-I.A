@@ -16,6 +16,11 @@
 
 ### 🌟 Key Features
 
+#### 🎥 Creator Mode (New!)
+- **Smart Income Detection:** Automatically identifies income from YouTube (AdSense), Twitch, and international platforms.
+- **Tax Optimization:** Flags export revenues (like AdSense from Google Ireland) that may be eligible for PIS/COFINS tax exemptions.
+- **Tailored Insights:** AI-driven advice specifically for content creation expenses (equipment, software, home office).
+
 #### 📊 Dashboard & Analytics
 - **Real-time Overview:** View your total balance, monthly income/expenses, and top revenue sources at a glance.
 - **Trend Analysis:** Visualize your financial growth with interactive 6-month balance evolution charts.
@@ -41,7 +46,8 @@
 
 #### 🤝 Accountant Connection
 - **Link Your Accountant:** Securely grant your accountant access to your financial reports and dashboard.
-- **Accountant Dashboard:** Dedicated interface for accountants to manage multiple client portfolios efficiently.
+- **Accountant Dashboard:** Dedicated interface for accountants to manage client portfolios.
+- **Creator Tax Reports:** Specialized reports that separate domestic vs. export income to simplify tax declarations for YouTubers.
 
 #### 🌟 Why Lumini I.A?
 - **Specialized for Creators:** Built specifically for the unique needs of the creator economy (AdSense, Publis, etc.).
@@ -55,6 +61,7 @@
 | :--- | :---: | :---: | :---: |
 | **Dashboard Access** | ✅ | ✅ | ✅ |
 | **Manual Transactions** | ✅ | ✅ | ✅ |
+| **Creator Mode Insights** | ❌ | ✅ | ✅ |
 | **Recurring Transactions** | ❌ | ✅ | ✅ |
 | **Integrations** | 0 (Demo) | Unlimited | Unlimited |
 | **Reports Export** | ❌ | ✅ (CSV/PDF) | ✅ (CSV/PDF) |
@@ -78,6 +85,7 @@
 - **Sequelize ORM** for database management.
 - **SQLite** (Dev) / **MySQL** (Prod) for reliable data storage.
 - **JWT Authentication** for secure user sessions.
+- **Google Gemini AI** for financial intelligence.
 
 ---
 
@@ -99,41 +107,19 @@
    ```bash
    cd backend
    npm install
-   # Configure .env file if needed
+   # Configure .env file
    npm start
    ```
 
 3. **Setup Frontend**
    ```bash
-   # Open a new terminal
    cd frontend
    npm install
    npm run dev
    ```
 
-4. **Access the App**
-   Open [http://localhost:5173](http://localhost:5173) in your browser.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-<p align="center">
-  Made with ❤️ by the Lumini Team
-</p>
+This project is licensed under the MIT License - see the LICENSE file for details.

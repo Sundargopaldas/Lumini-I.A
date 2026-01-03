@@ -3,8 +3,8 @@ const cors = require('cors');
 const path = require('path');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+require('dotenv').config(); // Load .env BEFORE database config
 const sequelize = require('./config/database');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -20,7 +20,7 @@ app.use(helmet({
 // Rate Limiting - Global
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300, // Limit each IP to 300 requests per windowMs
+  max: 1000, // Limit each IP to 1000 requests per windowMs (Increased for dev)
   standardHeaders: true, 
   legacyHeaders: false,
   message: 'Too many requests from this IP, please try again after 15 minutes'
@@ -64,7 +64,7 @@ const accountantRoutes = require('./routes/accountants');
 // Rate Limiting - Auth (Stricter)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Limit each IP to 50 login/register attempts per windowMs
+  max: 500, // Limit each IP to 500 login/register attempts per windowMs (Increased for dev/testing)
   message: 'Too many login attempts, please try again later'
 });
 
@@ -90,10 +90,8 @@ const startServer = async () => {
   try {
     await sequelize.authenticate();
     console.log('Database connection has been established successfully.');
-    
-    // Sync models with database (alter: true updates tables without dropping)
-    // Note: Since you have existing tables, be careful with sync. 
-    // 'alter: true' tries to match the model to the table.
+
+    // Using sync() to keep schema consistent
     await sequelize.sync();
     
     // Manual migration for cpfCnpj (safe add)

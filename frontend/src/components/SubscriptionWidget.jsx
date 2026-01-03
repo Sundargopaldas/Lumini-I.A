@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import CustomAlert from './CustomAlert';
 
 const SubscriptionWidget = ({ user }) => {
   if (!user) return null;
@@ -8,6 +9,13 @@ const SubscriptionWidget = ({ user }) => {
   // Local state to handle sync updates
   const [localUser, setLocalUser] = useState(user);
   const [syncing, setSyncing] = useState(false);
+  const [alert, setAlert] = useState({ 
+    show: false, 
+    message: '', 
+    type: 'success', 
+    title: '',
+    onCloseAction: null 
+  });
 
   useEffect(() => {
      setLocalUser(user);
@@ -22,12 +30,22 @@ const SubscriptionWidget = ({ user }) => {
               setLocalUser(res.data);
               // Dispatch storage event to notify other components
               window.dispatchEvent(new Event('storage'));
-              alert('Plano sincronizado com sucesso!');
-              window.location.reload(); // Force full reload
+              setAlert({
+                show: true,
+                message: 'Plano sincronizado com sucesso!',
+                type: 'success',
+                title: 'Sincronizado',
+                onCloseAction: () => window.location.reload()
+              });
           }
       } catch (e) {
           console.error('Sync error', e);
-          alert('Erro ao sincronizar. Tente novamente.');
+          setAlert({
+            show: true,
+            message: 'Erro ao sincronizar. Tente novamente.',
+            type: 'error',
+            title: 'Erro'
+          });
       } finally {
           setSyncing(false);
       }
@@ -120,6 +138,17 @@ const SubscriptionWidget = ({ user }) => {
             </div>
         )}
       </div>
+      
+      <CustomAlert 
+        isOpen={alert.show} 
+        message={alert.message} 
+        type={alert.type} 
+        title={alert.title}
+        onClose={() => {
+            setAlert(prev => ({ ...prev, show: false }));
+            if (alert.onCloseAction) alert.onCloseAction();
+        }} 
+      />
     </div>
   );
 };

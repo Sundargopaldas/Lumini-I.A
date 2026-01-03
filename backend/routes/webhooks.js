@@ -3,7 +3,7 @@ const router = express.Router();
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 const Invoice = require('../models/Invoice');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy');
 const AsaasService = require('../services/AsaasService');
 const { sendWelcomeEmail, sendInvoiceEmail } = require('../services/EmailService');
 

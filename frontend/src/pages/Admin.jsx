@@ -6,7 +6,13 @@ import CustomAlert from '../components/CustomAlert';
 const Admin = () => {
   const [accountants, setAccountants] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [alert, setAlert] = useState({ show: false, message: '', type: 'success' });
+  const [alert, setAlert] = useState({ 
+    show: false, 
+    message: '', 
+    type: 'success',
+    title: '',
+    onConfirm: null 
+  });
 
   useEffect(() => {
     fetchAccountants();
@@ -40,26 +46,44 @@ const Admin = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Tem certeza que deseja remover este escritório?')) return;
-    
-    try {
-      await api.delete(`/accountants/${id}`);
-      setAccountants(prev => prev.filter(acc => acc.id !== id));
-      showAlert('Contador removido com sucesso!', 'success');
-    } catch (error) {
-      console.error('Error deleting accountant:', error);
-      showAlert('Erro ao remover contador', 'error');
-    }
+  const handleDelete = (id) => {
+    showAlert(
+        'Tem certeza que deseja remover este escritório?',
+        'confirm',
+        'Remover Escritório',
+        async () => {
+            try {
+                await api.delete(`/accountants/${id}`);
+                setAccountants(prev => prev.filter(acc => acc.id !== id));
+                showAlert('Contador removido com sucesso!', 'success', 'Sucesso');
+            } catch (error) {
+                console.error('Error deleting accountant:', error);
+                showAlert('Erro ao remover contador', 'error', 'Erro');
+            }
+        }
+    );
   };
 
-  const showAlert = (message, type) => {
-    setAlert({ show: true, message, type });
-    setTimeout(() => setAlert({ show: false, message: '', type: 'success' }), 5000);
+  const showAlert = (message, type = 'info', title = '', onConfirm = null) => {
+    setAlert({ 
+        show: true, 
+        message, 
+        type, 
+        title: title || (type === 'error' ? 'Erro' : (type === 'success' ? 'Sucesso' : 'Atenção')),
+        onConfirm 
+    });
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+      <CustomAlert 
+        isOpen={alert.show}
+        onClose={() => setAlert(prev => ({ ...prev, show: false }))}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+        onConfirm={alert.onConfirm}
+      />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
         <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-8">
@@ -155,7 +179,9 @@ const Admin = () => {
         isOpen={alert.show} 
         message={alert.message} 
         type={alert.type} 
-        onClose={() => setAlert({ ...alert, show: false })} 
+        onClose={() => setAlert(prev => ({ ...prev, show: false }))} 
+        title={alert.title}
+        onConfirm={alert.onConfirm}
       />
     </div>
   );

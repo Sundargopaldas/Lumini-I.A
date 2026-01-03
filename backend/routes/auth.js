@@ -7,6 +7,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const User = require('../models/User');
+const Accountant = require('../models/Accountant');
 const auth = require('../middleware/auth');
 const checkPremium = require('../middleware/checkPremium');
 
@@ -146,7 +147,20 @@ router.get('/me', auth, async (req, res) => {
     const user = await User.findByPk(req.user.id, {
       attributes: { exclude: ['password'] }
     });
-    res.json(user);
+    
+    // Check if user is an accountant
+    const accountant = await Accountant.findOne({ where: { userId: req.user.id } });
+    
+    console.log('DEBUG /me: User ID:', req.user.id);
+    console.log('DEBUG /me: Accountant found:', !!accountant);
+
+    const userData = user.toJSON();
+    userData.isAccountant = !!accountant;
+    userData.accountantProfileId = accountant ? accountant.id : null;
+    
+    console.log('DEBUG /me: Response:', userData);
+
+    res.json(userData);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

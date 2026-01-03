@@ -49,8 +49,8 @@ const generateFinancialInsights = async (user, transactions, goals) => {
             ).join('\n');
 
             const prompt = `
-              Você é o "Lumini IA", um consultor financeiro pessoal de elite, especializado em finanças pessoais e empresariais para brasileiros.
-              
+              Você é o "Lumini IA", um consultor financeiro pessoal de elite, especializado em **Economia dos Criadores (Creator Economy)** e contabilidade para empreendedores digitais.
+
               Perfil do Usuário:
               - Nome: ${user.username}
               - Plano: ${user.plan} (Se for PRO/PREMIUM, seja mais detalhado)
@@ -63,6 +63,12 @@ const generateFinancialInsights = async (user, transactions, goals) => {
               
               SUA TAREFA:
               Analise os dados acima e forneça 3 insights PODEROSOS e acionáveis.
+              
+              🧠 **Inteligência para Criadores de Conteúdo:**
+              - Se identificar receitas de **YouTube, AdSense, Hotmart, Eduzz, Kiwify** ou publicidade, foque em:
+                1. **Volatilidade de Receita**: Sugira reserva de emergência maior (6-12 meses).
+                2. **Impostos**: Alerte sobre o limite de isenção de PF e sugira migração para PJ/Simples Nacional se passar de R$ 5k/mês.
+                3. **Reinvestimento**: Sugira investir em equipamentos/ads se o fluxo de caixa permitir.
               
               Regras de Resposta:
               1. Use linguagem natural, empática mas profissional (Português do Brasil).
@@ -144,8 +150,16 @@ const generateLocalInsights = (user, transactions, goals) => {
     // 4. Generate Insights
     let insight1, insight2, insight3;
 
-    // Insight 1: Cash Flow
-    if (balance < 0) {
+    // Check for Creator Sources
+    const creatorSources = ['YouTube', 'AdSense', 'Hotmart', 'Eduzz', 'Kiwify', 'TikTok', 'Google Ads'];
+    const hasCreatorIncome = transactions.some(t => 
+        t.type === 'income' && creatorSources.some(source => t.source?.includes(source) || t.description?.includes(source))
+    );
+
+    // Insight 1: Cash Flow or Creator Tip
+    if (hasCreatorIncome && balance > 0) {
+        insight1 = `🎥 **Creator Insight**: Identifiquei receitas de plataformas digitais. Lembre-se que receitas do AdSense/YouTube vindas do exterior podem ter isenção de alguns impostos se recebidas via PJ.`;
+    } else if (balance < 0) {
         insight1 = `🚨 **Atenção Imediata**: Seu saldo recente está negativo em **R$ ${Math.abs(balance).toFixed(2)}**. É crucial revisar seus gastos supérfluos esta semana para não entrar no cheque especial.`;
     } else {
         insight1 = `✅ **Saúde Financeira**: Parabéns! Você gastou menos do que ganhou recentemente (Saldo positivo: **R$ ${balance.toFixed(2)}**). Considere investir 30% desse excedente.`;
@@ -159,7 +173,11 @@ const generateLocalInsights = (user, transactions, goals) => {
     }
 
     // Insight 3: Strategy
-    insight3 = `🎯 **Foco no Futuro**: ${goalAlert} Lembre-se: consistência é a chave para grandes resultados.`;
+    if (hasCreatorIncome && !activeGoals.find(g => g.name.toLowerCase().includes('equipamento'))) {
+         insight3 = `💡 **Dica Pro**: Que tal criar uma meta para "Atualização de Equipamento"? Manter sua câmera/setup atualizado é investimento, não gasto.`;
+    } else {
+         insight3 = `🎯 **Foco no Futuro**: ${goalAlert} Lembre-se: consistência é a chave para grandes resultados.`;
+    }
 
     return `
 ### ✨ Análise Executiva (Lumini Essential)
@@ -191,7 +209,7 @@ const chatWithAI = async (user, transactions, goals, userMessage, history = []) 
         ).join('\n');
 
         const systemContext = `
-        Você é o "Lumini IA", um assistente financeiro pessoal inteligente.
+        Você é o "Lumini IA", um assistente financeiro pessoal inteligente, especializado em atender YouTubers, Influenciadores e Empreendedores Digitais.
         
         CONTEXTO DO USUÁRIO:
         - Nome: ${user.username}

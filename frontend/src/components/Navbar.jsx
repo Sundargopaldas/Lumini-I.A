@@ -19,19 +19,23 @@ const Navbar = () => {
             const response = await api.get('/auth/me');
             const freshUser = response.data;
             
-            // If plan changed, update state and localStorage
-            if (freshUser.plan !== user.plan) {
+            // Check for plan changes or accountant status updates
+            const planChanged = freshUser.plan !== user.plan;
+            const accountantStatusChanged = freshUser.isAccountant !== user.isAccountant;
+
+            if (planChanged || accountantStatusChanged) {
                 // PROTECTION: Don't downgrade UI if local says Premium/Pro but server says Free (likely server lag/error)
                 const localIsPaid = ['pro', 'premium', 'agency'].includes(user.plan?.toLowerCase());
                 const serverIsFree = freshUser.plan === 'free';
 
-                if (localIsPaid && serverIsFree) {
+                if (planChanged && localIsPaid && serverIsFree) {
                     console.warn('Backend returned Free but Local is Paid. Ignoring backend to preserve UX.');
                     return; 
                 }
 
-                console.log('Syncing user plan:', freshUser.plan);
-                setUser(freshUser);
+                console.log('Syncing user data:', { plan: freshUser.plan, isAccountant: freshUser.isAccountant });
+                setUser(prev => ({ ...prev, ...freshUser }));
+                
                 const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
                 localStorage.setItem('user', JSON.stringify({ ...currentUser, ...freshUser }));
             }
@@ -83,7 +87,7 @@ const Navbar = () => {
           <Logo className="w-8 h-8" />
           <span>Lumini I.A</span>
         </Link>
-            <div className="hidden md:ml-6 md:flex md:space-x-2 lg:space-x-6 xl:space-x-8">
+            <div className="hidden xl:ml-6 xl:flex xl:space-x-6">
             <Link to="/dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
               {t('sidebar.dashboard')}
             </Link>
@@ -96,9 +100,11 @@ const Navbar = () => {
             <Link to="/marketplace" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
               Marketplace
             </Link>
-            <Link to="/accountant-dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
-              Área do Contador
-            </Link>
+            {user.isAccountant && (
+              <Link to="/accountant-dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+                Área do Contador
+              </Link>
+            )}
             <Link to="/invoices" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
               Notas Fiscais
             </Link>
@@ -108,7 +114,7 @@ const Navbar = () => {
           </div>
           </div>
           
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden xl:flex items-center space-x-4">
             {/* Language Switcher moved to Settings */}
             <button 
                 onClick={() => {
@@ -129,7 +135,7 @@ const Navbar = () => {
                 }}
                 className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium transition-colors flex items-center gap-1 whitespace-nowrap"
             >
-                💬 Suporte {!isPro && '🔒'}
+                Suporte {!isPro && '🔒'}
             </button>
             {/* Plan Badge removed to reduce clutter as requested */}
             
@@ -160,7 +166,7 @@ const Navbar = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="flex items-center md:hidden">
+          <div className="flex items-center xl:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500 transition-colors"
@@ -182,7 +188,7 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 absolute w-full transition-colors shadow-lg">
+        <div className="xl:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 absolute w-full transition-colors shadow-lg">
           <div className="px-2 pt-2 pb-3 space-y-1">
             <Link 
               to="/dashboard" 
@@ -206,19 +212,55 @@ const Navbar = () => {
               {t('sidebar.reports')}
             </Link>
             <Link 
+              to="/marketplace" 
+              className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Marketplace
+            </Link>
+            <Link 
+              to="/accountant-dashboard" 
+              className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Área do Contador
+            </Link>
+            <Link 
+              to="/invoices" 
+              className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Notas Fiscais
+            </Link>
+            <Link 
               to="/integrations" 
               className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               {t('sidebar.integrations')}
             </Link>
-            <Link 
-              to="/plans" 
-              className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-700 dark:hover:text-yellow-300 hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-bold transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+            <button
+                onClick={() => {
+                    if (isPremium) {
+                        showAlert(
+                            '🌟 Atendimento Premium',
+                            'Seu Gerente Dedicado: **Sofia Martins**\n\n' +
+                            '📞 WhatsApp Direto: (11) 99999-8888\n' +
+                            '📧 Email: sofia.martins@luminia.com\n\n' +
+                            '📅 Consultoria Mensal: Sua próxima reunião está disponível para agendamento.',
+                            'success'
+                        );
+                    } else if (isPro) {
+                        showAlert('Suporte Prioritário', 'Como assinante PRO, você tem acesso direto ao nosso time via WhatsApp.\n\nIniciar Chat: +55 (11) 99999-9999', 'success');
+                    } else {
+                        showAlert('Recurso Premium', 'O Gerente de Conta Dedicado e Consultoria Mensal são exclusivos do plano Premium. Faça o upgrade!', 'locked');
+                    }
+                    setIsMenuOpen(false);
+                }}
+                className="w-full text-left text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
             >
-              UPGRADE PLAN
-            </Link>
+                💬 Suporte {!isPro && '🔒'}
+            </button>
           </div>
           <div className="pt-4 pb-4 border-t border-slate-200 dark:border-white/10">
             <div className="flex items-center px-5">
@@ -228,6 +270,13 @@ const Navbar = () => {
               </div>
             </div>
             <div className="mt-3 px-2 space-y-1">
+              <Link
+                to="/settings"
+                className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Configurações
+              </Link>
               <button
                 onClick={() => {
                     handleLogout();

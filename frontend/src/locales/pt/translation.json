@@ -9,7 +9,8 @@
     "transactions": "Transações",
     "integrations": "Integrações",
     "reports": "Relatórios",
-    "profile": "Perfil"
+    "profile": "Perfil",
+    "accountant": "Contador"
   },
   "transactions": {
     "title": "Transações",
@@ -82,7 +83,12 @@
     "csv_locked_msg": "Exportação CSV é exclusiva para usuários PRO. Faça upgrade para desbloquear!",
     "type": "Tipo",
     "source": "Fonte",
-    "goal": "Meta"
+    "goal": "Meta",
+    "creator_mode": "Modo Criador",
+    "export_income": "Receita de Exportação",
+    "domestic_income": "Receita Nacional",
+    "tax_savings": "Economia Estimada",
+    "export_exemption": "Isenção de Exportação"
   },
   "plans": {
     "title": "Escolha seu Plano",
@@ -127,7 +133,7 @@
         "nfse_issuance": "Emissão de Notas (NFS-e)",
         "dedicated_manager": "Gerente de Conta Dedicado",
         "financial_planning": "Planejamento Financeiro",
-      "pro_feature": "Recurso PRO"
+        "pro_feature": "Recurso PRO"
     }
   },
   "checkout": {
@@ -388,5 +394,23 @@
     "whatsapp_message": "Olá, preciso de ajuda com o Lumini.",
     "tooltip": "Falar com Especialista",
     "chat_with_expert": "Falar com Especialista"
+  },
+  "accountant": {
+    "title": "Painel do Contador",
+    "welcome": "Bem-vindo ao Portal de Contadores Lumini",
+    "select_client": "Selecione um cliente para visualizar",
+    "clients": "Clientes",
+    "reports": "Relatórios",
+    "tax_regime": "Regime Tributário",
+    "estimated_tax": "Imposto Estimado",
+    "export_savings": "Economia (Exportação)",
+    "view_report": "Ver Relatório",
+    "client_list": "Lista de Clientes",
+    "no_clients": "Nenhum cliente vinculado ainda.",
+    "invite_clients": "Convide seus clientes YouTubers para o Lumini!",
+    "creator_insight": "Insight do Criador",
+    "domestic_income": "Faturamento Nacional",
+    "international_income": "Faturamento Internacional (Exportação)",
+    "tax_observation": "Observação Fiscal"
   }
 }

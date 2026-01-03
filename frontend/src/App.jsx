@@ -57,6 +57,23 @@ const AdminRoute = ({ children }) => {
   }
 };
 
+const AccountantRoute = ({ children }) => {
+  try {
+    const userStr = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    
+    if (!userStr || !token || userStr === 'undefined') {
+      return <Navigate to="/login" replace />;
+    }
+
+    const user = JSON.parse(userStr);
+    // Check isAccountant flag (from backend) or fallback to logic if needed
+    return user && user.isAccountant ? children : <Navigate to="/dashboard" replace />;
+  } catch (error) {
+    return <Navigate to="/login" replace />;
+  }
+};
+
 import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
@@ -84,7 +101,11 @@ function App() {
                       <Route path="/checkout" element={<Checkout />} />
                       <Route path="/integrations" element={<Integrations />} />
                       <Route path="/marketplace" element={<Marketplace />} />
-                      <Route path="/accountant-dashboard" element={<AccountantDashboard />} />
+                      <Route path="/accountant-dashboard" element={
+                        <AccountantRoute>
+                          <AccountantDashboard />
+                        </AccountantRoute>
+                      } />
                       <Route path="/mobile-app" element={<MobileApp />} />
                       <Route path="/diferenciais" element={<Diferenciais />} />
                       <Route path="/admin" element={
