@@ -4,11 +4,7 @@ const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 const Invoice = require('../models/Invoice');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy');
-const AsaasService = require('../services/AsaasService');
 const { sendWelcomeEmail, sendInvoiceEmail } = require('../services/EmailService');
-
-// Use environment variable or fallback to the Sandbox key provided by user for testing
-const ASAAS_API_KEY = process.env.ASAAS_API_KEY || '$aact_hmlg_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6Ojk2ZmFiZmE1LTUzZGYtNGQ0Ny04NjVjLTU3MTg4MmJlZDI3Mjo6JGFhY2hfMWY0NWJkNTEtYjBkZi00NWE3LWE5NjAtZTYzOWE3ZDllM2Q1';
 
 // Stripe Webhook Handler
 // This ensures that plan updates happen even if the user closes the browser
@@ -114,84 +110,6 @@ router.post('/stripe', express.raw({type: 'application/json'}), async (req, res)
   }
 
   res.send();
-});
-
-// Asaas Webhook Handler
-router.post('/asaas', express.json(), async (req, res) => {
-  try {
-    const { event, payment } = req.body;
-    const token = req.headers['asaas-access-token'];
-    
-    // Optional: Verify token if configured
-    // if (token !== process.env.ASAAS_WEBHOOK_TOKEN) ...
-
-    console.log(`[Asaas Webhook] Event: ${event} for Payment: ${payment?.id}`);
-
-    if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
-        let newPlan = 'pro';
-        // Determine plan based on description or value
-        if (payment.description && payment.description.toLowerCase().includes('premium')) {
-            newPlan = 'premium';
-        } else if (payment.value >= 90) {
-            newPlan = 'premium';
-        } else if (payment.value >= 40) {
-            newPlan = 'pro';
-        }
-
-        // Fetch Customer to get email
-        if (payment.customer) {
-            try {
-                const customerData = await AsaasService.getCustomerById(ASAAS_API_KEY, payment.customer);
-                
-                if (customerData && customerData.email) {
-                    const email = customerData.email;
-                    
-                    // Update User Plan
-                    const user = await User.findOne({ where: { email } });
-                    if (user) {
-                        const oldPlan = user.plan;
-                        user.plan = newPlan;
-                        await user.save();
-                        console.log(`[Asaas Webhook] User ${email} plan updated to ${newPlan} via Asaas.`);
-                        
-                        // Create Transaction Record
-                        await Transaction.create({
-                            description: `Assinatura Lumini ${newPlan.charAt(0).toUpperCase() + newPlan.slice(1)} (Asaas)`,
-                            amount: payment.value,
-                            type: 'income',
-                            source: 'Asaas',
-                            date: new Date(),
-                            userId: user.id
-                        });
-
-                        // Send Invoice Email
-                        await sendInvoiceEmail(user, {
-                            amount: payment.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-                            description: `Assinatura Lumini ${newPlan === 'premium' ? 'Premium' : 'Pro'}`,
-                            method: payment.billingType || 'Asaas',
-                            date: new Date().toLocaleDateString('pt-BR')
-                        });
-
-                        // Send Welcome Email if upgrade
-                        if (oldPlan !== newPlan) {
-                            await sendWelcomeEmail(user, newPlan === 'premium' ? 'Premium' : 'Pro');
-                        }
-
-                    } else {
-                        console.warn(`[Asaas Webhook] User with email ${email} not found in local DB.`);
-                    }
-                }
-            } catch (custErr) {
-                console.error(`[Asaas Webhook] Failed to fetch customer ${payment.customer}:`, custErr.message);
-            }
-        }
-    }
-
-    res.json({ received: true });
-  } catch (error) {
-    console.error('[Asaas Webhook] Error:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
 });
 
 // Webhook Receiver for Hotmart (Simulation)

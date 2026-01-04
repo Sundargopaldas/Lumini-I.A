@@ -4,10 +4,6 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 // Initialize Stripe with the Secret Key
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy');
-const AsaasService = require('../services/AsaasService');
-
-// Use environment variable or fallback to the Sandbox key provided by user for testing
-const ASAAS_API_KEY = process.env.ASAAS_API_KEY || '$aact_hmlg_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6Ojk2ZmFiZmE1LTUzZGYtNGQ0Ny04NjVjLTU3MTg4MmJlZDI3Mjo6JGFhY2hfMWY0NWJkNTEtYjBkZi00NWE3LWE5NjAtZTYzOWE3ZDllM2Q1';
 
 // Map frontend plan names to details
 // Amount is in cents (BRL)
@@ -42,138 +38,8 @@ function logDebug(message) {
 }
 
 router.post('/create-subscription-asaas', auth, async (req, res) => {
-    const { planName, billingType, cpfCnpj, name, email, creditCard, creditCardHolderInfo } = req.body;
-
-    try {
-        logDebug(`Processing Asaas subscription for ${email} - Plan: ${planName}`);
-        console.log(`Processing Asaas subscription for ${email} - Plan: ${planName}`);
-        
-        const planKey = (planName || 'premium').toLowerCase();
-        const planDetails = PLANS[planKey] || PLANS['premium'];
-
-        // Fetch authenticated user details to ensure we have email/name
-        let userDetails = null;
-        if (req.user && req.user.id) {
-            userDetails = await User.findByPk(req.user.id);
-        }
-
-        const customerEmail = email || (userDetails ? userDetails.email : null);
-        const customerName = name || (userDetails ? userDetails.name : 'Cliente Lumini');
-
-        logDebug(`Customer: ${customerName} (${customerEmail})`);
-
-        // 1. Create Customer in Asaas
-        logDebug('Creating Customer...');
-        const customerId = await AsaasService.createCustomer(ASAAS_API_KEY, {
-            name: customerName,
-            email: customerEmail,
-            cpfCnpj: cpfCnpj
-        });
-        logDebug(`Customer ID: ${customerId}`);
-
-        // 2. Calculate Next Due Date
-        const nextDueDate = new Date();
-        nextDueDate.setDate(nextDueDate.getDate() + (billingType === 'CREDIT_CARD' ? 0 : 3)); // Immediate for CC, 3 days for Boleto
-        const dateString = nextDueDate.toISOString().split('T')[0];
-
-        // 3. Create Subscription
-        const subscriptionPayload = {
-            customerId,
-            billingType: billingType || 'BOLETO',
-            value: planDetails.value,
-            nextDueDate: dateString,
-            description: `Assinatura ${planDetails.name}`
-        };
-
-        if (billingType === 'CREDIT_CARD') {
-            subscriptionPayload.creditCard = creditCard;
-            subscriptionPayload.creditCardHolderInfo = creditCardHolderInfo;
-            
-            // Debug Log for Credit Card Details (Safe Masking)
-            if (creditCard) {
-                logDebug(`CC Expiry Sent: ${creditCard.expiryMonth}/${creditCard.expiryYear}`);
-                logDebug(`CC Holder: ${creditCard.holderName}`);
-            }
-        }
-
-        logDebug('Creating Subscription...');
-        const subscription = await AsaasService.createSubscription(ASAAS_API_KEY, subscriptionPayload);
-        logDebug(`Subscription Created: ${subscription.id}`);
-
-        // 4. Update User Plan (Optimistic for Credit Card or Test Plan)
-        // Since we want instant feedback for the user, we update the plan immediately.
-        
-        try {
-            logDebug('Updating DB...');
-            // Use authenticated user (req.user) as the primary target for update
-            let userToUpdate = userDetails;
-            
-            if (!userToUpdate && email) {
-                userToUpdate = await User.findOne({ where: { email } });
-            }
-
-            if (userToUpdate) {
-                // Determine valid plan name (map 'teste' -> 'premium' or keep 'teste' if system supports it)
-                // Assuming 'teste' gives access to Premium features for validation
-                const targetPlan = planKey === 'teste' ? 'premium' : planKey;
-                
-                userToUpdate.plan = targetPlan;
-                if (cpfCnpj) {
-                    try {
-                         userToUpdate.cpfCnpj = cpfCnpj.replace(/\D/g, '');
-                    } catch (cpfError) {
-                        console.warn('Invalid CPF/CNPJ format, skipping update for this field:', cpfError.message);
-                    }
-                }
-                
-                await userToUpdate.save();
-                logDebug(`DB Updated: ${userToUpdate.email} -> ${targetPlan}`);
-                console.log(`[Asaas] Updated user ${userToUpdate.email} to plan ${targetPlan} (Subscription ID: ${subscription.id})`);
-                
-                // Send Welcome Email
-                try {
-                    sendWelcomeEmail(userToUpdate, targetPlan === 'premium' ? 'Premium' : 'Pro');
-                } catch (emailErr) {
-                    console.error('Error triggering welcome email:', emailErr);
-                }
-
-                // Return full user object for immediate frontend update
-                res.json({
-                    subscriptionId: subscription.id,
-                    invoiceUrl: subscription.invoiceUrl || 'https://sandbox.asaas.com', // Fallback
-                    message: 'Assinatura criada. Realize o pagamento para ativar.',
-                    updatedPlan: targetPlan,
-                    user: {
-                        id: userToUpdate.id,
-                        name: userToUpdate.name,
-                        email: userToUpdate.email,
-                        plan: userToUpdate.plan,
-                        logo: userToUpdate.logo
-                    }
-                });
-                return;
-            }
-        } catch (dbError) {
-            logDebug(`DB Update Error: ${dbError.message}`);
-            console.error('Database update failed after successful Asaas subscription:', dbError);
-            // DO NOT THROW. Return success because the payment was created.
-            // The user can sync manually later or we rely on webhooks.
-        }
-        
-        logDebug('Sending success response (fallback)...');
-        res.json({
-            subscriptionId: subscription.id,
-            invoiceUrl: subscription.invoiceUrl || 'https://sandbox.asaas.com', // Fallback
-            message: 'Assinatura criada. Realize o pagamento para ativar.',
-            updatedPlan: planKey === 'teste' ? 'premium' : planKey
-        });
-
-    } catch (error) {
-        logDebug(`FATAL ERROR: ${error.message}`);
-        console.error('Asaas Subscription Error:', error.message);
-        // Send the specific error message to the frontend for debugging
-        res.status(500).json({ message: error.message || 'Erro ao criar assinatura no Asaas.' });
-    }
+    // Deprecated route
+    return res.status(400).json({ error: 'Asaas payment method is deprecated. Please use Stripe.' });
 });
 
 router.post('/create-subscription', auth, async (req, res) => {

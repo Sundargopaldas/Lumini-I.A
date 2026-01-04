@@ -94,7 +94,7 @@ const Terms = () => {
                                 <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
                                     <h3 className="font-bold text-slate-800 dark:text-white mb-2">Processadores Certificados</h3>
                                     <p className="text-sm">
-                                        Todas as transações são processadas pelo <strong>Stripe</strong> ou <strong>Asaas</strong>, que possuem certificação PCI-DSS de nível máximo. A Lumini I.A. <strong>não armazena</strong> os dados completos do seu cartão de crédito.
+                                        Todas as transações são processadas pelo <strong>Stripe</strong>, que possui certificação PCI-DSS de nível máximo. A Lumini I.A. <strong>não armazena</strong> os dados completos do seu cartão de crédito.
                                     </p>
                                 </div>
                                 <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">

@@ -73,40 +73,40 @@ const SubscriptionWidget = ({ user }) => {
   const isFree = plan === 'free';
 
   return (
-    <div className="w-full mb-8">
-      <div className={`rounded-2xl p-6 shadow-lg ${getPlanColor(plan)} text-white relative overflow-hidden`}>
-        {/* Background Decoration */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-        
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+    <div className="w-full mb-6">
+      <div className="bg-slate-800 rounded-xl p-4 shadow-md border border-slate-700 relative overflow-hidden">
+        {/* Left Color Strip */}
+        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${getPlanColor(plan)}`}></div>
+
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pl-3">
           
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-              <span className="text-3xl">{isFree ? '🌱' : '👑'}</span>
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${getPlanColor(plan)} shadow-lg shadow-purple-500/20`}>
+              <span className="text-xl text-white">{isFree ? '🌱' : '👑'}</span>
             </div>
             <div>
-              <h2 className="text-2xl font-bold">{getPlanName(plan)}</h2>
-              <p className="text-white/80">
+              <h2 className="text-lg font-bold text-white">{getPlanName(plan)}</h2>
+              <p className="text-slate-400 text-sm">
                 {isFree 
-                  ? 'Faça um upgrade para desbloquear todos os recursos.' 
-                  : 'Sua assinatura está ativa e você tem acesso total.'}
+                  ? 'Faça upgrade para desbloquear.' 
+                  : 'Sua assinatura está ativa.'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="flex items-center gap-3 w-full md:w-auto">
              {isFree ? (
                 <Link 
                   to="/plans" 
-                  className="w-full md:w-auto px-6 py-3 bg-white text-slate-900 rounded-xl font-bold hover:bg-slate-100 transition-colors shadow-lg text-center"
+                  className="w-full md:w-auto px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition-colors shadow text-sm text-center"
                 >
-                  Fazer Upgrade 🚀
+                  Upgrade 🚀
                 </Link>
              ) : (
                 <div className="flex gap-2">
                     <Link 
                       to="/plans" 
-                      className="px-6 py-3 bg-white/20 text-white rounded-xl font-semibold hover:bg-white/30 transition-colors border border-white/30 text-center"
+                      className="px-4 py-2 bg-slate-700 text-white rounded-lg font-semibold hover:bg-slate-600 transition-colors border border-slate-600 text-sm text-center"
                     >
                       Gerenciar
                     </Link>
@@ -116,25 +116,24 @@ const SubscriptionWidget = ({ user }) => {
              <button
                 onClick={handleSync}
                 disabled={syncing}
-                className="px-4 py-3 bg-transparent text-white/70 hover:text-white text-sm font-medium hover:bg-white/10 rounded-xl transition-colors border border-transparent hover:border-white/20"
+                className="p-2 text-slate-400 hover:text-white transition-colors"
                 title="Sincronizar Status"
              >
-                {syncing ? '↻ ...' : '↻'}
+                {syncing ? '...' : '↻'}
              </button>
           </div>
         </div>
 
-        {/* Free Plan Progress Bar (Mockup for future real limits) */}
+        {/* Free Plan Progress Bar (Compact) */}
         {isFree && (
-            <div className="mt-6 pt-6 border-t border-white/10">
-                <div className="flex justify-between text-sm mb-2 font-medium text-white/90">
-                    <span>Notas Fiscais (Mês)</span>
+            <div className="mt-4 pt-3 border-t border-slate-700 ml-3">
+                <div className="flex justify-between text-xs mb-1 font-medium text-slate-400">
+                    <span>Notas (Mês)</span>
                     <span>3 / 5</span>
                 </div>
-                <div className="w-full bg-slate-900/30 rounded-full h-2.5 overflow-hidden">
-                    <div className="bg-white h-2.5 rounded-full" style={{ width: '60%' }}></div>
+                <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                    <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: '60%' }}></div>
                 </div>
-                <p className="text-xs text-white/60 mt-2">Limite renova em 01/03</p>
             </div>
         )}
       </div>

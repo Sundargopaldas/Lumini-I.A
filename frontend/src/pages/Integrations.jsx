@@ -50,15 +50,6 @@ const Integrations = () => {
       description: t('integrations.stripe_desc'),
       isNew: true
     },
-    {
-      id: 'asaas',
-      name: 'Asaas',
-      type: 'Payment',
-      logo: 'https://cdn-icons-png.flaticon.com/512/10095/10095689.png', // Logo atualizado
-      color: 'bg-blue-500',
-      description: t('integrations.asaas_desc'),
-      isNew: true
-    },
     // Existing
     {
       id: 'nubank',
@@ -92,9 +83,10 @@ const Integrations = () => {
         id: 'mobile',
         name: t('integrations.mobile_app'),
         description: t('integrations.mobile_app_desc'),
-        type: 'Roadmap',
+        type: 'Available',
+        path: '/mobile-app',
         icon: (
-            <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
         )

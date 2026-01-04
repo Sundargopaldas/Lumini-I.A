@@ -42,14 +42,28 @@ const AIInsightsWidget = () => {
     const fetchInsights = async () => {
       try {
         setLoading(true);
+        setError(null);
         // Remove simulated delay, real API takes time
         // Increase timeout for AI request as it might take longer
-        const response = await api.get('/ai/insights', { timeout: 30000 });
-        setInsights(response.data);
+        const response = await api.get('/ai/insights', { timeout: 45000 });
+        
+        console.log('AI Insights response:', response.data);
+        
+        if (Array.isArray(response.data)) {
+             setInsights(response.data);
+        } else {
+             console.error('AI Insights received invalid format:', response.data);
+             // Fallback if backend sends object instead of array
+             if (response.data && typeof response.data === 'object') {
+                 setInsights([response.data]);
+             } else {
+                 setInsights([]);
+             }
+        }
         setLoading(false);
       } catch (err) {
         console.error('Failed to fetch AI insights', err);
-        setError('Não foi possível conectar ao Consultor IA no momento.');
+        setError('Não foi possível conectar ao Consultor IA no momento. Tente novamente mais tarde.');
         setLoading(false);
       }
     };

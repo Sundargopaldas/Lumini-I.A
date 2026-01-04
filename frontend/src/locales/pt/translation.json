@@ -285,9 +285,9 @@
     "pluggy_desc": "Conecte qualquer banco via Open Finance (Itaú, Bradesco, etc).",
     "stripe_desc": "Receba pagamentos globais via cartão.",
     "asaas_desc": "Automação de boletos e Pix com taxas reduzidas.",
-    "roadmap_title": "Em Breve (Roadmap)",
-    "mobile_app": "App Mobile (Em breve)",
-    "mobile_app_desc": "Versão nativa para iOS e Android.",
+    "roadmap_title": "Expansão & Acesso",
+    "mobile_app": "App Mobile (PWA)",
+    "mobile_app_desc": "Instale na tela inicial (iOS/Android) e use como app nativo.",
     "marketplace": "Marketplace de Contadores (Em breve)",
     "marketplace_desc": "Encontre o contador ideal para o seu negócio."
   },
