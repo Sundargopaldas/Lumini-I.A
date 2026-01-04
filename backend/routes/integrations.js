@@ -6,6 +6,7 @@ const User = require('../models/User');
 const Integration = require('../models/Integration');
 const BankingService = require('../services/BankingService');
 const YouTubeService = require('../services/YouTubeService');
+const HotmartService = require('../services/HotmartService');
 const PluggyService = require('../services/PluggyService');
 const StripeService = require('../services/StripeService');
 const AsaasService = require('../services/AsaasService');
@@ -123,16 +124,8 @@ router.post('/sync', auth, async (req, res) => {
         const ytData = await YouTubeService.getChannelRevenue('CHANNEL_ID_MOCK');
         newTransactions = ytData.transactions;
     } else if (provider === 'Hotmart') {
-      const today = new Date().toISOString().split('T')[0];
-      newTransactions = [
-        {
-          description: 'Course Sales (Manual Sync)',
-          amount: 150.00,
-          type: 'income',
-          source: 'Hotmart',
-          date: today
-        }
-      ];
+        const hotmartData = await HotmartService.fetchSales(integration.apiKey);
+        newTransactions = hotmartData;
     }
 
     console.log(`[Sync] Found ${newTransactions.length} transactions from ${provider}`);

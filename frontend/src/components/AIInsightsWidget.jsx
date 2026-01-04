@@ -125,13 +125,13 @@ const AIInsightsWidget = () => {
               <div className="flex items-start gap-3">
                 <span className="text-xl mt-0.5">{getIcon(insight.type)}</span>
                 <div className="w-full">
-                  <h3 className="font-bold text-sm mb-2">{insight.title}</h3>
+                  <h3 className="font-bold text-lg mb-2">{insight.title}</h3>
                   {insight.isMarkdown ? (
-                      <div className="text-xs opacity-90 leading-relaxed text-slate-200">
+                      <div className="text-base opacity-90 leading-relaxed text-slate-200">
                           <SimpleMarkdown text={insight.message} />
                       </div>
                   ) : (
-                      <p className="text-xs opacity-90 leading-relaxed">{insight.message}</p>
+                      <p className="text-base opacity-90 leading-relaxed">{insight.message}</p>
                   )}
                 </div>
               </div>

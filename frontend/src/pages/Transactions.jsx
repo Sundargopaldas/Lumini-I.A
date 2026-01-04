@@ -117,7 +117,7 @@ const Transactions = () => {
             className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold shadow-lg shadow-purple-500/30 transition-all flex items-center gap-2"
           >
             <span>+</span>
-            {t('transactions.add_new')}
+            {t('transactions.new_transaction')}
           </button>
         </div>
       </div>

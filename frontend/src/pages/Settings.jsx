@@ -7,16 +7,24 @@ import { useTheme } from '../contexts/ThemeContext';
 const Settings = () => {
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'preferences'
+  const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'fiscal' | 'preferences'
 
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
   const [loading, setLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState(null);
   const [alertState, setAlertState] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+  
+  // Certificate State
+  const [certPassword, setCertPassword] = useState('');
+  const [certFile, setCertFile] = useState(null);
+  const [certStatus, setCertStatus] = useState(null); // { configured: bool, expirationDate: string }
+
   const [formData, setFormData] = useState({
     name: '',
     cpfCnpj: '',
-    address: ''
+    address: '',
+    municipalRegistration: '',
+    taxRegime: 'Simples Nacional'
   });
 
   // Load user data on mount
@@ -28,19 +36,90 @@ const Settings = () => {
             setFormData({
                 name: res.data.name || '',
                 cpfCnpj: res.data.cpfCnpj || '',
-                address: res.data.address || ''
+                address: res.data.address || '',
+                municipalRegistration: res.data.municipalRegistration || '',
+                taxRegime: res.data.taxRegime || 'Simples Nacional'
             });
             if (res.data.logo) {
                 const API_URL = import.meta.env.VITE_API_URL;
                 const BASE_URL = API_URL ? API_URL.replace('/api', '') : '';
                 setLogoPreview(`${BASE_URL}/uploads/logos/${res.data.logo}`);
             }
+
+            // Fetch Certificate Status
+            try {
+                const certRes = await api.get('/certificates/status');
+                setCertStatus(certRes.data);
+            } catch (err) {
+                console.error('Error fetching cert status', err);
+            }
+
         } catch (error) {
             console.error('Error fetching user:', error);
         }
     };
     fetchUser();
   }, []);
+
+  const handleFillTestData = () => {
+    setFormData({
+        ...formData,
+        municipalRegistration: '12345678 (TESTE)',
+        taxRegime: 'MEI'
+    });
+    setAlertState({
+        isOpen: true,
+        title: 'Dados Preenchidos',
+        message: 'Dados de teste preenchidos. Clique em "Salvar Dados" para confirmar.',
+        type: 'success'
+    });
+  };
+
+  const handleCertUpload = async (e) => {
+    e.preventDefault();
+    if (!certFile || !certPassword) {
+        setAlertState({
+            isOpen: true,
+            title: 'Erro',
+            message: 'Selecione o arquivo e digite a senha.',
+            type: 'error'
+        });
+        return;
+    }
+
+    const formDataCert = new FormData();
+    formDataCert.append('certificate', certFile);
+    formDataCert.append('password', certPassword);
+
+    setLoading(true);
+    try {
+        const res = await api.post('/certificates/upload', formDataCert, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        setCertStatus({
+            configured: true,
+            expirationDate: res.data.expiration,
+            status: 'active'
+        });
+        setAlertState({
+            isOpen: true,
+            title: 'Sucesso',
+            message: 'Certificado Digital configurado com sucesso!',
+            type: 'success'
+        });
+        setCertFile(null);
+        setCertPassword('');
+    } catch (error) {
+        setAlertState({
+            isOpen: true,
+            title: 'Erro',
+            message: error.response?.data?.message || 'Erro ao enviar certificado.',
+            type: 'error'
+        });
+    } finally {
+        setLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -81,6 +160,32 @@ const Settings = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Validate File Size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        setAlertState({
+            isOpen: true,
+            title: t('common.error'),
+            message: 'O arquivo é muito grande. O tamanho máximo permitido é 5MB.',
+            type: 'error'
+        });
+        e.target.value = ''; // Reset input
+        return;
+    }
+    
+    // Validate File Type
+    if (!file.type.startsWith('image/')) {
+        setAlertState({
+             isOpen: true,
+             title: t('common.error'),
+             message: 'Formato inválido. Apenas imagens são permitidas.',
+             type: 'error'
+        });
+        e.target.value = ''; // Reset input
+        return;
+    }
+
+    const previousPreview = logoPreview; // Capture current state for reversion
+
     // Preview
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -116,15 +221,26 @@ const Settings = () => {
         });
     } catch (error) {
         console.error('Upload error:', error);
+        
+        // Revert preview on error
+        setLogoPreview(previousPreview);
+
+        let errorMessage = t('settings.upload_error');
+        if (error.response && error.response.data && error.response.data.message) {
+             errorMessage = error.response.data.message;
+        } else if (error.message) {
+             errorMessage = error.message;
+        }
+
         setAlertState({
             isOpen: true,
             title: t('common.error'),
-            message: error.response?.data?.message || t('settings.upload_error'),
+            message: errorMessage,
             type: 'error'
         });
-        // Revert preview on error (optional)
     } finally {
         setLoading(false);
+        e.target.value = ''; // Reset input to allow re-selection
     }
   };
 
@@ -209,6 +325,16 @@ const Settings = () => {
             {t('settings.company_data')}
         </button>
         <button
+            onClick={() => setActiveTab('fiscal')}
+            className={`py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'fiscal' 
+                ? 'border-purple-500 text-purple-600 dark:text-purple-400' 
+                : 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-white'
+            }`}
+        >
+            Dados Fiscais & Certificado
+        </button>
+        <button
             onClick={() => setActiveTab('preferences')}
             className={`py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'preferences' 
@@ -242,20 +368,6 @@ const Settings = () => {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                {t('settings.cpf_cnpj')}
-                            </label>
-                            <input
-                                type="text"
-                                name="cpfCnpj"
-                                value={formData.cpfCnpj}
-                                onChange={handleInputChange}
-                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                                placeholder={t('settings.cpf_cnpj_placeholder')}
-                            />
-                        </div>
-
-                        <div className="space-y-2 md:col-span-2">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                                 {t('settings.address')}
                             </label>
@@ -352,6 +464,154 @@ const Settings = () => {
                 </div>
             </div>
         </div>
+        )}
+
+        {activeTab === 'fiscal' && (
+            <div className="space-y-8 animate-fadeIn">
+                <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <h4 className="text-blue-800 dark:text-blue-200 font-semibold mb-2">Configuração Profissional</h4>
+                    <p className="text-sm text-blue-600 dark:text-blue-300">
+                        Para emitir notas fiscais reais, é necessário configurar os dados abaixo e o certificado digital A1.
+                    </p>
+                </div>
+
+                {/* Fiscal Data Form */}
+                <form onSubmit={handleSaveProfile} className="space-y-6">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Dados da Empresa</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                {t('settings.cpf_cnpj')}
+                            </label>
+                            <input
+                                type="text"
+                                name="cpfCnpj"
+                                value={formData.cpfCnpj}
+                                onChange={handleInputChange}
+                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                                placeholder={t('settings.cpf_cnpj_placeholder')}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                Regime Tributário
+                            </label>
+                            <select
+                                name="taxRegime"
+                                value={formData.taxRegime}
+                                onChange={handleInputChange}
+                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 transition-all"
+                            >
+                                <option value="MEI">MEI (Microempreendedor Individual)</option>
+                                <option value="Simples Nacional">Simples Nacional</option>
+                                <option value="Lucro Presumido">Lucro Presumido</option>
+                                <option value="Lucro Real">Lucro Real</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                {formData.taxRegime === 'MEI' ? 'Inscrição Municipal (CCM)' : 'Inscrição Municipal'} <span className="text-xs text-gray-500 font-normal">(Opcional para testes)</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="municipalRegistration"
+                                value={formData.municipalRegistration}
+                                onChange={handleInputChange}
+                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 transition-all"
+                                placeholder={formData.taxRegime === 'MEI' ? "Ex: 12345 (CCM)" : "Ex: 12345678"}
+                            />
+                        </div>
+                    </div>
+
+                    {formData.taxRegime === 'MEI' && (
+                         <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800 text-sm text-yellow-800 dark:text-yellow-200">
+                             <p><strong>💡 Dica para MEI:</strong></p>
+                             <ul className="list-disc ml-5 mt-1 space-y-1">
+                                 <li>Seu CCM (Inscrição Municipal) pode ser encontrado no alvará ou consulta na prefeitura.</li>
+                                 <li>MEI Prestador de Serviços geralmente não possui Inscrição Estadual.</li>
+                             </ul>
+                         </div>
+                    )}
+
+                    <div className="flex justify-end gap-3">
+                         <button
+                            type="button"
+                            onClick={handleFillTestData}
+                            className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-colors text-sm font-medium"
+                        >
+                            Preencher c/ Dados de Teste
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+                        >
+                            {loading ? 'Salvando...' : 'Salvar Dados'}
+                        </button>
+                    </div>
+                </form>
+
+                <hr className="border-slate-200 dark:border-white/10" />
+
+                {/* Certificate Section */}
+                <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Certificado Digital (A1)</h3>
+                        {certStatus?.configured && (
+                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">
+                                ATIVO (Expira em: {new Date(certStatus.expirationDate).toLocaleDateString()})
+                            </span>
+                        )}
+                    </div>
+
+                    <form onSubmit={handleCertUpload} className="bg-slate-50 dark:bg-slate-900/30 p-6 rounded-xl border border-slate-200 dark:border-slate-700 space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Arquivo do Certificado (.pfx ou .p12)
+                            </label>
+                            <input
+                                type="file"
+                                accept=".pfx,.p12"
+                                onChange={(e) => setCertFile(e.target.files[0])}
+                                className="block w-full text-sm text-slate-500
+                                    file:mr-4 file:py-2 file:px-4
+                                    file:rounded-full file:border-0
+                                    file:text-sm file:font-semibold
+                                    file:bg-purple-50 file:text-purple-700
+                                    hover:file:bg-purple-100
+                                    dark:file:bg-purple-900/30 dark:file:text-purple-300
+                                "
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Senha do Certificado
+                            </label>
+                            <input
+                                type="password"
+                                value={certPassword}
+                                onChange={(e) => setCertPassword(e.target.value)}
+                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 transition-all"
+                                placeholder="Digite a senha..."
+                            />
+                        </div>
+
+                        <div className="pt-2">
+                            <button
+                                type="submit"
+                                disabled={loading || !certFile}
+                                className={`w-full py-2 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors ${loading ? 'opacity-50' : ''}`}
+                            >
+                                {loading ? 'Enviando...' : 'Configurar Certificado'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         )}
 
         {activeTab === 'preferences' && (

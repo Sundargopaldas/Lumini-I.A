@@ -8,6 +8,7 @@ const auth = require('../middleware/auth');
 const checkPremium = require('../middleware/checkPremium');
 const { Op } = require('sequelize');
 const { validateCPF, validateCNPJ, validateStateRegistration } = require('../utils/validators');
+const nuvemFiscalService = require('../services/nuvemFiscalService');
 
 // List Invoices (Protected + Premium Only)
 router.get('/', auth, checkPremium, async (req, res) => {
@@ -29,6 +30,7 @@ router.get('/', auth, checkPremium, async (req, res) => {
       clientEmail: inv.clientEmail,
       amount: parseFloat(inv.amount),
       status: inv.status,
+      type: inv.type, // Added type
       service: inv.serviceDescription
     }));
 
@@ -53,7 +55,10 @@ router.post('/', auth, checkPremium, async (req, res) => {
       city, 
       state, 
       serviceDescription, 
-      value 
+      value,
+      taxAmount,
+      clientState,
+      type // 'official' or 'receipt'
     } = req.body;
 
     // --- Validation ---
@@ -88,6 +93,11 @@ router.post('/', auth, checkPremium, async (req, res) => {
     
     const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : 'Não Informado';
 
+    // Determine status based on type and configuration
+    const isMock = process.env.NUVEM_FISCAL_MOCK === 'true';
+    const hasCredentials = process.env.NUVEM_FISCAL_CLIENT_ID && process.env.NUVEM_FISCAL_CLIENT_ID !== 'your_client_id_here';
+    const shouldEmit = type === 'official' && (hasCredentials || isMock);
+
     const newInvoice = await Invoice.create({
       userId: req.user.id,
       clientName,
@@ -97,9 +107,36 @@ router.post('/', auth, checkPremium, async (req, res) => {
       clientAddress: fullAddress,
       serviceDescription,
       amount: value,
-      status: 'issued', // Manual is always issued immediately in this demo
+      taxAmount: taxAmount || 0,
+      clientState: clientState || state,
+      status: shouldEmit ? 'processing' : 'issued',
+      type: type || 'official',
       issueDate: new Date()
     });
+
+    // --- NUVEM FISCAL INTEGRATION (Optional) ---
+    // If keys are present in .env and type is 'official' (or Mock mode is on), try to emit
+    if (shouldEmit) {
+        try {
+            console.log('Tentando emitir via Nuvem Fiscal...');
+             
+             // Note: This requires the User (req.user) to have CPF/CNPJ and address configured correctly.
+             const result = await nuvemFiscalService.emitNfse(newInvoice, req.user);
+             
+             // If successful:
+             newInvoice.status = 'issued';
+             // newInvoice.externalReference = result.data.id; 
+             await newInvoice.save();
+             
+             console.log('NFS-e emitida com sucesso (Simulação/Sandbox).');
+        } catch (nfError) {
+             console.error('Erro na integração Nuvem Fiscal:', nfError.message);
+             // On error, revert to 'error' status or keep 'processing'
+             newInvoice.status = 'error';
+             await newInvoice.save();
+        }
+    }
+    // -------------------------------------------
 
     // Automatically create a Transaction (Income) for this invoice
     await Transaction.create({
@@ -134,6 +171,7 @@ router.post('/', auth, checkPremium, async (req, res) => {
       clientAddress: newInvoice.clientAddress,
       amount: parseFloat(newInvoice.amount),
       status: newInvoice.status,
+      type: newInvoice.type,
       service: newInvoice.serviceDescription
     });
 

@@ -16,37 +16,28 @@ const Certificate = sequelize.define('Certificate', {
       key: 'id'
     }
   },
-  cnpj: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  razaoSocial: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  inscricaoMunicipal: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
   filename: {
     type: DataTypes.STRING,
     allowNull: false
   },
-  password: {
-    type: DataTypes.STRING, // In production, this should be encrypted!
+  path: {
+    type: DataTypes.STRING,
     allowNull: false
   },
-  expiryDate: {
+  password: {
+    type: DataTypes.STRING, // In prod, this should be encrypted
+    allowNull: false
+  },
+  expirationDate: {
     type: DataTypes.DATE,
     allowNull: true
   },
   status: {
-    type: DataTypes.ENUM('active', 'expired', 'error'),
+    type: DataTypes.ENUM('active', 'expired', 'invalid'),
     defaultValue: 'active'
   }
 });
 
-// Association
 User.hasOne(Certificate, { foreignKey: 'userId' });
 Certificate.belongsTo(User, { foreignKey: 'userId' });
 

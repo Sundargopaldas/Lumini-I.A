@@ -60,10 +60,10 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
         data.append('inscricaoMunicipal', formData.inscricaoMunicipal);
         data.append('password', formData.password);
         if (formData.file) {
-            data.append('file', formData.file);
+            data.append('certificate', formData.file); // Changed 'file' to 'certificate' to match backend expectation
         }
 
-        const response = await api.post('/certificates', data, {
+        const response = await api.post('/certificates/upload', data, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
@@ -193,14 +193,13 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
                     />
                 </div>
                 <div>
-                    <label className="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1 transition-colors">Inscrição Municipal</label>
+                    <label className="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1 transition-colors">Inscrição Municipal <span className="text-gray-400 font-normal">(Opcional)</span></label>
                     <input 
                         type="text" 
                         value={formData.inscricaoMunicipal}
                         onChange={(e) => setFormData({...formData, inscricaoMunicipal: e.target.value})}
                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
                         placeholder="Ex: 123456-7"
-                        required
                     />
                 </div>
             </div>

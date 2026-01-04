@@ -58,12 +58,13 @@ class YouTubeService {
       await new Promise(resolve => setTimeout(resolve, 600));
   
       const today = new Date().toISOString().split('T')[0];
-  
+      const randomAmount = (Math.random() * 500 + 100).toFixed(2); // 100-600
+
       return {
         transactions: [
           {
             description: 'AdSense Earnings (Estimated)',
-            amount: 450.00,
+            amount: parseFloat(randomAmount),
             type: 'income',
             source: 'YouTube',
             date: today

@@ -36,13 +36,16 @@ const Invoices = () => {
   // Fetch certificate status
   const fetchCertificate = async () => {
     try {
-        const response = await api.get('/certificates');
-        if (response.data) {
+        const response = await api.get('/certificates/status');
+        if (response.data && response.data.configured) {
             setCertificate(response.data);
+        } else {
+            setCertificate(null);
         }
     } catch (error) {
-        // It's okay if not found (404)
-        console.log('No certificate found or error fetching.');
+        // It's okay if not found (404) or error
+        console.log('Certificate status check:', error.response?.status === 404 ? 'Not configured' : error.message);
+        setCertificate(null);
     }
   };
 
@@ -169,15 +172,23 @@ const Invoices = () => {
     doc.setTextColor(255, 255, 255); // White Text
     doc.setFontSize(16); // Larger
     doc.setFont('helvetica', 'bold');
-    doc.text(t('invoices.pdf.nfse_title').toUpperCase(), 105, 22, { align: 'center' });
+    
+    const title = invoice.type === 'receipt' ? 'RECIBO DE PAGAMENTO' : t('invoices.pdf.nfse_title').toUpperCase();
+    doc.text(title, 105, 22, { align: 'center' });
     
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    const rpsText = t('invoices.pdf.rps_text', { 
-        number: invoice.id.toString().padStart(6, '0'), 
-        date: new Date(invoice.date || new Date()).toLocaleDateString(i18n.language) 
-    });
-    doc.text(rpsText, 105, 32, { align: 'center' });
+    
+    let subTitle = '';
+    if (invoice.type === 'receipt') {
+        subTitle = `Documento Auxiliar de Venda - Não possui valor fiscal`;
+    } else {
+        subTitle = t('invoices.pdf.rps_text', { 
+            number: invoice.id.toString().padStart(6, '0'), 
+            date: new Date(invoice.date || new Date()).toLocaleDateString(i18n.language) 
+        });
+    }
+    doc.text(subTitle, 105, 32, { align: 'center' });
     
     doc.setTextColor(30, 41, 59); // Dark Text
 
@@ -192,7 +203,7 @@ const Invoices = () => {
     // Col 1: Numero
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139); // Slate 500
-    doc.text(t('invoices.pdf.note_number'), 41.5, y+5, { align: 'center' });
+    doc.text(invoice.type === 'receipt' ? 'RECIBO Nº' : t('invoices.pdf.note_number'), 41.5, y+5, { align: 'center' });
     doc.setFontSize(12);
     doc.setTextColor(30, 41, 59);
     doc.setFont('helvetica', 'bold');
@@ -209,16 +220,25 @@ const Invoices = () => {
     const issueDate = invoice.date ? new Date(invoice.date) : new Date();
     doc.text(`${issueDate.toLocaleDateString(i18n.language)} ${issueDate.toLocaleTimeString(i18n.language)}`, 104.5, y+12, { align: 'center' });
 
-    // Col 3: Codigo Verificacao
+    // Col 3: Codigo Verificacao / Status
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
     doc.setFont('helvetica', 'normal');
-    doc.text(t('invoices.pdf.verification_code'), 168, y+5, { align: 'center' });
-    doc.setFontSize(11);
-    doc.setTextColor(30, 41, 59);
-    doc.setFont('helvetica', 'bold');
-    const mockHash = `A${invoice.id}B-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`;
-    doc.text(mockHash, 168, y+12, { align: 'center' });
+    
+    if (invoice.type === 'receipt') {
+        doc.text('TIPO', 168, y+5, { align: 'center' });
+        doc.setFontSize(11);
+        doc.setTextColor(30, 41, 59);
+        doc.setFont('helvetica', 'bold');
+        doc.text('RECIBO', 168, y+12, { align: 'center' });
+    } else {
+        doc.text(t('invoices.pdf.verification_code'), 168, y+5, { align: 'center' });
+        doc.setFontSize(11);
+        doc.setTextColor(30, 41, 59);
+        doc.setFont('helvetica', 'bold');
+        const mockHash = `A${invoice.id}B-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`;
+        doc.text(mockHash, 168, y+12, { align: 'center' });
+    }
 
     // --- PRESTADOR ---
     y += 20;
@@ -312,61 +332,92 @@ const Invoices = () => {
     doc.setFillColor(241, 245, 249); // Slate 100
     doc.rect(10, y, 190, 6, 'F');
     
-    const colWidth = 190/6;
-    const headers = ['PIS (0,65%)', 'COFINS (3%)', 'INSS', 'IR (1,5%)', 'CSLL (1%)', 'ISS (5%)'];
-    
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(30, 41, 59); // Slate 800
-    headers.forEach((h, i) => {
-        doc.text(h, 10 + (i * colWidth) + (colWidth/2), y+4, { align: 'center' });
-        // Vertical lines
-        if(i > 0) doc.line(10 + (i * colWidth), y, 10 + (i * colWidth), y+14);
-    });
-    doc.setTextColor(60, 60, 60);
+    // Check if it is a receipt or official invoice
+    if (invoice.type === 'receipt') {
+        // --- RECEIPT LAYOUT ---
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        
+        // Single row for Total Value
+        doc.text('VALOR TOTAL', 105, y+4, { align: 'center' });
+        
+        doc.setFontSize(12);
+        doc.setTextColor(30, 41, 59);
+        doc.text(invoice.amount.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}), 105, y+14, { align: 'center' });
+        
+        // --- SIGNATURE AREA ---
+        y += 35;
+        doc.line(60, y, 150, y); // Signature line
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Assinatura do Emissor', 105, y+5, { align: 'center' });
 
-    // Values Row
-    doc.setFont('helvetica', 'normal');
-    const valor = invoice.amount || 0;
-    const vals = [
-        (valor * 0.0065).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
-        (valor * 0.03).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
-        'R$ 0,00',
-        (valor * 0.015).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
-        (valor * 0.01).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
-        (valor * 0.05).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
-    ];
-    
-    vals.forEach((v, i) => {
-        doc.text(v, 10 + (i * colWidth) + (colWidth/2), y+12, { align: 'center' });
-        // Vertical lines should stop at the separator line (y+14) to not cross the Total text
-        if(i > 0) doc.line(10 + (i * colWidth), y+6, 10 + (i * colWidth), y+14);
-    });
-    
-    doc.line(10, y+14, 200, y+14); // Separator
+        // Footer
+        y += 15;
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'italic');
+        doc.text('Este recibo não substitui a Nota Fiscal de Serviços (NFS-e).', 105, y, { align: 'center' });
+        
+    } else {
+        // --- OFFICIAL INVOICE LAYOUT ---
+        const colWidth = 190/6;
+        const headers = ['PIS (0,65%)', 'COFINS (3%)', 'INSS', 'IR (1,5%)', 'CSLL (1%)', 'ISS (5%)'];
+        
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59); // Slate 800
+        headers.forEach((h, i) => {
+            doc.text(h, 10 + (i * colWidth) + (colWidth/2), y+4, { align: 'center' });
+            // Vertical lines
+            if(i > 0) doc.line(10 + (i * colWidth), y, 10 + (i * colWidth), y+14);
+        });
+        doc.setTextColor(60, 60, 60);
 
-    // Total Line
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('VALOR TOTAL DA NOTA:', 110, y+18);
-    doc.text(valor.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}), 195, y+18, { align: 'right' });
+        // Values Row
+        doc.setFont('helvetica', 'normal');
+        const valor = invoice.amount || 0;
+        const vals = [
+            (valor * 0.0065).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
+            (valor * 0.03).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
+            'R$ 0,00',
+            (valor * 0.015).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
+            (valor * 0.01).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
+            (valor * 0.05).toLocaleString(i18n.language, {style: 'currency', currency: 'BRL'}),
+        ];
+        
+        vals.forEach((v, i) => {
+            doc.text(v, 10 + (i * colWidth) + (colWidth/2), y+12, { align: 'center' });
+            // Vertical lines should stop at the separator line (y+14) to not cross the Total text
+            if(i > 0) doc.line(10 + (i * colWidth), y+6, 10 + (i * colWidth), y+14);
+        });
+        
+        doc.line(10, y+14, 200, y+14); // Separator
 
-    // --- RODAPÉ ---
-    y += 25;
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'italic');
-    doc.text('Documento emitido por ME ou EPP optante pelo Simples Nacional.', 105, y, { align: 'center' });
-    doc.text('Não gera direito a crédito fiscal de IPI.', 105, y+4, { align: 'center' });
-    
-    // --- BARCODE ---
-    y += 8;
-    // Use invoice Access Key if available, or generate a valid-looking 44 digit mock
-    const randomDigits = (len) => Array.from({length: len}, () => Math.floor(Math.random()*10)).join('');
-    const accessKey = invoice.nfeAccessKey || `35${new Date().getFullYear()}${randomDigits(38)}`;
-    drawBarcode(50, y, 110, 15, accessKey); // Centered barcode
+        // Total Line
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('VALOR TOTAL DA NOTA:', 110, y+18);
+        doc.text(valor.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}), 195, y+18, { align: 'right' });
+
+        // --- RODAPÉ ---
+        y += 25;
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'italic');
+        doc.text('Documento emitido por ME ou EPP optante pelo Simples Nacional.', 105, y, { align: 'center' });
+        doc.text('Não gera direito a crédito fiscal de IPI.', 105, y+4, { align: 'center' });
+        
+        // --- BARCODE ---
+        y += 8;
+        // Use invoice Access Key if available, or generate a valid-looking 44 digit mock
+        const randomDigits = (len) => Array.from({length: len}, () => Math.floor(Math.random()*10)).join('');
+        const accessKey = invoice.nfeAccessKey || `35${new Date().getFullYear()}${randomDigits(38)}`;
+        drawBarcode(50, y, 110, 15, accessKey); // Centered barcode
+    }
 
     // Save
-    doc.save(`NFS-e-${invoice.id}.pdf`);
+    const fileName = invoice.type === 'receipt' ? `Recibo-${invoice.id}.pdf` : `NFS-e-${invoice.id}.pdf`;
+    doc.save(fileName);
 
   };
 
@@ -494,7 +545,12 @@ const Invoices = () => {
                 <tbody className="text-gray-600 dark:text-gray-300 text-sm">
                     {invoices.map((inv) => (
                         <tr key={inv.id} className="border-t border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                            <td className="p-4 font-mono text-purple-600 dark:text-purple-400">{inv.id}</td>
+                            <td className="p-4 font-mono text-purple-600 dark:text-purple-400">
+                                <div className="flex flex-col">
+                                    <span>{inv.id}</span>
+                                    <span className="text-[10px] uppercase text-gray-400">{inv.type === 'receipt' ? 'Recibo' : 'NFS-e'}</span>
+                                </div>
+                            </td>
                             <td className="p-4">{new Date(inv.date).toLocaleDateString('pt-BR')}</td>
                             <td className="p-4 align-middle text-sm text-gray-800 dark:text-gray-300 max-w-[200px] truncate">{inv.client}</td>
                             <td className="p-4 align-middle text-sm text-gray-800 dark:text-gray-300 font-mono">

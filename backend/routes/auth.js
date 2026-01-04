@@ -238,7 +238,7 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // Upload Logo
-router.post('/logo', auth, checkPremium, (req, res) => {
+router.post('/logo', auth, (req, res) => {
   const uploadSingle = upload.single('logo');
 
   uploadSingle(req, res, async (err) => {
@@ -306,10 +306,10 @@ router.delete('/logo', auth, async (req, res) => {
     }
 });
 
-// Update Profile (Name, Address, CPF/CNPJ)
+// Update Profile (Name, Address, CPF/CNPJ, Company Info)
 router.put('/profile', auth, async (req, res) => {
   try {
-    const { name, address, cpfCnpj } = req.body;
+    const { name, address, cpfCnpj, municipalRegistration, taxRegime } = req.body;
     const user = await User.findByPk(req.user.id);
     
     if (!user) {
@@ -319,6 +319,8 @@ router.put('/profile', auth, async (req, res) => {
     if (name !== undefined) user.name = name;
     if (address !== undefined) user.address = address;
     if (cpfCnpj !== undefined) user.cpfCnpj = cpfCnpj;
+    if (municipalRegistration !== undefined) user.municipalRegistration = municipalRegistration;
+    if (taxRegime !== undefined) user.taxRegime = taxRegime;
 
     await user.save();
 
@@ -331,6 +333,8 @@ router.put('/profile', auth, async (req, res) => {
         name: user.name,
         address: user.address,
         cpfCnpj: user.cpfCnpj,
+        municipalRegistration: user.municipalRegistration,
+        taxRegime: user.taxRegime,
         logo: user.logo
     };
 

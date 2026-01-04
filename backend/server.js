@@ -7,6 +7,7 @@ require('dotenv').config(); // Load .env BEFORE database config
 const sequelize = require('./config/database');
 
 const app = express();
+// Force reload comment
 const PORT = process.env.PORT || 5000;
 
 // Trust Proxy (Essential for HTTPS behind proxies/load balancers like Ngrok, Vercel, Heroku)
@@ -94,6 +95,37 @@ const startServer = async () => {
     // Using sync() to keep schema consistent
     await sequelize.sync();
     
+    // Manual migration for Invoice columns (safe add)
+    try {
+        await sequelize.query("ALTER TABLE Invoices ADD COLUMN taxAmount DECIMAL(10, 2) DEFAULT 0.00;");
+        console.log("Added taxAmount column to Invoices table.");
+    } catch (e) {
+        // Ignore if column exists
+    }
+    try {
+        await sequelize.query("ALTER TABLE Invoices ADD COLUMN clientState VARCHAR(2);");
+        console.log("Added clientState column to Invoices table.");
+    } catch (e) {
+        // Ignore if column exists
+    }
+
+    try {
+        await sequelize.query("ALTER TABLE Invoices ADD COLUMN type ENUM('official', 'receipt') DEFAULT 'official';");
+        console.log("Added type column to Invoices table.");
+    } catch (e) {
+        // Ignore if column exists
+    }
+    
+    // Manual migration for User Company Fields
+    try {
+        await sequelize.query("ALTER TABLE Users ADD COLUMN municipalRegistration VARCHAR(255);");
+        console.log("Added municipalRegistration to Users.");
+    } catch (e) {}
+    try {
+        await sequelize.query("ALTER TABLE Users ADD COLUMN taxRegime VARCHAR(50) DEFAULT 'Simples Nacional';");
+        console.log("Added taxRegime to Users.");
+    } catch (e) {}
+
     // Manual migration for cpfCnpj (safe add)
     try {
         await sequelize.query("ALTER TABLE Users ADD COLUMN cpfCnpj VARCHAR(255);");

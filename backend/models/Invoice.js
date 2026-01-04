@@ -44,6 +44,19 @@ const Invoice = sequelize.define('Invoice', {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false
   },
+  taxAmount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+    defaultValue: 0.00
+  },
+  clientState: {
+    type: DataTypes.STRING(2), // UF like SP, RJ
+    allowNull: true
+  },
+  type: {
+    type: DataTypes.ENUM('official', 'receipt'),
+    defaultValue: 'official'
+  },
   status: {
     type: DataTypes.ENUM('issued', 'processing', 'cancelled', 'error'),
     defaultValue: 'processing'

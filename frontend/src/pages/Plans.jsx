@@ -78,11 +78,13 @@ const Plans = () => {
       displayName: t('plans.free') || 'Free',
       price: 'R$ 0',
       period: t('plans.month'),
-      description: t('plans.free_desc'),
+      description: 'Seu primeiro passo para a liberdade financeira. Organize contas e controle gastos sem custo.',
       features: [
-        t('plans.features.monthly_reports'),
-        t('plans.features.basic_dashboard'),
-        t('plans.features.up_to_3_goals')
+        'Controle de Receitas e Despesas',
+        'Dashboard Essencial',
+        'Até 3 Metas de Economia',
+        'Suporte via Comunidade',
+        'Exportação Simples (PDF)'
       ],
       buttonText: t('plans.start_free'),
       buttonStyle: 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20',
@@ -93,13 +95,14 @@ const Plans = () => {
       displayName: t('plans.pro') || 'Pro',
       price: 'R$ 49',
       period: t('plans.month'),
-      description: t('plans.pro_desc'),
+      description: 'Acelere seu crescimento com Inteligência Artificial. Automação total para quem não tem tempo a perder.',
       features: [
-        t('plans.features.unlimited_integrations'),
-        t('plans.features.auto_categorization'),
-        t('plans.features.advanced_reports'),
-        t('plans.features.tax_simulator'),
-        t('plans.features.priority_support')
+        'Conexão Bancária Automática (Open Finance)',
+        'Categorização Inteligente via I.A.',
+        'Relatórios de Fluxo de Caixa Futuro',
+        'Simulador Tributário (MEI/Simples)',
+        'Suporte Prioritário (WhatsApp/Chat)',
+        'Sem Limites de Metas'
       ],
       buttonText: t('plans.upgrade_pro'),
       buttonStyle: 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 shadow-lg shadow-purple-500/30',
@@ -110,13 +113,14 @@ const Plans = () => {
       displayName: t('plans.premium') || 'Premium',
       price: 'R$ 99',
       period: t('plans.month'),
-      description: t('plans.premium_desc'),
+      description: 'Gestão Financeira e Contábil em um só lugar. Tenha um especialista humano cuidando do seu negócio.',
       features: [
-        t('plans.features.all_from_pro'),
-        t('plans.features.monthly_consulting'),
-        t('plans.features.nfse_issuance'),
-        t('plans.features.dedicated_manager'),
-        t('plans.features.financial_planning')
+        'Tudo do Plano Pro +',
+        'Emissão de Notas Fiscais (NFS-e) Ilimitada',
+        'Consultoria Mensal com Contador (30min)',
+        'Auditoria Fiscal Preventiva',
+        'Gestão de Documentos na Nuvem',
+        'Atendimento VIP Exclusivo'
       ],
       buttonText: t('plans.get_premium'),
       buttonStyle: 'bg-white text-purple-900 hover:bg-gray-100',
@@ -131,6 +135,9 @@ const Plans = () => {
         <p className="text-slate-500 dark:text-gray-400 max-w-2xl mx-auto px-4 transition-colors">
           {t('plans.subtitle')}
         </p>
+        <Link to="/terms" className="text-purple-600 hover:text-purple-700 underline text-sm">
+             Ver Regras de Pagamento e Devoluções
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

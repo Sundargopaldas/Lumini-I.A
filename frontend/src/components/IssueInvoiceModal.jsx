@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { validateCPF, validateCNPJ, validateStateRegistration, validateEmail } from '../utils/validators';
+import { STATE_TAX_RATES, BRAZILIAN_STATES } from '../utils/taxRates';
 
 const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
   const [loading, setLoading] = useState(false);
@@ -26,6 +27,22 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
       setFormData(initialFormState);
       setErrors({});
     }
+  }, [isOpen]);
+
+  const [issueType, setIssueType] = useState('receipt');
+  const [certStatus, setCertStatus] = useState({ configured: false, taxRegime: '' });
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.taxRegime === 'MEI') {
+      setIssueType('receipt');
+    } else {
+      setIssueType('official');
+    }
+    setCertStatus({
+      configured: false,
+      taxRegime: user.taxRegime || ''
+    });
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -76,6 +93,8 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
           .replace(/(-\d{3})\d+?$/, '$1');
   };
 
+  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -124,7 +143,26 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
     
     if (isNaN(numericValue)) numericValue = 0;
 
-    onIssue({ ...formData, value: numericValue });
+    // Calculate Tax Amount
+    let taxAmount = 0;
+    
+    // Only calculate taxes if it's an Official NF-e
+    if (issueType === 'official') {
+        const pis = 0.0065;
+        const cofins = 0.03;
+        const iss = 0.05;
+        const icms = formData.state && STATE_TAX_RATES[formData.state] ? STATE_TAX_RATES[formData.state] : 0;
+        const totalTaxRate = pis + cofins + iss + icms;
+        taxAmount = numericValue * totalTaxRate;
+    }
+
+    onIssue({ 
+        ...formData, 
+        value: numericValue,
+        taxAmount: taxAmount,
+        clientState: formData.state,
+        type: issueType // 'official' or 'receipt'
+    });
     setLoading(false);
     onClose();
   };
@@ -134,7 +172,9 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
       <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="p-6 pb-2 flex justify-between items-center shrink-0">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Emitir NFS-e</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {issueType === 'official' ? 'Emitir NFS-e' : 'Gerar Recibo / Fatura'}
+          </h2>
           <button 
             onClick={onClose}
             className="text-gray-500 dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition-colors bg-gray-100 dark:bg-white/10 rounded-full p-2"
@@ -145,6 +185,64 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
 
         {/* Scrollable Content */}
         <div className="p-6 pt-2 overflow-y-auto custom-scrollbar">
+          
+          {/* Issue Type Selector */}
+          <div className="mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg flex">
+            <button
+                type="button"
+                onClick={() => setIssueType('official')}
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                    issueType === 'official' 
+                    ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-white shadow-sm' 
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                }`}
+            >
+                Nota Fiscal (NFS-e)
+            </button>
+            <button
+                type="button"
+                onClick={() => setIssueType('receipt')}
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                    issueType === 'receipt' 
+                    ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-white shadow-sm' 
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                }`}
+            >
+                Recibo Simples
+            </button>
+          </div>
+
+          {issueType === 'official' && (
+             <div className={`mb-6 p-3 rounded-lg border flex gap-3 ${
+                 certStatus.taxRegime === 'MEI' 
+                 ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800' 
+                 : 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800'
+             }`}>
+                 <span className="text-xl">{certStatus.taxRegime === 'MEI' ? '⚠️' : 'ℹ️'}</span>
+                 <div className="text-xs">
+                     {certStatus.taxRegime === 'MEI' ? (
+                         <p className="text-orange-800 dark:text-orange-200">
+                             <strong>Atenção MEI:</strong> Para emitir NFS-e oficial pelo sistema, você precisa ter um Certificado Digital A1 configurado.
+                             Caso não tenha, use a opção <strong>Recibo Simples</strong>.
+                         </p>
+                     ) : (
+                         <p className="text-blue-800 dark:text-blue-200">
+                             Para emitir NFS-e com validade jurídica, certifique-se de ter configurado seu Certificado Digital A1 nas configurações.
+                         </p>
+                     )}
+                 </div>
+             </div>
+          )}
+
+          {issueType === 'receipt' && (
+             <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-100 dark:border-yellow-800 flex gap-3">
+                 <span className="text-xl">📄</span>
+                 <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                     Este documento serve apenas como comprovante de recebimento e controle interno. <strong>Não possui valor fiscal.</strong>
+                 </p>
+             </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             
             {/* Client Info */}
@@ -259,14 +357,16 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
-                <input
-                  type="text"
+                <select
                   className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="UF"
-                  maxLength="2"
                   value={formData.state}
                   onChange={e => setFormData({...formData, state: e.target.value})}
-                />
+                >
+                  <option value="">UF</option>
+                  {BRAZILIAN_STATES.map(state => (
+                    <option key={state.code} value={state.code}>{state.code}</option>
+                  ))}
+                </select>
               </div>
             </div>
             </div>
@@ -318,7 +418,7 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
               {formData.value && (
                 <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-3 border border-gray-200 dark:border-white/5">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Simulação de Impostos (Estimado)</p>
-                    <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="grid grid-cols-4 gap-2 text-xs">
                         <div>
                             <span className="block text-gray-600 dark:text-gray-500">PIS (0,65%)</span>
                             <span className="text-gray-800 dark:text-gray-300">
@@ -335,6 +435,12 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
                             <span className="block text-gray-600 dark:text-gray-500">ISS (5%)</span>
                             <span className="text-gray-800 dark:text-gray-300">
                                 {(parseFloat(formData.value.replace(/[^\d,]/g, '').replace(',', '.') || 0) * 0.05).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="block text-gray-600 dark:text-gray-500">ICMS ({formData.state ? (STATE_TAX_RATES[formData.state] * 100).toFixed(1) : '0'}%)</span>
+                            <span className="text-gray-800 dark:text-gray-300">
+                                {(parseFloat(formData.value.replace(/[^\d,]/g, '').replace(',', '.') || 0) * (formData.state ? STATE_TAX_RATES[formData.state] : 0)).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}
                             </span>
                         </div>
                     </div>
