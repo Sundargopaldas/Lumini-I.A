@@ -77,6 +77,7 @@ const AIInsightsWidget = () => {
       case 'success': return '✅';
       case 'ai_prediction': return '🔮';
       case 'ai_consultant': return '🤖';
+      case 'tax_risk': return '🦁'; // Lion for Receita Federal
       default: return '💡';
     }
   };
@@ -87,6 +88,7 @@ const AIInsightsWidget = () => {
       case 'success': return 'bg-green-500/10 border-green-500/20 text-green-200';
       case 'ai_prediction': return 'bg-purple-500/10 border-purple-500/20 text-purple-200';
       case 'ai_consultant': return 'bg-indigo-500/10 border-indigo-500/20 text-indigo-100';
+      case 'tax_risk': return 'bg-orange-500/10 border-orange-500/20 text-orange-200';
       default: return 'bg-blue-500/10 border-blue-500/20 text-blue-200';
     }
   };

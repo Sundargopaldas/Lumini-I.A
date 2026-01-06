@@ -4,6 +4,7 @@ const Transaction = require('../models/Transaction');
 const Category = require('../models/Category');
 const Goal = require('../models/Goal');
 const User = require('../models/User');
+const Invoice = require('../models/Invoice');
 const authMiddleware = require('../middleware/auth');
 const { Op } = require('sequelize');
 const { generateFinancialInsights, chatWithAI } = require('../services/geminiService');
@@ -42,9 +43,21 @@ router.get('/insights', authMiddleware, async (req, res) => {
     });
     console.log(`[AI] Found ${goals.length} goals.`);
 
+    console.log('[AI] Fetching invoices...');
+    const invoices = await Invoice.findAll({
+      where: { 
+          userId,
+          issueDate: {
+            [Op.gte]: pastDate
+          }
+      },
+      limit: 20
+    });
+    console.log(`[AI] Found ${invoices.length} invoices.`);
+
     // Generate Insights using Gemini Service
     console.log('[AI] Calling Gemini Service...');
-    const aiResponse = await generateFinancialInsights(user, transactions, goals);
+    const aiResponse = await generateFinancialInsights(user, transactions, goals, invoices);
     console.log('[AI] Gemini response received. Length:', aiResponse.length);
 
     // Return as a single "AI Insight" object for the frontend widget

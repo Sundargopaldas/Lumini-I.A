@@ -14,11 +14,12 @@ const logDebug = (msg) => {
     fs.appendFileSync(logFile, `[${timestamp}] ${msg}\n`);
 };
 
-const generateFinancialInsights = async (user, transactions, goals) => {
+const generateFinancialInsights = async (user, transactions, goals, invoices = []) => {
   try {
     logDebug('Starting generation...');
     logDebug(`User: ${user?.id} - ${user?.username}`);
     logDebug(`Transactions count: ${transactions?.length}`);
+    logDebug(`Invoices count: ${invoices?.length}`);
     
     // Choose a model
     // Robust fallback strategy: Iterate through candidates until one works
@@ -48,6 +49,10 @@ const generateFinancialInsights = async (user, transactions, goals) => {
                 `- ${g.name}: R$ ${g.currentAmount} / R$ ${g.targetAmount} (Deadline: ${g.deadline})`
             ).join('\n');
 
+            const invoicesSummary = invoices.map(i =>
+                `- NF ${i.number || 'N/A'}: R$ ${i.amount} (${i.status}) - Tomador: ${i.borrowerName || 'N/A'}`
+            ).join('\n');
+
             const prompt = `
               Você é o "Lumini IA", um consultor financeiro pessoal de elite, especializado em **Economia dos Criadores (Creator Economy)** e contabilidade para empreendedores digitais.
 
@@ -57,12 +62,20 @@ const generateFinancialInsights = async (user, transactions, goals) => {
               
               Dados Financeiros Recentes (Últimos 30 dias):
               ${transactionSummary}
+
+              Notas Fiscais Emitidas Recentemente:
+              ${invoicesSummary || 'Nenhuma nota fiscal emitida no período.'}
               
               Metas Financeiras:
               ${goalsSummary}
               
               SUA TAREFA:
               Analise os dados acima e forneça 3 insights PODEROSOS e acionáveis.
+
+              🚨 **AUDITORIA FISCAL (MALHA FINA) - PRIORIDADE MÁXIMA:**
+              - Compare o total de RECEITAS (entradas) com o total de NOTAS FISCAIS emitidas.
+              - Se houver entradas altas (acima de R$ 3.000) sem notas fiscais correspondentes, **VOCÊ DEVE GERAR UM ALERTA DE RISCO**.
+              - Use o termo "**Risco de Malha Fina**" explicitamente se houver discrepância.
               
               🧠 **Inteligência para Criadores de Conteúdo:**
               - Se identificar receitas de **YouTube, AdSense, Hotmart, Eduzz, Kiwify** ou publicidade, foque em:

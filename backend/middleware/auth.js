@@ -9,6 +9,10 @@ const authMiddleware = (req, res, next) => {
   }
 
   try {
+    // SECURITY WARNING: Using default secret if env var is missing
+    if (!process.env.JWT_SECRET) {
+        console.warn('⚠️  [SECURITY WARNING] JWT_SECRET is not defined in .env! Using insecure default. Please fix this for production.');
+    }
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
     req.user = decoded.user;
     next();

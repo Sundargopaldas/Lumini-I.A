@@ -75,6 +75,24 @@ const Settings = () => {
     });
   };
 
+  const handleInviteAccountant = async (e) => {
+    e.preventDefault();
+    if (!accountantEmail) return;
+
+    setInviteStatus('loading');
+    // Simulate API call
+    setTimeout(() => {
+        setInviteStatus('success');
+        setAlertState({
+            isOpen: true,
+            title: 'Convite Enviado',
+            message: `Um convite foi enviado para ${accountantEmail}. Assim que ele aceitar, vocês estarão conectados.`,
+            type: 'success'
+        });
+        setAccountantEmail('');
+    }, 1500);
+  };
+
   const handleCertUpload = async (e) => {
     e.preventDefault();
     if (!certFile || !certPassword) {
