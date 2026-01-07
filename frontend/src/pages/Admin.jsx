@@ -354,12 +354,12 @@ const Admin = () => {
                     </div>
                 </div>
 
-                <div className="pt-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+                <div className="pt-6 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-end gap-3">
                     <button 
                         type="button"
                         onClick={handleTestConfig}
                         disabled={testing}
-                        className={`px-6 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2 ${testing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        className={`w-full sm:w-auto px-6 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2 ${testing ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
                         {testing ? (
                             <>
@@ -377,7 +377,7 @@ const Admin = () => {
                     </button>
                     <button 
                         type="submit" 
-                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow flex items-center gap-2"
+                        className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow flex items-center justify-center gap-2"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
