@@ -44,6 +44,10 @@ const User = sequelize.define('User', {
     type: DataTypes.ENUM('free', 'pro', 'premium', 'agency'),
     defaultValue: 'free',
   },
+  isAdmin: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
   accountantId: {
     type: DataTypes.INTEGER,
     allowNull: true,

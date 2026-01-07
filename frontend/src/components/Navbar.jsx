@@ -111,34 +111,28 @@ const Navbar = () => {
             <Link to="/integrations" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
               {t('sidebar.integrations')}
             </Link>
+            {user.isAdmin && (
+              <Link to="/admin" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap font-medium">
+                Admin
+              </Link>
+            )}
           </div>
           </div>
           
           <div className="hidden xl:flex items-center space-x-4">
-            {/* Language Switcher moved to Settings */}
-            <button 
-                onClick={() => {
-                    if (isPremium) {
-                        showAlert(
-                            '🌟 Atendimento Premium',
-                            'Seu Gerente Dedicado: **Sofia Martins**\n\n' +
-                            '📞 WhatsApp Direto: (11) 99999-8888\n' +
-                            '📧 Email: sofia.martins@luminia.com\n\n' +
-                            '📅 Consultoria Mensal: Sua próxima reunião está disponível para agendamento.',
-                            'success'
-                        );
-                    } else if (isPro) {
-                        showAlert('Suporte Prioritário', 'Como assinante PRO, você tem acesso direto ao nosso time via WhatsApp.\n\nIniciar Chat: +55 (11) 99999-9999', 'success');
-                    } else {
-                        showAlert('Recurso Premium', 'O Gerente de Conta Dedicado e Consultoria Mensal são exclusivos do plano Premium. Faça o upgrade!', 'locked');
-                    }
-                }}
-                className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium transition-colors flex items-center gap-1 whitespace-nowrap"
-            >
-                Suporte {!isPro && '🔒'}
-            </button>
             {/* Plan Badge removed to reduce clutter as requested */}
             
+            <Link 
+                to="/settings" 
+                className="p-2 text-slate-400 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 transition-colors"
+                title={t('settings.title') || 'Configurações'}
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </Link>
+
             <Link to="/settings" className="flex items-center gap-2 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors group">
                 <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-full border border-slate-200 dark:border-slate-700 group-hover:border-purple-500 transition-colors w-8 h-8 flex items-center justify-center overflow-hidden">
                     {user.logo ? (
@@ -148,9 +142,8 @@ const Navbar = () => {
                             className="w-full h-full object-cover"
                         />
                     ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                         </svg>
                     )}
                 </div>
@@ -239,28 +232,15 @@ const Navbar = () => {
             >
               {t('sidebar.integrations')}
             </Link>
-            <button
-                onClick={() => {
-                    if (isPremium) {
-                        showAlert(
-                            '🌟 Atendimento Premium',
-                            'Seu Gerente Dedicado: **Sofia Martins**\n\n' +
-                            '📞 WhatsApp Direto: (11) 99999-8888\n' +
-                            '📧 Email: sofia.martins@luminia.com\n\n' +
-                            '📅 Consultoria Mensal: Sua próxima reunião está disponível para agendamento.',
-                            'success'
-                        );
-                    } else if (isPro) {
-                        showAlert('Suporte Prioritário', 'Como assinante PRO, você tem acesso direto ao nosso time via WhatsApp.\n\nIniciar Chat: +55 (11) 99999-9999', 'success');
-                    } else {
-                        showAlert('Recurso Premium', 'O Gerente de Conta Dedicado e Consultoria Mensal são exclusivos do plano Premium. Faça o upgrade!', 'locked');
-                    }
-                    setIsMenuOpen(false);
-                }}
-                className="w-full text-left text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-            >
-                💬 Suporte {!isPro && '🔒'}
-            </button>
+            {user.isAdmin && (
+              <Link 
+                to="/admin" 
+                className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Painel Admin
+              </Link>
+            )}
           </div>
           <div className="pt-4 pb-4 border-t border-slate-200 dark:border-white/10">
             <div className="flex items-center px-5">

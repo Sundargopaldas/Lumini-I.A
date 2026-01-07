@@ -4,8 +4,18 @@ import Navbar from '../components/Navbar';
 import CustomAlert from '../components/CustomAlert';
 
 const Admin = () => {
+  const [activeTab, setActiveTab] = useState('accountants');
   const [accountants, setAccountants] = useState([]);
+  const [smtpConfig, setSmtpConfig] = useState({
+      SMTP_HOST: '',
+      SMTP_PORT: '587',
+      SMTP_USER: '',
+      SMTP_PASS: '',
+      SMTP_SECURE: 'false',
+      SMTP_FROM: ''
+  });
   const [loading, setLoading] = useState(true);
+  const [testing, setTesting] = useState(false);
   const [alert, setAlert] = useState({ 
     show: false, 
     message: '', 
@@ -15,8 +25,28 @@ const Admin = () => {
   });
 
   useEffect(() => {
-    fetchAccountants();
-  }, []);
+    if (activeTab === 'accountants') {
+        fetchAccountants();
+    } else if (activeTab === 'settings') {
+        fetchSmtpConfig();
+    }
+  }, [activeTab]);
+
+  const fetchSmtpConfig = async () => {
+    try {
+        setLoading(true);
+        const res = await api.get('/admin/config/smtp');
+        setSmtpConfig(res.data);
+    } catch (error) {
+        console.error('Error loading SMTP config', error);
+        showAlert(
+            'Erro ao carregar configurações. Verifique se você é administrador e se o servidor está online.', 
+            'error'
+        );
+    } finally {
+        setLoading(false);
+    }
+  };
 
   const fetchAccountants = async () => {
     try {
@@ -32,6 +62,36 @@ const Admin = () => {
       showAlert('Erro ao carregar lista de contadores', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConfigChange = (e) => {
+    const { name, value } = e.target;
+    setSmtpConfig(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveConfig = async (e) => {
+    e.preventDefault();
+    try {
+        await api.post('/admin/config/smtp', smtpConfig);
+        showAlert('Configurações salvas com sucesso!', 'success');
+    } catch (error) {
+        console.error(error);
+        showAlert('Erro ao salvar configurações', 'error');
+    }
+  };
+
+  const handleTestConfig = async () => {
+    try {
+      setTesting(true);
+      const res = await api.post('/admin/config/smtp/test', smtpConfig);
+      showAlert(res.data.message, 'success');
+    } catch (error) {
+      console.error('Error testing SMTP config:', error);
+      const msg = error.response?.data?.message || 'Falha ao testar conexão SMTP';
+      showAlert(msg, 'error');
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -90,11 +150,35 @@ const Admin = () => {
           Painel Administrativo
         </h1>
 
+        {/* Tabs */}
+        <div className="flex space-x-6 mb-8 border-b border-slate-200 dark:border-slate-700">
+            <button
+                onClick={() => setActiveTab('accountants')}
+                className={`pb-3 px-2 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'accountants'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                }`}
+            >
+                Contadores
+            </button>
+            <button
+                onClick={() => setActiveTab('settings')}
+                className={`pb-3 px-2 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'settings'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                }`}
+            >
+                Configurações do Sistema
+            </button>
+        </div>
+
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
-        ) : (
+        ) : activeTab === 'accountants' ? (
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -171,6 +255,137 @@ const Admin = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 max-w-3xl">
+            <div className="mb-8">
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Configuração de E-mail (SMTP)</h2>
+                <p className="text-slate-600 dark:text-slate-400">
+                    Configure o servidor de e-mail que será utilizado para enviar convites, recuperações de senha e notificações do sistema.
+                </p>
+            </div>
+            
+            <form onSubmit={handleSaveConfig} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Host SMTP
+                        </label>
+                        <input 
+                            type="text" 
+                            name="SMTP_HOST" 
+                            value={smtpConfig.SMTP_HOST || ''} 
+                            onChange={handleConfigChange}
+                            placeholder="ex: smtp.gmail.com"
+                            className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Porta
+                        </label>
+                        <input 
+                            type="text" 
+                            name="SMTP_PORT" 
+                            value={smtpConfig.SMTP_PORT || ''} 
+                            onChange={handleConfigChange}
+                            placeholder="ex: 587"
+                            className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Segurança (SSL/TLS)
+                        </label>
+                        <select 
+                            name="SMTP_SECURE" 
+                            value={smtpConfig.SMTP_SECURE || 'false'} 
+                            onChange={handleConfigChange}
+                            className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        >
+                            <option value="false">Não / STARTTLS (Padrão 587)</option>
+                            <option value="true">Sim / SSL (Padrão 465)</option>
+                        </select>
+                    </div>
+
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Email do Remetente (User)
+                        </label>
+                        <input 
+                            type="email" 
+                            name="SMTP_USER" 
+                            value={smtpConfig.SMTP_USER || ''} 
+                            onChange={handleConfigChange}
+                            placeholder="ex: contato@lumini.ai"
+                            className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        />
+                    </div>
+
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Senha do Email
+                        </label>
+                        <input 
+                            type="password" 
+                            name="SMTP_PASS" 
+                            value={smtpConfig.SMTP_PASS || ''} 
+                            onChange={handleConfigChange}
+                            placeholder="********"
+                            className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        />
+                        <p className="mt-1 text-xs text-slate-500">Deixe em branco para manter a senha atual.</p>
+                    </div>
+                    
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Nome do Remetente (Opcional)
+                        </label>
+                        <input 
+                            type="text" 
+                            name="SMTP_FROM" 
+                            value={smtpConfig.SMTP_FROM || ''} 
+                            onChange={handleConfigChange}
+                            placeholder='ex: "Equipe Lumini" <contato@lumini.ai>'
+                            className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        />
+                    </div>
+                </div>
+
+                <div className="pt-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+                    <button 
+                        type="button"
+                        onClick={handleTestConfig}
+                        disabled={testing}
+                        className={`px-6 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2 ${testing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    >
+                        {testing ? (
+                            <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-600 dark:border-slate-300"></div>
+                                Testando...
+                            </>
+                        ) : (
+                            <>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                Testar Conexão
+                            </>
+                        )}
+                    </button>
+                    <button 
+                        type="submit" 
+                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow flex items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Salvar Configurações
+                    </button>
+                </div>
+            </form>
           </div>
         )}
       </div>

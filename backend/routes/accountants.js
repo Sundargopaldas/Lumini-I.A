@@ -8,6 +8,7 @@ const authMiddleware = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const EmailService = require('../services/EmailService');
 
 // Configure Multer for Image Upload
 const storage = multer.diskStorage({
@@ -38,6 +39,54 @@ const upload = multer({
 
 
 
+
+// POST /api/accountants/invite - Invite/Link an accountant
+router.post('/invite', authMiddleware, async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
+
+        // Fetch full user data to ensure we have name/email for the email template
+        const user = await User.findByPk(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // 1. Check if accountant exists
+        const accountant = await Accountant.findOne({ where: { email } });
+
+        if (accountant) {
+            // Link user to accountant
+            await User.update({ accountantId: accountant.id }, { where: { id: req.user.id } });
+
+            // Send notification to the accountant
+            try {
+                await EmailService.sendNewClientNotification(user, email);
+            } catch (emailErr) {
+                console.error('Failed to send new client notification:', emailErr);
+            }
+
+            return res.json({ status: 'linked', message: 'Contador vinculado com sucesso! Agora ele tem acesso aos seus dados fiscais.' });
+        }
+
+        // 2. If not found, send invite email
+        try {
+            await EmailService.sendInviteEmail(user, email);
+        } catch (emailErr) {
+            console.error('Failed to send invite email:', emailErr);
+            // Continue even if email fails, to tell user we tried
+        }
+
+        return res.json({ status: 'invited', message: `Convite enviado para ${email}. Assim que ele se cadastrar como contador, o vínculo será automático.` });
+
+    } catch (error) {
+        console.error('Invite error:', error);
+        res.status(500).json({ message: 'Error processing invite' });
+    }
+});
 
 // GET /api/accountants/me/clients - List clients for the logged-in accountant
 router.get('/me/clients', authMiddleware, async (req, res) => {

@@ -19,6 +19,10 @@ const Settings = () => {
   const [certFile, setCertFile] = useState(null);
   const [certStatus, setCertStatus] = useState(null); // { configured: bool, expirationDate: string }
 
+  // Accountant Invite State
+  const [accountantEmail, setAccountantEmail] = useState('');
+  const [inviteStatus, setInviteStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
+
   const [formData, setFormData] = useState({
     name: '',
     cpfCnpj: '',
@@ -80,17 +84,28 @@ const Settings = () => {
     if (!accountantEmail) return;
 
     setInviteStatus('loading');
-    // Simulate API call
-    setTimeout(() => {
+    
+    try {
+        const res = await api.post('/accountants/invite', { email: accountantEmail });
+        
         setInviteStatus('success');
         setAlertState({
             isOpen: true,
-            title: 'Convite Enviado',
-            message: `Um convite foi enviado para ${accountantEmail}. Assim que ele aceitar, vocês estarão conectados.`,
+            title: res.data.status === 'linked' ? 'Contador Vinculado' : 'Convite Enviado',
+            message: res.data.message,
             type: 'success'
         });
         setAccountantEmail('');
-    }, 1500);
+    } catch (error) {
+        console.error('Invite error:', error);
+        setInviteStatus('error');
+        setAlertState({
+            isOpen: true,
+            title: 'Erro',
+            message: error.response?.data?.message || 'Erro ao enviar convite.',
+            type: 'error'
+        });
+    }
   };
 
   const handleCertUpload = async (e) => {
@@ -331,10 +346,10 @@ const Settings = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-4 border-b border-slate-200 dark:border-white/10">
+      <div className="flex space-x-4 border-b border-slate-200 dark:border-white/10 overflow-x-auto pb-1 scrollbar-hide">
         <button
             onClick={() => setActiveTab('profile')}
-            className={`py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
+            className={`py-2 px-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === 'profile' 
                 ? 'border-purple-500 text-purple-600 dark:text-purple-400' 
                 : 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-white'
@@ -343,8 +358,18 @@ const Settings = () => {
             {t('settings.company_data')}
         </button>
         <button
+            onClick={() => setActiveTab('accountant')}
+            className={`py-2 px-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'accountant' 
+                ? 'border-purple-500 text-purple-600 dark:text-purple-400' 
+                : 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-white'
+            }`}
+        >
+            Convidar Contador
+        </button>
+        <button
             onClick={() => setActiveTab('fiscal')}
-            className={`py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
+            className={`py-2 px-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === 'fiscal' 
                 ? 'border-purple-500 text-purple-600 dark:text-purple-400' 
                 : 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-white'
@@ -354,7 +379,7 @@ const Settings = () => {
         </button>
         <button
             onClick={() => setActiveTab('preferences')}
-            className={`py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
+            className={`py-2 px-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === 'preferences' 
                 ? 'border-purple-500 text-purple-600 dark:text-purple-400' 
                 : 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-white'
@@ -482,6 +507,55 @@ const Settings = () => {
                 </div>
             </div>
         </div>
+        )}
+
+        {activeTab === 'accountant' && (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-4">Convidar Contador</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+                Dê acesso seguro ao seu contador para que ele possa visualizar suas notas fiscais e relatórios financeiros sem precisar da sua senha.
+              </p>
+              
+              <form onSubmit={handleInviteAccountant} className="max-w-md">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    E-mail do Contador
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={accountantEmail}
+                    onChange={(e) => setAccountantEmail(e.target.value)}
+                    placeholder="ex: contador@escritorio.com"
+                    className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm p-2.5 border transition-colors"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={inviteStatus === 'loading'}
+                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 transition-colors"
+                >
+                  {inviteStatus === 'loading' ? 'Enviando...' : 'Enviar Convite'}
+                </button>
+              </form>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
+                <div className="flex">
+                    <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                    <div className="ml-3 flex-1 md:flex md:justify-between">
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                            Seu contador receberá um e-mail com instruções para acessar sua conta de forma segura. Ele terá acesso apenas a leitura de dados fiscais.
+                        </p>
+                    </div>
+                </div>
+            </div>
+          </div>
         )}
 
         {activeTab === 'fiscal' && (

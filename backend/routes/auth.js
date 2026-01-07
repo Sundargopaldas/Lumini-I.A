@@ -113,6 +113,7 @@ router.post('/login', async (req, res) => {
             email: user.email, 
             plan: user.plan,
             name: user.name,
+            isAdmin: user.isAdmin,
             logo: user.logo // Include logo in login response
         } 
     });
@@ -156,6 +157,7 @@ router.get('/me', auth, async (req, res) => {
 
     const userData = user.toJSON();
     userData.isAccountant = !!accountant;
+    userData.isAdmin = !!user.isAdmin; // Ensure boolean
     userData.accountantProfileId = accountant ? accountant.id : null;
     
     console.log('DEBUG /me: Response:', userData);

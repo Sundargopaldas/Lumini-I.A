@@ -47,6 +47,7 @@ require('./models/Integration');
 require('./models/Invoice');
 require('./models/Certificate');
 require('./models/Accountant');
+require('./models/SystemConfig');
 
 // Routes Placeholder
 const authRoutes = require('./routes/auth');
@@ -61,6 +62,7 @@ const certificateRoutes = require('./routes/certificates');
 const aiRoutes = require('./routes/ai');
 const importRoutes = require('./routes/import');
 const accountantRoutes = require('./routes/accountants');
+const adminRoutes = require('./routes/admin');
 
 // Rate Limiting - Auth (Stricter)
 const authLimiter = rateLimit({
@@ -81,6 +83,7 @@ app.use('/api/certificates', certificateRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/import', importRoutes);
 app.use('/api/accountants', accountantRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => {
   res.send('Lumini I.A Backend is running');
@@ -88,6 +91,16 @@ app.get('/', (req, res) => {
 
 // Database Connection and Server Start
 const startServer = async () => {
+  // CRITICAL SECURITY CHECK
+  if (process.env.NODE_ENV === 'production') {
+      const requiredEnv = ['JWT_SECRET', 'DB_PASS', 'DB_USER', 'DB_NAME'];
+      const missing = requiredEnv.filter(key => !process.env[key]);
+      if (missing.length > 0) {
+          console.error(`FATAL ERROR: Missing critical environment variables for production: ${missing.join(', ')}`);
+          process.exit(1);
+      }
+  }
+
   try {
     await sequelize.authenticate();
     console.log('Database connection has been established successfully.');
