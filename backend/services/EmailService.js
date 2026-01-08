@@ -59,9 +59,9 @@ const getTransporter = async () => {
 const getFromAddress = async () => {
     try {
         const config = await SystemConfig.findOne({ where: { key: 'SMTP_FROM' } });
-        return config?.value || process.env.EMAIL_FROM || `"Equipe Lumini I.A" <${process.env.EMAIL_USER || 'noreply@lumini.ai'}>`;
+        return config?.value || process.env.EMAIL_FROM || `"Equipe Lumini I.A" <contato@luminiiadigital.com.br>`;
     } catch (e) {
-        return process.env.EMAIL_FROM || `"Equipe Lumini I.A" <${process.env.EMAIL_USER || 'noreply@lumini.ai'}>`;
+        return process.env.EMAIL_FROM || `"Equipe Lumini I.A" <contato@luminiiadigital.com.br>`;
     }
 };
 

@@ -189,27 +189,21 @@ router.post('/forgot-password', async (req, res) => {
     console.log(`[LOG] Reset Link for ${email}: ${resetLink}`);
 
     // Configuração de envio de email
-     if (process.env.EMAIL_USER && process.env.EMAIL_PASS && process.env.EMAIL_USER !== 'seu_email@gmail.com') {
-       try {
-         await sendPasswordResetEmail(user, resetLink);
-         console.log(`[SUCCESS] Email enviado para ${email}`);
-         return res.json({ message: 'Um email com as instruções foi enviado para você.' });
+    try {
+        // Tenta enviar o email. O EmailService vai verificar se há config no Banco ou .env
+        await sendPasswordResetEmail(user, resetLink);
+        console.log(`[SUCCESS] Email enviado para ${email}`);
+        return res.json({ message: 'Um email com as instruções foi enviado para você.' });
 
-      } catch (emailError) {
-        console.error('Erro ao enviar email:', emailError);
-        // Fallback para desenvolvimento
+    } catch (emailError) {
+        console.error('Erro ao tentar enviar email de reset:', emailError);
+        
+        // Se falhou (sem config ou erro de SMTP), verifica se estamos em DEV para dar uma colher de chá
         if (process.env.NODE_ENV === 'development') {
-             return res.status(500).json({ message: 'Erro ao enviar email: ' + emailError.message, devLink: resetLink });
+             return res.status(500).json({ message: 'Erro ao enviar email (Dev): ' + emailError.message, devLink: resetLink });
         }
-        return res.status(500).json({ message: 'Erro ao enviar email. Tente novamente mais tarde.' });
-      }
-    } else {
-       // Modo de desenvolvimento sem email configurado
-       console.log('[DEV] Email não configurado. Retornando link diretamente.');
-       if (process.env.NODE_ENV === 'production') {
-            return res.status(500).json({ message: 'Serviço de email não configurado.' });
-       }
-       return res.json({ message: 'Email não configurado. Use o link abaixo (Dev Mode).', resetLink });
+        
+        return res.status(500).json({ message: 'Erro ao processar envio de email. Verifique as configurações.' });
     }
   } catch (error) {
     console.error(error);
