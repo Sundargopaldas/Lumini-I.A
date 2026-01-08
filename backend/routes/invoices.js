@@ -3,6 +3,7 @@ const router = express.Router();
 const Invoice = require('../models/Invoice');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
+const Certificate = require('../models/Certificate');
 const { sendInvoiceEmail } = require('../services/EmailService');
 const auth = require('../middleware/auth');
 const checkPremium = require('../middleware/checkPremium');
@@ -96,7 +97,29 @@ router.post('/', auth, checkPremium, async (req, res) => {
     // Determine status based on type and configuration
     const isMock = process.env.NUVEM_FISCAL_MOCK === 'true';
     const hasCredentials = process.env.NUVEM_FISCAL_CLIENT_ID && process.env.NUVEM_FISCAL_CLIENT_ID !== 'your_client_id_here';
-    const shouldEmit = type === 'official' && (hasCredentials || isMock);
+    
+    // Check for active certificate
+    const userCert = await Certificate.findOne({ where: { userId: req.user.id, status: 'active' } });
+    const hasCertificate = !!userCert;
+
+    let shouldEmit = false;
+    let initialStatus = 'issued';
+
+    if (type === 'official') {
+        if (isMock) {
+            shouldEmit = true;
+            initialStatus = 'processing';
+        } else if (hasCredentials) {
+            if (hasCertificate) {
+                shouldEmit = true;
+                initialStatus = 'processing';
+            } else {
+                // User requested official invoice but has no certificate
+                initialStatus = 'error';
+                console.warn(`User ${req.user.id} requested official invoice without certificate.`);
+            }
+        }
+    }
 
     const newInvoice = await Invoice.create({
       userId: req.user.id,
@@ -109,7 +132,7 @@ router.post('/', auth, checkPremium, async (req, res) => {
       amount: value,
       taxAmount: taxAmount || 0,
       clientState: clientState || state,
-      status: shouldEmit ? 'processing' : 'issued',
+      status: initialStatus,
       type: type || 'official',
       issueDate: new Date()
     });

@@ -4,6 +4,7 @@ const auth = require('../middleware/auth');
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 const Goal = require('../models/Goal');
+const Certificate = require('../models/Certificate');
 
 const nfeService = require('../services/nfeService');
 const nuvemFiscalService = require('../services/nuvemFiscalService');
@@ -25,7 +26,10 @@ router.post('/:id/emit-nfe', auth, async (req, res) => {
             let nfeResult;
 
             // Check if Nuvem Fiscal is configured and this is an Income transaction
-            if (process.env.NUVEM_FISCAL_CLIENT_ID && transaction.type === 'income') {
+            const isMock = process.env.NUVEM_FISCAL_MOCK === 'true';
+            const userCert = await Certificate.findOne({ where: { userId: req.user.id, status: 'active' } });
+
+            if (process.env.NUVEM_FISCAL_CLIENT_ID && transaction.type === 'income' && (isMock || userCert)) {
                 console.log('Tentando emitir via Nuvem Fiscal (Transactions Route)...');
                 
                 // Construct a mock invoice object for the service

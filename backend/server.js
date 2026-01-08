@@ -85,9 +85,20 @@ app.use('/api/import', importRoutes);
 app.use('/api/accountants', accountantRoutes);
 app.use('/api/admin', adminRoutes);
 
-app.get('/', (req, res) => {
-  res.send('Lumini I.A Backend is running');
-});
+// --- SERVE FRONTEND IN PRODUCTION ---
+if (process.env.NODE_ENV === 'production') {
+  // Set static folder
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+  // Any other route loads the index.html
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.send('Lumini I.A Backend is running (Dev Mode)');
+  });
+}
 
 // Database Connection and Server Start
 const startServer = async () => {
