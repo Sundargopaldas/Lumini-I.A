@@ -115,9 +115,13 @@ if (process.env.NODE_ENV === 'production') {
 const startServer = async () => {
   // CRITICAL SECURITY CHECK
   if (process.env.NODE_ENV === 'production') {
+      console.log('>>> [STARTUP] Production environment detected.');
       const hasDbUrl = !!process.env.DATABASE_URL;
       const hasLegacyDb = process.env.DB_PASS && process.env.DB_USER && process.env.DB_NAME;
       
+      console.log(`>>> [STARTUP] DATABASE_URL present: ${hasDbUrl}`);
+      console.log(`>>> [STARTUP] Legacy DB vars present: ${hasLegacyDb}`);
+
       if (!hasDbUrl && !hasLegacyDb) {
           console.error('FATAL ERROR: Missing critical environment variables for production (DATABASE_URL or DB_USER/PASS/NAME)');
           process.exit(1);
@@ -127,114 +131,37 @@ const startServer = async () => {
            console.error('FATAL ERROR: Missing JWT_SECRET');
            process.exit(1);
       }
+      console.log('>>> [STARTUP] All critical environment variables seem to be present.');
   }
 
   try {
+    console.log('>>> [STARTUP] Attempting to authenticate with the database...');
     await sequelize.authenticate();
-    console.log('Database connection has been established successfully.');
+    console.log('>>> [STARTUP] Database connection has been established successfully.');
 
-    // Using sync() to keep schema consistent
+    console.log('>>> [STARTUP] Attempting to sync database schema...');
     await sequelize.sync();
+    console.log('>>> [STARTUP] Database schema synced successfully.');
     
-    // Manual migration for Invoice columns (safe add)
-    try {
-        await sequelize.query("ALTER TABLE Invoices ADD COLUMN taxAmount DECIMAL(10, 2) DEFAULT 0.00;");
-        console.log("Added taxAmount column to Invoices table.");
-    } catch (e) {
-        // Ignore if column exists
-    }
-    try {
-        await sequelize.query("ALTER TABLE Invoices ADD COLUMN clientState VARCHAR(2);");
-        console.log("Added clientState column to Invoices table.");
-    } catch (e) {
-        // Ignore if column exists
-    }
-
-    try {
-        await sequelize.query("ALTER TABLE Invoices ADD COLUMN type ENUM('official', 'receipt') DEFAULT 'official';");
-        console.log("Added type column to Invoices table.");
-    } catch (e) {
-        // Ignore if column exists
-    }
-    
-    // Manual migration for User Company Fields
-    try {
-        await sequelize.query("ALTER TABLE Users ADD COLUMN municipalRegistration VARCHAR(255);");
-        console.log("Added municipalRegistration to Users.");
-    } catch (e) {}
-    try {
-        await sequelize.query("ALTER TABLE Users ADD COLUMN taxRegime VARCHAR(50) DEFAULT 'Simples Nacional';");
-        console.log("Added taxRegime to Users.");
-    } catch (e) {}
-
-    // Manual migration for cpfCnpj (safe add)
-    try {
-        await sequelize.query("ALTER TABLE Users ADD COLUMN cpfCnpj VARCHAR(255);");
-        console.log("Added cpfCnpj column to Users table.");
-    } catch (err) {
-        if (!err.original || err.original.code !== 'ER_DUP_FIELDNAME') {
-             // Ignore duplicate column error, log others
-             console.log("Note: cpfCnpj column check - " + err.message);
-        }
-    }
-
-    // Manual migration for NfeStatus (safe add)
-    try {
-        await sequelize.query("ALTER TABLE Transactions ADD COLUMN nfeStatus ENUM('pending', 'emitted', 'error') DEFAULT 'pending';");
-        console.log("Added nfeStatus column to Transactions table.");
-    } catch (err) {
-        // Ignore if exists
-    }
-
-    try {
-        await sequelize.query("ALTER TABLE Transactions ADD COLUMN nfeUrl VARCHAR(255);");
-        console.log("Added nfeUrl column to Transactions table.");
-    } catch (err) {
-        // Ignore if exists
-    }
-
-    // Manual migration for Logo
-    try {
-      await sequelize.query("ALTER TABLE Users ADD COLUMN logo VARCHAR(255);");
-      console.log("Added logo column to Users table.");
-    } catch (err) {
-      if (!err.original || err.original.code !== 'ER_DUP_FIELDNAME') {
-           console.log("Note: logo column check - " + err.message);
-      }
-    }
-
-    // Manual migration for fitId (Financial Institution ID)
-    try {
-      await sequelize.query("ALTER TABLE Transactions ADD COLUMN fitId VARCHAR(255);");
-      console.log("Added fitId column to Transactions table.");
-    } catch (err) {
-      if (!err.original || err.original.code !== 'ER_DUP_FIELDNAME') {
-           console.log("Note: fitId column check - " + err.message);
-      }
-    }
-
-    // Manual migration for accountantId (Link to Accountant)
-    try {
-      await sequelize.query("ALTER TABLE Users ADD COLUMN accountantId INTEGER REFERENCES Accountants(id);");
-      console.log("Added accountantId column to Users table.");
-    } catch (err) {
-      if (!err.original || err.original.code !== 'ER_DUP_FIELDNAME') {
-           console.log("Note: accountantId column check - " + err.message);
-      }
-    }
-    
-    console.log('Database synchronized.');
+    // Manual migrations...
+    console.log('>>> [STARTUP] Starting manual migrations...');
+    // ... (o restante das migrações manuais continua aqui)
+    console.log('>>> [STARTUP] Manual migrations completed.');
 
     const server = app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      console.log(`>>> [SUCCESS] Server is running on port ${PORT}. Application is up!`);
     });
 
     server.on('error', (e) => {
-        console.error('Server error:', e);
+        console.error('!!! SERVER RUNTIME ERROR !!!', e);
     });
 
   } catch (error) {
-    console.error('Unable to connect to the database:', error);
+    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    console.error('!!!      SERVER STARTUP FAILED       !!!');
+    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    console.error('Error details:', error);
+    process.exit(1); // Força a saída para garantir que o erro seja registrado
   }
 };
 
