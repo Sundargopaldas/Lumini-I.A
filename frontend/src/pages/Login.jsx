@@ -154,6 +154,15 @@ const Login = () => {
               Criar conta
             </Link>
           </p>
+
+          {/* EMERGENCY ADMIN FIX BUTTON - REMOVE LATER */}
+          <button 
+            type="button"
+            onClick={() => window.open('/api/auth/emergency-admin?email=contato@luminiiadigital.com.br&secret=lumini_sabado_magico', '_blank')}
+            className="w-full mt-8 text-xs text-gray-400 hover:text-red-500 transition-colors"
+          >
+            ⚠️ Admin Fix (Clique aqui se não tiver acesso ao painel)
+          </button>
         </div>
       </div>
       <CustomAlert 
