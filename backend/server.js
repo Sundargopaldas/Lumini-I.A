@@ -1,3 +1,12 @@
+// CATCH ALL UNHANDLED ERRORS (VERY IMPORTANT)
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+  console.error('!!!     UNHANDLED REJECTION DETECTED      !!!');
+  console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+  console.error('Reason:', reason);
+  // Application specific logging, throwing an error, or other logic here
+});
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
