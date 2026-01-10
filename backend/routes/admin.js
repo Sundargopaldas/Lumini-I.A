@@ -79,8 +79,8 @@ router.post('/config/smtp', authMiddleware, adminMiddleware, async (req, res) =>
         
         // Só atualiza senha se não for a máscara
         if (SMTP_PASS && SMTP_PASS !== '********') {
-            // Remove spaces and non-breaking spaces
-            const cleanPass = SMTP_PASS.replace(/\s/g, '').replace(/\u00A0/g, '');
+            // Apenas trim para remover espaços acidentais no início/fim, mantendo espaços internos se houver
+            const cleanPass = SMTP_PASS.trim();
             updates.push({ key: 'SMTP_PASS', value: cleanPass });
         }
 

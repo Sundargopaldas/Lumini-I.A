@@ -67,7 +67,29 @@ const Admin = () => {
 
   const handleConfigChange = (e) => {
     const { name, value } = e.target;
-    setSmtpConfig(prev => ({ ...prev, [name]: value }));
+    setSmtpConfig(prev => {
+        const newConfig = { ...prev, [name]: value };
+
+        // Lógica para ajustar a segurança (SSL/TLS) com base na porta
+        if (name === 'SMTP_PORT') {
+            if (value.trim() === '465') {
+                newConfig.SMTP_SECURE = 'true';
+            } else if (value.trim() === '587') {
+                newConfig.SMTP_SECURE = 'false';
+            }
+        }
+        
+        // Lógica inversa: se o usuário mudar a segurança, ajusta a porta
+        if (name === 'SMTP_SECURE') {
+            if (value === 'true' && prev.SMTP_PORT !== '465') {
+                newConfig.SMTP_PORT = '465';
+            } else if (value === 'false' && prev.SMTP_PORT !== '587') {
+                newConfig.SMTP_PORT = '587';
+            }
+        }
+
+        return newConfig;
+    });
   };
 
   const handleSaveConfig = async (e) => {
