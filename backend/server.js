@@ -105,8 +105,18 @@ app.use('/api/import', importRoutes);
 app.use('/api/accountants', accountantRoutes);
 app.use('/api/admin', adminRoutes);
 
+// Health Check Route for Railway
+app.get('/healthcheck', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // --- SERVE FRONTEND IN PRODUCTION ---
 if (process.env.NODE_ENV === 'production') {
+  // Simple "OK" for the root path to pass health checks
+  app.get('/', (req, res) => {
+    res.send('Lumini I.A Backend is running');
+  });
+
   // Set static folder
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
