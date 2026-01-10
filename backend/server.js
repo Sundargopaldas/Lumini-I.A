@@ -104,11 +104,17 @@ if (process.env.NODE_ENV === 'production') {
 const startServer = async () => {
   // CRITICAL SECURITY CHECK
   if (process.env.NODE_ENV === 'production') {
-      const requiredEnv = ['JWT_SECRET', 'DB_PASS', 'DB_USER', 'DB_NAME'];
-      const missing = requiredEnv.filter(key => !process.env[key]);
-      if (missing.length > 0) {
-          console.error(`FATAL ERROR: Missing critical environment variables for production: ${missing.join(', ')}`);
+      const hasDbUrl = !!process.env.DATABASE_URL;
+      const hasLegacyDb = process.env.DB_PASS && process.env.DB_USER && process.env.DB_NAME;
+      
+      if (!hasDbUrl && !hasLegacyDb) {
+          console.error('FATAL ERROR: Missing critical environment variables for production (DATABASE_URL or DB_USER/PASS/NAME)');
           process.exit(1);
+      }
+      
+      if (!process.env.JWT_SECRET) {
+           console.error('FATAL ERROR: Missing JWT_SECRET');
+           process.exit(1);
       }
   }
 
