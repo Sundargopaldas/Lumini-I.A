@@ -16,6 +16,17 @@ app.enable('trust proxy');
 // Security Middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow images to be loaded by frontend
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com"],
+      connectSrc: ["'self'", "https://api.stripe.com", "https://*.stripe.com"], 
+      frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      fontSrc: ["'self'", "data:", "https:"],
+    },
+  },
 }));
 
 // Rate Limiting - Global
