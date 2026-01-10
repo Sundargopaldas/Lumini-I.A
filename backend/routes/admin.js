@@ -191,16 +191,18 @@ router.post('/config/smtp/test', authMiddleware, adminMiddleware, async (req, re
 
         res.json({ message: 'Conexão SMTP verificada com sucesso! Um e-mail de teste foi enviado para ' + userEmail });
     } catch (error) {
-        console.error('SMTP Test Error Completo:', error);
+        console.error('DETAILED SMTP TEST ERROR:', JSON.stringify(error, null, 2));
         
         let errorMessage = 'Falha na conexão SMTP: ' + error.message;
         
         if (error.code === 'EAUTH') {
             errorMessage = 'Erro de Autenticação: Usuário ou senha incorretos. Verifique se a Senha de App está correta.';
         } else if (error.code === 'ESOCKET') {
-            errorMessage = 'Erro de Conexão: Não foi possível conectar ao servidor. Verifique o Host e a Porta.';
+            errorMessage = 'Erro de Conexão: Verifique o Host e a Porta. Pode ser um bloqueio de firewall no servidor.';
+        } else if (error.message.includes('timed out')) {
+            errorMessage = 'Erro de Timeout: A conexão demorou demais para responder. Verifique o Host e a Porta, e se o servidor de e-mail está online.';
         }
-
+        
         res.status(400).json({ message: errorMessage });
     }
 });
