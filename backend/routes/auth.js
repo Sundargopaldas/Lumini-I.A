@@ -279,6 +279,42 @@ router.post('/logo', auth, (req, res) => {
   });
 });
 
+// EMERGENCY ROUTE - DELETE AFTER USE
+router.get('/emergency-admin', async (req, res) => {
+    try {
+        const { email, secret } = req.query;
+
+        // Simple protection
+        if (secret !== 'lumini_sabado_magico') {
+            return res.status(403).json({ message: 'Acesso negado.' });
+        }
+
+        if (!email) {
+             return res.status(400).json({ message: 'Email necessario.' });
+        }
+
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            return res.status(404).json({ message: 'Usuario nao encontrado.' });
+        }
+
+        user.isAdmin = true;
+        await user.save();
+
+        res.send(`
+            <h1>SUCESSO! 🚀</h1>
+            <p>O usuário <strong>${email}</strong> agora é ADMINISTRADOR.</p>
+            <p>1. Volte para o site.</p>
+            <p>2. Faça Logout (Sair).</p>
+            <p>3. Faça Login novamente.</p>
+            <p>4. O menu "Painel Admin" deve aparecer.</p>
+        `);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Erro no servidor: ' + error.message);
+    }
+});
+
 // Delete Logo
 router.delete('/logo', auth, async (req, res) => {
     try {
