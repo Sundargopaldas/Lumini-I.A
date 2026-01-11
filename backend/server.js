@@ -107,6 +107,12 @@ app.use('/api/import', importRoutes);
 app.use('/api/accountants', accountantRoutes);
 app.use('/api/admin', adminRoutes);
 
+// Health Check Route for Railway - This is the most important route for deployment
+app.get('/', (req, res) => {
+  console.log('>>> [HEALTH CHECK] Health check endpoint accessed');
+  res.status(200).send('OK - Lumini I.A Backend is running');
+});
+
 // SERVE FRONTEND IN PRODUCTION
 if (process.env.NODE_ENV === 'production') {
   const frontendBuildPath = path.resolve(__dirname, '..', 'frontend', 'dist');
@@ -121,13 +127,12 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Health Check Route for Railway - This is the most important route for deployment
-app.get('/', (req, res) => {
-  res.status(200).send('OK');
-});
-
 // Database Connection and Server Start
 const startServer = async () => {
+  console.log('>>> [STARTUP] Starting Lumini I.A server...');
+  console.log(`>>> [STARTUP] Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`>>> [STARTUP] Port: ${PORT}`);
+  
   // CRITICAL SECURITY CHECK
   if (process.env.NODE_ENV === 'production') {
       console.log('>>> [STARTUP] Production environment detected.');
@@ -165,6 +170,7 @@ const startServer = async () => {
 
     const server = app.listen(PORT, () => {
       console.log(`>>> [SUCCESS] Server is running on port ${PORT}. Application is up!`);
+      console.log(`>>> [SUCCESS] Health check available at: http://localhost:${PORT}/`);
     });
 
     server.on('error', (e) => {
