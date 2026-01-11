@@ -5,26 +5,25 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const sequelize = process.env.DATABASE_URL
+// Em produção, usar DATABASE_URL (PostgreSQL)
+// Em desenvolvimento, usar SQLite (mais simples e rápido)
+const sequelize = isProduction && process.env.DATABASE_URL
   ? new Sequelize(process.env.DATABASE_URL, {
-      dialect: isProduction ? 'postgres' : 'mysql',
+      dialect: 'postgres',
       logging: false,
-      dialectOptions: isProduction ? {
+      dialectOptions: {
         ssl: {
           require: true,
           rejectUnauthorized: false
         }
-      } : {}
-    })
-  : new Sequelize(
-      process.env.DB_NAME,
-      process.env.DB_USER,
-      process.env.DB_PASS,
-      {
-        host: process.env.DB_HOST,
-        dialect: 'mysql',
-        logging: false,
       }
-    );
+    })
+  : new Sequelize({
+      dialect: 'sqlite',
+      storage: path.join(__dirname, '../database.sqlite'),
+      logging: false,
+    });
+
+console.log(`>>> [DATABASE] Using ${isProduction ? 'PostgreSQL (Production)' : 'SQLite (Development)'}`);
 
 module.exports = sequelize;

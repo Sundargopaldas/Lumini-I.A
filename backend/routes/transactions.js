@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const { validate, schemas } = require('../middleware/validator');
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 const Goal = require('../models/Goal');
@@ -88,7 +89,35 @@ router.get('/', auth, async (req, res) => {
   try {
     console.log(`[GET /transactions] Request from User ID: ${req.user.id}`);
     
-    // Debug: Check if user has transactions
+    const { page, limit, sortBy = 'date', order = 'DESC' } = req.query;
+    
+    // Se page e limit foram passados, usa paginação
+    const usePagination = page && limit;
+    
+    if (usePagination) {
+      const offset = (parseInt(page) - 1) * parseInt(limit);
+      
+      const { count, rows: transactions } = await Transaction.findAndCountAll({
+        where: { userId: req.user.id },
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        order: [[sortBy, order]],
+        include: [{ model: Goal, attributes: ['name', 'color'] }]
+      });
+
+      console.log(`[GET /transactions] Returning ${transactions.length}/${count} (paginated)`);
+      return res.json({
+        data: transactions,
+        pagination: {
+          total: count,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(count / parseInt(limit))
+        }
+      });
+    }
+    
+    // Sem paginação - comportamento original (mantém compatibilidade)
     const count = await Transaction.count({ where: { userId: req.user.id } });
     console.log(`[GET /transactions] Found ${count} transactions in DB for User ${req.user.id}`);
 
@@ -110,7 +139,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Create transaction
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, validate(schemas.createTransactionSchema), async (req, res) => {
   const { amount, description, date, type, source, goalId, isRecurring } = req.body;
 
   try {

@@ -8,10 +8,12 @@ const Invoice = require('../models/Invoice');
 const authMiddleware = require('../middleware/auth');
 const { Op } = require('sequelize');
 const { generateFinancialInsights, chatWithAI } = require('../services/geminiService');
+const { cacheMiddleware } = require('../utils/cache');
 
 // GET /api/ai/insights
 // Generates AI-powered insights for the user using Google Gemini
-router.get('/insights', authMiddleware, async (req, res) => {
+// Cache por 1 hora (3600s) para economizar API calls
+router.get('/insights', authMiddleware, cacheMiddleware(3600), async (req, res) => {
   console.log(`[AI] Generating insights for user ${req.user.id}...`);
   try {
     const userId = req.user.id;

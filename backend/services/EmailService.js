@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 const fs = require('fs');
 const SystemConfig = require('../models/SystemConfig');
+const { decrypt } = require('../utils/encryption');
 
 /**
  * Get Transporter - Dynamically loads SMTP config from DB or Env
@@ -27,7 +28,13 @@ const getTransporter = async () => {
         const port = configMap['SMTP_PORT'] || process.env.EMAIL_PORT || 587;
         const secure = (configMap['SMTP_SECURE'] === 'true') || (process.env.EMAIL_SECURE === 'true') || false;
         const user = configMap['SMTP_USER'] || process.env.EMAIL_USER;
-        const pass = configMap['SMTP_PASS'] || process.env.EMAIL_PASS;
+        
+        // Descriptografar senha se estiver criptografada (formato: iv:encrypted)
+        let pass = configMap['SMTP_PASS'] || process.env.EMAIL_PASS;
+        if (pass && pass.includes(':')) {
+            const decrypted = decrypt(pass);
+            if (decrypted) pass = decrypted;
+        }
 
         return nodemailer.createTransport({
             host,

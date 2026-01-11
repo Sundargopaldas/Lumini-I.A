@@ -1,0 +1,59 @@
+# ============================================
+# LUMINI I.A - ENVIRONMENT VARIABLES
+# Com Melhorias Implementadas
+# ============================================
+
+# === DATABASE ===
+DATABASE_URL=
+NODE_ENV=development
+
+# === JWT ===
+JWT_SECRET=GERE_UMA_CHAVE_FORTE_AQUI
+
+# === ENCRYPTION (NOVO!) ===
+# Gerar com: node -e "console.log(require('./utils/encryption').generateEncryptionKey())"
+ENCRYPTION_KEY=GERE_UMA_CHAVE_DE_64_CARACTERES_AQUI
+
+# === LOGS (NOVO!) ===
+# Níveis: DEBUG, INFO, WARN, ERROR
+LOG_LEVEL=INFO
+
+# === CACHE REDIS (OPCIONAL) ===
+# Se não configurar, usa cache em memória
+REDIS_URL=redis://localhost:6379
+# OU
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# === SMTP EMAIL ===
+EMAIL_HOST=smtp.hostinger.com
+EMAIL_PORT=587
+EMAIL_SECURE=false
+EMAIL_USER=contato@luminiiadigital.com.br
+EMAIL_PASS=SUA_SENHA_AQUI
+EMAIL_FROM=contato@luminiiadigital.com.br
+
+# === FRONTEND ===
+FRONTEND_URL=https://luminiiadigital.com.br
+
+# === PAYMENT GATEWAYS ===
+STRIPE_SECRET_KEY=
+ASAAS_API_KEY=
+ASAAS_WALLET_ID=
+
+# === AI SERVICES ===
+GEMINI_API_KEY=
+
+# === BANKING INTEGRATIONS ===
+PLUGGY_CLIENT_ID=
+PLUGGY_CLIENT_SECRET=
+
+# === NFE SERVICES ===
+NFE_IO_API_KEY=
+NUVEM_FISCAL_API_KEY=
+
+# === YOUTUBE ===
+YOUTUBE_API_KEY=
+
+# === SERVER ===
+PORT=8080

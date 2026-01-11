@@ -9,15 +9,13 @@ const authMiddleware = (req, res, next) => {
   }
 
   try {
-    // SECURITY CHECK: Fail in production if JWT_SECRET is missing
+    // SECURITY CHECK: JWT_SECRET is required
     if (!process.env.JWT_SECRET) {
-        if (process.env.NODE_ENV === 'production') {
-            throw new Error('FATAL: JWT_SECRET is missing in production environment.');
-        } else {
-            console.warn('⚠️  [SECURITY WARNING] JWT_SECRET is not defined in .env! Using insecure default. Please fix this for production.');
-        }
+        console.error('[SECURITY] FATAL: JWT_SECRET is not defined!');
+        return res.status(500).json({ message: 'Server configuration error' });
     }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded.user;
     next();
   } catch (err) {

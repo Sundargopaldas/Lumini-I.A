@@ -10,6 +10,12 @@ const User = require('../models/User');
 const Accountant = require('../models/Accountant');
 const auth = require('../middleware/auth');
 const checkPremium = require('../middleware/checkPremium');
+const { validatePassword, isCommonPassword } = require('../utils/passwordValidator');
+const { validate, schemas } = require('../middleware/validator');
+const { createLogger } = require('../utils/logger');
+const TokenService = require('../services/TokenService');
+
+const logger = createLogger('AUTH');
 
 // Configure Multer for Logo Upload
 const storage = multer.diskStorage({
@@ -42,9 +48,20 @@ const upload = multer({
 });
 
 // Register
-router.post('/register', async (req, res) => {
+router.post('/register', validate(schemas.registerSchema), async (req, res) => {
   try {
     const { username, email, password } = req.body;
+
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({ message: passwordValidation.message });
+    }
+    
+    // Check for common weak passwords
+    if (isCommonPassword(password)) {
+      return res.status(400).json({ message: 'Senha muito comum. Escolha uma senha mais segura.' });
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
@@ -77,31 +94,42 @@ router.post('/register', async (req, res) => {
 });
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', validate(schemas.loginSchema), async (req, res) => {
   console.log('Login attempt:', req.body.email);
+  logger.auth('Login attempt', req.body.email);
+  
   try {
     const { email, password } = req.body;
 
     // Check if user exists
     const user = await User.findOne({ where: { email } });
     if (!user) {
+      logger.auth('Login failed - user not found', email, false);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      logger.auth('Login failed - invalid password', email, false);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
+    
+    logger.auth('Login successful', user.id, true);
 
     // Generate token
+    if (!process.env.JWT_SECRET) {
+      console.error('[AUTH] FATAL: JWT_SECRET not configured');
+      return res.status(500).json({ message: 'Server configuration error' });
+    }
+    
     const payload = {
       user: {
         id: user.id
       }
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET || 'secret', {
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '24h',
     });
 
@@ -182,7 +210,11 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     // Generate a temporary reset token
-    const resetToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' });
+    if (!process.env.JWT_SECRET) {
+      console.error('[AUTH] FATAL: JWT_SECRET not configured');
+      return res.status(500).json({ message: 'Server configuration error' });
+    }
+    const resetToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetLink = `${frontendUrl}/reset-password/${resetToken}`;
@@ -216,8 +248,23 @@ router.post('/reset-password', async (req, res) => {
   try {
     const { token, newPassword } = req.body;
     
+    // Validate new password strength
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({ message: passwordValidation.message });
+    }
+    
+    // Check for common weak passwords
+    if (isCommonPassword(newPassword)) {
+      return res.status(400).json({ message: 'Senha muito comum. Escolha uma senha mais segura.' });
+    }
+    
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    if (!process.env.JWT_SECRET) {
+      console.error('[AUTH] FATAL: JWT_SECRET not configured');
+      return res.status(500).json({ message: 'Server configuration error' });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Hash new password
     const salt = await bcrypt.genSalt(10);
@@ -279,41 +326,8 @@ router.post('/logo', auth, (req, res) => {
   });
 });
 
-// EMERGENCY ROUTE - DELETE AFTER USE
-router.get('/emergency-admin', async (req, res) => {
-    try {
-        const { email, secret } = req.query;
-
-        // Simple protection
-        if (secret !== 'lumini_sabado_magico') {
-            return res.status(403).json({ message: 'Acesso negado.' });
-        }
-
-        if (!email) {
-             return res.status(400).json({ message: 'Email necessario.' });
-        }
-
-        const user = await User.findOne({ where: { email } });
-        if (!user) {
-            return res.status(404).json({ message: 'Usuario nao encontrado.' });
-        }
-
-        user.isAdmin = true;
-        await user.save();
-
-        res.send(`
-            <h1>SUCESSO! 🚀</h1>
-            <p>O usuário <strong>${email}</strong> agora é ADMINISTRADOR.</p>
-            <p>1. Volte para o site.</p>
-            <p>2. Faça Logout (Sair).</p>
-            <p>3. Faça Login novamente.</p>
-            <p>4. O menu "Painel Admin" deve aparecer.</p>
-        `);
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Erro no servidor: ' + error.message);
-    }
-});
+// EMERGENCY ROUTE REMOVED FOR SECURITY
+// Use backend/upgrade_user.js script instead
 
 // Delete Logo
 router.delete('/logo', auth, async (req, res) => {
@@ -339,7 +353,7 @@ router.delete('/logo', auth, async (req, res) => {
 });
 
 // Update Profile (Name, Address, CPF/CNPJ, Company Info)
-router.put('/profile', auth, async (req, res) => {
+router.put('/profile', auth, validate(schemas.updateProfileSchema), async (req, res) => {
   try {
     const { name, address, cpfCnpj, municipalRegistration, taxRegime } = req.body;
     const user = await User.findByPk(req.user.id);
@@ -373,6 +387,49 @@ router.put('/profile', auth, async (req, res) => {
     res.json({ message: 'Profile updated successfully', user: updatedUser });
   } catch (error) {
     console.error('Profile Update Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ========== REFRESH TOKEN ROUTES (OPCIONAL - Não quebra login atual) ==========
+
+/**
+ * POST /api/auth/refresh
+ * Renova access token usando refresh token
+ * 
+ * Body: { refreshToken: "..." }
+ * Returns: { accessToken: "...", refreshToken: "..." }
+ */
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({ message: 'Refresh token required' });
+    }
+
+    const tokens = await TokenService.refreshAccessToken(refreshToken);
+    
+    logger.info('Token refreshed successfully');
+    res.json(tokens);
+  } catch (error) {
+    logger.warn('Token refresh failed', { error: error.message });
+    res.status(401).json({ message: 'Invalid or expired refresh token' });
+  }
+});
+
+/**
+ * POST /api/auth/logout-all
+ * Revoga todos os refresh tokens do usuário (logout de todos dispositivos)
+ */
+router.post('/logout-all', auth, async (req, res) => {
+  try {
+    await TokenService.revokeAllUserTokens(req.user.id);
+    
+    logger.info('All tokens revoked', { userId: req.user.id });
+    res.json({ message: 'Logged out from all devices' });
+  } catch (error) {
+    logger.error('Logout all failed', { error });
     res.status(500).json({ message: 'Server error' });
   }
 });
