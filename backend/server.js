@@ -19,113 +19,104 @@ const app = express();
 // Force reload comment
 const PORT = process.env.PORT || 5000;
 
-// Trust Proxy (Essential for HTTPS behind proxies/load balancers like Ngrok, Vercel, Heroku)
-app.enable('trust proxy');
-
-// Security Middleware
+// Middleware
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow images to be loaded by frontend
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com"],
-      connectSrc: ["'self'", "https://api.stripe.com", "https://*.stripe.com"], 
-      frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      fontSrc: ["'self'", "data:", "https:"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com"],
+      frameSrc: ["'self'", "https://js.stripe.com"],
+      connectSrc: ["'self'", "https://api.stripe.com"],
     },
   },
 }));
 
-// Rate Limiting - Global
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://luminiiadigital.com.br', 'https://www.luminiiadigital.com.br'] 
+    : ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Rate limiting
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Limit each IP to 1000 requests per windowMs (Increased for dev)
-  standardHeaders: true, 
+  max: 100, // limit each IP to 100 requests per windowMs
+  trustProxy: true,
+  standardHeaders: true,
   legacyHeaders: false,
-  message: 'Too many requests from this IP, please try again after 15 minutes',
-  trustProxy: true, // Trust the Railway proxy
 });
-app.use(globalLimiter);
 
-// Middleware
-app.use(cors());
-
-// Webhooks must be before express.json() to allow raw body access
-const webhookRoutes = require('./routes/webhooks');
-app.use('/api/webhooks', webhookRoutes);
-
-app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Import Models to ensure they are registered
-require('./models/User');
-require('./models/Category');
-require('./models/Transaction');
-require('./models/Goal');
-require('./models/Integration');
-require('./models/Invoice');
-require('./models/Certificate');
-require('./models/Accountant');
-require('./models/SystemConfig');
-
-// Routes Placeholder
-const authRoutes = require('./routes/auth');
-const transactionRoutes = require('./routes/transactions');
-const dashboardRoutes = require('./routes/dashboard');
-const integrationRoutes = require('./routes/integrations');
-const goalRoutes = require('./routes/goals');
-// webhookRoutes imported earlier
-const paymentRoutes = require('./routes/payments');
-const invoiceRoutes = require('./routes/invoices');
-const certificateRoutes = require('./routes/certificates');
-const aiRoutes = require('./routes/ai');
-const importRoutes = require('./routes/import');
-const accountantRoutes = require('./routes/accountants');
-const adminRoutes = require('./routes/admin');
-
-// Rate Limiting - Auth (Stricter)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // Limit each IP to 500 login/register attempts per windowMs (Increased for dev/testing)
-  message: 'Too many login attempts, please try again later',
-  trustProxy: true, // Trust the Railway proxy
+  max: 5, // limit each IP to 5 login attempts per windowMs
+  trustProxy: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
 });
 
-app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/integrations', integrationRoutes);
-app.use('/api/goals', goalRoutes);
-// app.use('/api/webhooks', webhookRoutes); // Moved up
-app.use('/api/payments', paymentRoutes);
-app.use('/api/invoices', invoiceRoutes);
-app.use('/api/certificates', certificateRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/import', importRoutes);
-app.use('/api/accountants', accountantRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/auth', authLimiter);
+app.use(globalLimiter);
 
-// Health Check Route for Railway - This is the most important route for deployment
+// Health Check Route (MOVED BEFORE PRODUCTION CATCH-ALL)
 app.get('/', (req, res) => {
   console.log('>>> [HEALTH CHECK] Health check endpoint accessed');
   res.status(200).send('OK - Lumini I.A Backend is running');
 });
 
-// SERVE FRONTEND IN PRODUCTION
-if (process.env.NODE_ENV === 'production') {
-  const frontendBuildPath = path.resolve(__dirname, '..', 'frontend', 'dist');
-  
-  // Serve static files from the React app
-  app.use(express.static(frontendBuildPath));
+// Routes
+const authRoutes = require('./routes/auth');
+const transactionRoutes = require('./routes/transactions');
+const dashboardRoutes = require('./routes/dashboard');
+const invoiceRoutes = require('./routes/invoices');
+const accountantRoutes = require('./routes/accountants');
+const certificateRoutes = require('./routes/certificates');
+const goalRoutes = require('./routes/goals');
+const importRoutes = require('./routes/import');
+const adminRoutes = require('./routes/admin');
+const integrationRoutes = require('./routes/integrations');
+const paymentRoutes = require('./routes/payments');
+const aiRoutes = require('./routes/ai');
+const webhookRoutes = require('./routes/webhooks');
 
-  // The "catchall" handler: for any request that doesn't match one above,
-  // send back React's index.html file.
+app.use('/api/auth', authRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/invoices', invoiceRoutes);
+app.use('/api/accountants', accountantRoutes);
+app.use('/api/certificates', certificateRoutes);
+app.use('/api/goals', goalRoutes);
+app.use('/api/import', importRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/integrations', integrationRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/webhooks', webhookRoutes);
+
+// Serve static files from React app
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+  
+  // The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.
   app.get('*', (req, res) => {
-    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
   });
 }
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error occurred:', err);
+  res.status(500).json({ 
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+  });
+});
 
 // Database Connection and Server Start
 const startServer = async () => {
@@ -154,6 +145,7 @@ const startServer = async () => {
       console.log('>>> [STARTUP] All critical environment variables seem to be present.');
   }
 
+  let dbConnected = false;
   try {
     console.log('>>> [STARTUP] Attempting to authenticate with the database...');
     await sequelize.authenticate();
@@ -167,10 +159,38 @@ const startServer = async () => {
     console.log('>>> [STARTUP] Starting manual migrations...');
     // ... (o restante das migrações manuais continua aqui)
     console.log('>>> [STARTUP] Manual migrations completed.');
-
+    
+    dbConnected = true;
+  } catch (dbError) {
+    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    console.error('!!!      DATABASE CONNECTION FAILED    !!!');
+    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    console.error('Database Error:', dbError.message);
+    console.error('Database Config:', {
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+      hasDbHost: !!process.env.DB_HOST,
+      hasDbUser: !!process.env.DB_USER,
+      hasDbName: !!process.env.DB_NAME,
+      nodeEnv: process.env.NODE_ENV
+    });
+    
+    if (process.env.NODE_ENV === 'production') {
+      console.error('FATAL: Cannot start without database in production');
+      process.exit(1);
+    } else {
+      console.warn('>>> [WARNING] Starting without database connection (development mode)');
+    }
+  }
+  
+  try {
     const server = app.listen(PORT, () => {
       console.log(`>>> [SUCCESS] Server is running on port ${PORT}. Application is up!`);
       console.log(`>>> [SUCCESS] Health check available at: http://localhost:${PORT}/`);
+      if (dbConnected) {
+        console.log(`>>> [SUCCESS] Database is connected and ready`);
+      } else {
+        console.warn(`>>> [WARNING] Server started but database is not connected`);
+      }
     });
 
     server.on('error', (e) => {
@@ -187,17 +207,17 @@ const startServer = async () => {
 };
 
 process.on('exit', (code) => {
-    console.log(`Process exiting with code: ${code}`);
+  console.log(`>>> [SHUTDOWN] Process exiting with code: ${code}`);
 });
 
 process.on('SIGINT', () => {
-    console.log('Received SIGINT. Exiting...');
-    process.exit();
+  console.log('>>> [SHUTDOWN] Received SIGINT, shutting down gracefully...');
+  process.exit(0);
 });
 
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
+process.on('SIGTERM', () => {
+  console.log('>>> [SHUTDOWN] Received SIGTERM, shutting down gracefully...');
+  process.exit(0);
 });
 
 startServer();
-
