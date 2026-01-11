@@ -145,11 +145,24 @@ if (process.env.NODE_ENV === 'production') {
     ? path.join(__dirname, 'public') 
     : path.join(__dirname, '../frontend/dist');
   
+  console.log(`>>> [STARTUP] Public path: ${publicPath}`);
+  console.log(`>>> [STARTUP] Public path exists: ${fs.existsSync(publicPath)}`);
+  console.log(`>>> [STARTUP] index.html exists: ${fs.existsSync(path.join(publicPath, 'index.html'))}`);
+  
+  if (fs.existsSync(publicPath)) {
+    console.log(`>>> [STARTUP] Files in public path:`, fs.readdirSync(publicPath));
+  }
+  
   app.use(express.static(publicPath));
   
   // The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.
   app.get('*', (req, res) => {
-    res.sendFile(path.join(publicPath, 'index.html'));
+    const indexPath = path.join(publicPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).send(`Frontend not found. Looking for: ${indexPath}`);
+    }
   });
 }
 
