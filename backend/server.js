@@ -34,34 +34,71 @@ app.use(helmet({
   },
 }));
 
+// CORS Configuration
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [
+      'https://luminiiadigital.com.br',
+      'https://www.luminiiadigital.com.br',
+      process.env.FRONTEND_URL
+    ].filter(Boolean)
+  : [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:5174'
+    ];
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://luminiiadigital.com.br', 'https://www.luminiiadigital.com.br'] 
-    : ['http://localhost:5173', 'http://localhost:3000'],
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limiting
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  trustProxy: true,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Sanitização de inputs (protege contra XSS)
+const { sanitizeMiddleware } = require('./utils/sanitizer');
+app.use(sanitizeMiddleware);
 
-const authLimiter = rateLimit({
+// Trust proxy - necessário para rate limiting atrás de proxy (Render, Heroku, etc)
+app.set('trust proxy', 1);
+
+// Rate limiting - Multiple levels for different endpoints
+const strictAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // limit each IP to 5 login attempts per windowMs
-  trustProxy: true,
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
+  message: 'Muitas tentativas de login. Tente novamente em 15 minutos.'
 });
 
-app.use('/api/auth', authLimiter);
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // limit each IP to 3 register attempts per hour
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Muitas tentativas de registro. Tente novamente em 1 hora.'
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 30, // limit each IP to 30 requests per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Muitas requisições. Tente novamente em 1 minuto.'
+});
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per 15 min
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiters
+app.use('/api/auth/login', strictAuthLimiter);
+app.use('/api/auth/register', registerLimiter);
+app.use('/api/auth/forgot-password', strictAuthLimiter);
+app.use('/api/', apiLimiter);
 app.use(globalLimiter);
 
 // Health Check Route (MOVED BEFORE PRODUCTION CATCH-ALL)
@@ -101,11 +138,17 @@ app.use('/api/webhooks', webhookRoutes);
 
 // Serve static files from React app
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+  // Em Docker, frontend está em ./public; localmente em ../frontend/dist
+  const fs = require('fs');
+  const publicPath = fs.existsSync(path.join(__dirname, 'public')) 
+    ? path.join(__dirname, 'public') 
+    : path.join(__dirname, '../frontend/dist');
+  
+  app.use(express.static(publicPath));
   
   // The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+    res.sendFile(path.join(publicPath, 'index.html'));
   });
 }
 
