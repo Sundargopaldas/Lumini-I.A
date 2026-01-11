@@ -3,11 +3,13 @@ const path = require('path');
 // Explicitly load .env from root of backend
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const sequelize = process.env.DATABASE_URL
   ? new Sequelize(process.env.DATABASE_URL, {
-      dialect: 'mysql',
+      dialect: isProduction ? 'postgres' : 'mysql',
       logging: false,
-      dialectOptions: process.env.NODE_ENV === 'production' ? {
+      dialectOptions: isProduction ? {
         ssl: {
           require: true,
           rejectUnauthorized: false
@@ -22,12 +24,6 @@ const sequelize = process.env.DATABASE_URL
         host: process.env.DB_HOST,
         dialect: 'mysql',
         logging: false,
-        dialectOptions: process.env.NODE_ENV === 'production' ? {
-          ssl: {
-            require: true,
-            rejectUnauthorized: false
-          }
-        } : {}
       }
     );
 
