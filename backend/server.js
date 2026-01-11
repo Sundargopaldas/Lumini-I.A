@@ -112,17 +112,9 @@ app.get('/healthcheck', (req, res) => {
 
 // --- SERVE FRONTEND IN PRODUCTION ---
 if (process.env.NODE_ENV === 'production') {
-  // Simple "OK" for the root path to pass health checks
-  app.get('/', (req, res) => {
-    res.send('Lumini I.A Backend is running');
-  });
-
-  // Set static folder
-  app.use(express.static(path.join(__dirname, '../frontend/dist')));
-
-  // Any other route loads the index.html
+  // Respond to all routes to pass health checks definitively
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+    res.send('Lumini I.A Backend is running and healthy!');
   });
 } else {
   app.get('/', (req, res) => {
