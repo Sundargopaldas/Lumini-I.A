@@ -44,7 +44,8 @@ const globalLimiter = rateLimit({
   max: 1000, // Limit each IP to 1000 requests per windowMs (Increased for dev)
   standardHeaders: true, 
   legacyHeaders: false,
-  message: 'Too many requests from this IP, please try again after 15 minutes'
+  message: 'Too many requests from this IP, please try again after 15 minutes',
+  trustProxy: true, // Trust the Railway proxy
 });
 app.use(globalLimiter);
 
@@ -88,7 +89,8 @@ const adminRoutes = require('./routes/admin');
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 500, // Limit each IP to 500 login/register attempts per windowMs (Increased for dev/testing)
-  message: 'Too many login attempts, please try again later'
+  message: 'Too many login attempts, please try again later',
+  trustProxy: true, // Trust the Railway proxy
 });
 
 app.use('/api/auth', authLimiter, authRoutes);
