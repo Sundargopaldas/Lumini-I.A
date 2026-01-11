@@ -47,6 +47,12 @@ COPY backend/ ./
 # Copiar frontend buildado para pasta public do backend
 COPY --from=frontend-builder /app/frontend/dist ./public
 
+# DEBUG: Verificar se os arquivos foram copiados
+RUN echo "=== Verificando arquivos do frontend ===" && \
+    ls -la ./public/ && \
+    echo "=== Conteúdo do index.html ===" && \
+    if [ -f ./public/index.html ]; then echo "index.html EXISTE!"; else echo "index.html NAO EXISTE!"; fi
+
 # Criar diretórios necessários
 RUN mkdir -p uploads/logos uploads/certificates logs
 
