@@ -1,10 +1,10 @@
-# fly.toml app configuration file generated for lumini-i-a on 2026-01-11T20:07:49Z
+# fly.toml app configuration file generated for lumini-i-a on 2026-01-11T20:53:50Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
 app = 'lumini-i-a'
-primary_region = 'iad'
+primary_region = 'gru'
 
 [build]
 
