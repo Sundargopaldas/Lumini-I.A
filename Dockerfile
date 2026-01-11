@@ -26,14 +26,20 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Instalar tini para melhor signal handling
-RUN apk add --no-cache tini
+# Instalar dependências do sistema necessárias para compilar sqlite3
+RUN apk add --no-cache \
+    tini \
+    python3 \
+    make \
+    g++ \
+    sqlite
 
 # Copiar package.json do backend
 COPY backend/package*.json ./
 
-# Instalar dependências do backend (produção apenas)
-RUN npm ci --only=production
+# Instalar dependências do backend (incluindo rebuild do sqlite3)
+RUN npm ci --only=production && \
+    npm rebuild sqlite3 --build-from-source
 
 # Copiar código do backend
 COPY backend/ ./
