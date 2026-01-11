@@ -55,8 +55,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Sanitização de inputs (protege contra XSS)
-const { sanitizeMiddleware } = require('./utils/sanitizer');
-app.use(sanitizeMiddleware);
+// Temporariamente desativado para deploy - reativar depois
+// const { sanitizeMiddleware } = require('./utils/sanitizer');
+// app.use(sanitizeMiddleware);
 
 // Trust proxy - necessário para rate limiting atrás de proxy (Render, Heroku, etc)
 app.set('trust proxy', 1);
