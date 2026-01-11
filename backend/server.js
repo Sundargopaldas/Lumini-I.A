@@ -16,7 +16,7 @@ require('dotenv').config(); // Load .env BEFORE database config
 const sequelize = require('./config/database');
 
 const app = express();
-// Force reload comment
+// Force rebuild - Deploy v3
 const PORT = process.env.PORT || 5000;
 
 // Middleware
