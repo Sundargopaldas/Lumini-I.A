@@ -105,22 +105,10 @@ app.use('/api/import', importRoutes);
 app.use('/api/accountants', accountantRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Health Check Route for Railway
-app.get('/healthcheck', (req, res) => {
+// Health Check Route for Railway - This is the most important route for deployment
+app.get('/', (req, res) => {
   res.status(200).send('OK');
 });
-
-// --- SERVE FRONTEND IN PRODUCTION ---
-if (process.env.NODE_ENV === 'production') {
-  // Respond to all routes to pass health checks definitively
-  app.get('*', (req, res) => {
-    res.send('Lumini I.A Backend is running and healthy!');
-  });
-} else {
-  app.get('/', (req, res) => {
-    res.send('Lumini I.A Backend is running (Dev Mode)');
-  });
-}
 
 // Database Connection and Server Start
 const startServer = async () => {
