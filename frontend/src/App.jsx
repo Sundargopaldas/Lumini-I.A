@@ -19,6 +19,7 @@ import Settings from './pages/Settings';
 import Terms from './pages/Terms';
 import Footer from './components/Footer';
 import WhatsAppWidget from './components/WhatsAppWidget';
+import CookieConsent from './components/CookieConsent';
 
 import AccountantDashboard from './pages/AccountantDashboard';
 
@@ -125,6 +126,9 @@ function App() {
             </PrivateRoute>
           } />
         </Routes>
+        
+        {/* Cookie Consent Banner */}
+        <CookieConsent />
       </div>
     </Router>
   );

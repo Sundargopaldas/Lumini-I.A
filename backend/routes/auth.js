@@ -10,12 +10,35 @@ const User = require('../models/User');
 const Accountant = require('../models/Accountant');
 const auth = require('../middleware/auth');
 const checkPremium = require('../middleware/checkPremium');
-const { validatePassword, isCommonPassword } = require('../utils/passwordValidator');
+const { validatePassword: validatePasswordStrength } = require('../utils/passwordValidator');
+const { recordFailedAttempt, isBlocked, clearAttempts } = require('../utils/loginAttempts');
 const { validate, schemas } = require('../middleware/validator');
 const { createLogger } = require('../utils/logger');
 const TokenService = require('../services/TokenService');
 
 const logger = createLogger('AUTH');
+
+// 🔒 Endpoint para validar força de senha (sem autenticação)
+router.post('/validate-password', (req, res) => {
+  const { password } = req.body;
+  
+  if (!password) {
+    return res.status(400).json({ error: 'Password is required' });
+  }
+  
+  const validation = validatePasswordStrength(password);
+  
+  res.json({
+    valid: validation.valid,
+    strength: validation.strength,
+    errors: validation.errors,
+    strengthLevel: 
+      validation.strength >= 80 ? 'Muito Forte' :
+      validation.strength >= 60 ? 'Forte' :
+      validation.strength >= 40 ? 'Média' :
+      validation.strength >= 20 ? 'Fraca' : 'Muito Fraca'
+  });
+});
 
 // Configure Multer for Logo Upload
 const storage = multer.diskStorage({
@@ -53,15 +76,16 @@ router.post('/register', validate(schemas.registerSchema), async (req, res) => {
     const { username, email, password } = req.body;
 
     // Validate password strength
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.isValid) {
-      return res.status(400).json({ message: passwordValidation.message });
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({ 
+        message: 'Senha não atende aos requisitos de segurança',
+        errors: passwordValidation.errors,
+        strength: passwordValidation.strength
+      });
     }
     
-    // Check for common weak passwords
-    if (isCommonPassword(password)) {
-      return res.status(400).json({ message: 'Senha muito comum. Escolha uma senha mais segura.' });
-    }
+    console.log(`✅ [SECURITY] Senha forte criada (força: ${passwordValidation.strength}%) para ${email}`);
 
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
@@ -100,21 +124,62 @@ router.post('/login', validate(schemas.loginSchema), async (req, res) => {
   
   try {
     const { email, password } = req.body;
+    
+    // 🔒 SEGURANÇA: Verificar se a conta está bloqueada
+    const blockStatus = isBlocked(email);
+    if (blockStatus.blocked) {
+      logger.auth(`Login blocked - too many attempts`, email, false);
+      return res.status(429).json({ 
+        message: `Conta temporariamente bloqueada devido a múltiplas tentativas falhadas. Tente novamente em ${blockStatus.remainingMinutes} minutos.`,
+        blocked: true,
+        blockedUntil: blockStatus.blockedUntil
+      });
+    }
 
     // Check if user exists
     const user = await User.findOne({ where: { email } });
     if (!user) {
+      // 🔒 SEGURANÇA: Registrar tentativa falhada
+      const attemptResult = recordFailedAttempt(email);
       logger.auth('Login failed - user not found', email, false);
-      return res.status(400).json({ message: 'Invalid credentials' });
+      
+      if (attemptResult.blocked) {
+        return res.status(429).json({ 
+          message: `Muitas tentativas falhadas. Conta bloqueada por ${attemptResult.remainingMinutes} minutos.`,
+          blocked: true,
+          blockedUntil: attemptResult.blockedUntil
+        });
+      }
+      
+      return res.status(400).json({ 
+        message: 'Credenciais inválidas',
+        remainingAttempts: attemptResult.remainingAttempts
+      });
     }
 
-    // Check password
+    // Check password (com timing constante para prevenir timing attacks)
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      // 🔒 SEGURANÇA: Registrar tentativa falhada
+      const attemptResult = recordFailedAttempt(email);
       logger.auth('Login failed - invalid password', email, false);
-      return res.status(400).json({ message: 'Invalid credentials' });
+      
+      if (attemptResult.blocked) {
+        return res.status(429).json({ 
+          message: `Muitas tentativas falhadas. Conta bloqueada por ${attemptResult.remainingMinutes} minutos.`,
+          blocked: true,
+          blockedUntil: attemptResult.blockedUntil
+        });
+      }
+      
+      return res.status(400).json({ 
+        message: 'Credenciais inválidas',
+        remainingAttempts: attemptResult.remainingAttempts
+      });
     }
     
+    // 🔒 SEGURANÇA: Limpar tentativas após login bem-sucedido
+    clearAttempts(email);
     logger.auth('Login successful', user.id, true);
 
     // Generate token

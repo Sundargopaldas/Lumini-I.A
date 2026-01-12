@@ -5,6 +5,27 @@ const SystemConfig = require('../models/SystemConfig');
 const { decrypt } = require('../utils/encryption');
 
 /**
+ * Get Logo Path - Tries multiple paths for dev and production
+ */
+const getLogoPath = () => {
+    const possiblePaths = [
+        path.join(__dirname, '../public/logo.png'),           // Produção: /app/public/logo.png
+        path.join(__dirname, '../../frontend/public/logo.png'), // Dev: frontend/public/logo.png
+        path.join(__dirname, '../../public/logo.png')          // Alternativo
+    ];
+    
+    for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+            console.log(`✅ Logo encontrada em: ${p}`);
+            return p;
+        }
+    }
+    
+    console.warn('⚠️ Logo não encontrada em nenhum caminho esperado');
+    return null;
+};
+
+/**
  * Get Transporter - Dynamically loads SMTP config from DB or Env
  */
 const getTransporter = async () => {
@@ -89,9 +110,9 @@ const sendCancellationEmail = async (user, reason) => {
 
     const fromAddress = await getFromAddress();
     
-    const logoPath = path.join(__dirname, '../../frontend/public/logo.png');
+    const logoPath = getLogoPath();
     const attachments = [];
-    if (fs.existsSync(logoPath)) {
+    if (logoPath) {
         attachments.push({
             filename: 'logo.png',
             path: logoPath,
@@ -102,22 +123,31 @@ const sendCancellationEmail = async (user, reason) => {
     const mailOptions = {
         from: fromAddress,
         to: user.email,
-        subject: 'Confirmação de Cancelamento de Assinatura',
+        subject: 'Confirmação de Cancelamento - Lumini I.A',
         html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <img src="cid:logo" alt="Lumini I.A" style="width: 50px; height: 50px;">
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                <div style="background: #6d28d9; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                    <img src="cid:logo" alt="Lumini I.A" style="width: 80px; height: auto; margin-bottom: 10px;">
+                    <h1 style="color: white; margin: 0;">Cancelamento Recebido</h1>
                 </div>
-                <h2 style="color: #4a5568;">Cancelamento Recebido</h2>
-                <p>Olá, ${user.name || 'Usuário'},</p>
-                <p>Recebemos sua solicitação de cancelamento da assinatura <strong>Lumini I.A</strong>.</p>
-                <p>Sua assinatura permanecerá ativa até o final do período de cobrança atual. Após essa data, sua conta retornará ao plano Gratuito.</p>
-                
-                ${reason ? `<p><strong>Motivo informado:</strong> ${reason}</p>` : ''}
-                
-                <p>Sentimos muito em ver você partir. Se houver algo que possamos fazer para melhorar sua experiência, por favor, responda a este e-mail.</p>
-                
-                <p>Atenciosamente,<br>Equipe Lumini I.A</p>
+                <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+                    <p>Olá, <strong>${user.name || 'Usuário'}</strong>,</p>
+                    
+                    <p>Recebemos sua solicitação de cancelamento da assinatura <strong>Lumini I.A</strong>.</p>
+                    
+                    <p>Sua assinatura permanecerá ativa até o final do período de cobrança atual. Após essa data, sua conta retornará ao plano Gratuito.</p>
+                    
+                    ${reason ? `
+                    <div style="background-color: #f3f4f6; border-left: 4px solid #6d28d9; padding: 15px; margin: 20px 0;">
+                        <p style="margin: 0; color: #4a5568;"><strong>Motivo informado:</strong></p>
+                        <p style="margin: 10px 0 0 0; color: #6b7280;">${reason}</p>
+                    </div>
+                    ` : ''}
+                    
+                    <p>Sentimos muito em ver você partir. Se houver algo que possamos fazer para melhorar sua experiência, por favor, responda a este e-mail.</p>
+                    
+                    <p>Atenciosamente,<br>Equipe Lumini I.A</p>
+                </div>
             </div>
         `,
         attachments: attachments
@@ -157,9 +187,9 @@ const sendWelcomeEmail = async (user, planName) => {
     if (!transporter) return;
     const fromAddress = await getFromAddress();
 
-    const logoPath = path.join(__dirname, '../../frontend/public/logo.png');
+    const logoPath = getLogoPath();
     const attachments = [];
-    if (fs.existsSync(logoPath)) {
+    if (logoPath) {
         attachments.push({
             filename: 'logo.png',
             path: logoPath,
@@ -224,14 +254,31 @@ const sendPasswordResetEmail = async (user, resetLink) => {
     if (!transporter) return;
     const fromAddress = await getFromAddress();
 
-    const logoPath = path.join(__dirname, '../../frontend/public/logo.png');
+    // Tentar múltiplos caminhos para a logo (dev e produção)
+    const possibleLogoPaths = [
+        path.join(__dirname, '../public/logo.png'),           // Produção: /app/public/logo.png
+        path.join(__dirname, '../../frontend/public/logo.png'), // Dev: frontend/public/logo.png
+        path.join(__dirname, '../../public/logo.png')          // Alternativo
+    ];
+    
+    let logoPath = null;
+    for (const p of possibleLogoPaths) {
+        if (fs.existsSync(p)) {
+            logoPath = p;
+            console.log(`✅ Logo encontrada em: ${p}`);
+            break;
+        }
+    }
+
     const attachments = [];
-    if (fs.existsSync(logoPath)) {
+    if (logoPath) {
         attachments.push({
             filename: 'logo.png',
             path: logoPath,
             cid: 'logo'
         });
+    } else {
+        console.warn('⚠️ Logo não encontrada em nenhum caminho esperado');
     }
 
     const mailOptions = {
@@ -282,9 +329,9 @@ const sendInvoiceEmail = async (user, invoiceData) => {
     if (!transporter) return;
     const fromAddress = await getFromAddress();
 
-    const logoPath = path.join(__dirname, '../../frontend/public/logo.png');
+    const logoPath = getLogoPath();
     const attachments = [];
-    if (fs.existsSync(logoPath)) {
+    if (logoPath) {
         attachments.push({
             filename: 'logo.png',
             path: logoPath,
@@ -344,9 +391,9 @@ const sendInviteEmail = async (inviter, email) => {
     if (!transporter) return;
     const fromAddress = await getFromAddress();
 
-    const logoPath = path.join(__dirname, '../../frontend/public/logo.png');
+    const logoPath = getLogoPath();
     const attachments = [];
-    if (fs.existsSync(logoPath)) {
+    if (logoPath) {
         attachments.push({
             filename: 'logo.png',
             path: logoPath,
@@ -416,9 +463,9 @@ const sendNewClientNotification = async (client, accountantEmail) => {
     if (!transporter) return;
     const fromAddress = await getFromAddress();
 
-    const logoPath = path.join(__dirname, '../../frontend/public/logo.png');
+    const logoPath = getLogoPath();
     const attachments = [];
-    if (fs.existsSync(logoPath)) {
+    if (logoPath) {
         attachments.push({
             filename: 'logo.png',
             path: logoPath,

@@ -7,6 +7,27 @@ const SystemConfig = require('../models/SystemConfig');
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
 
+/**
+ * Get Logo Path - Tries multiple paths for dev and production
+ */
+const getLogoPath = () => {
+    const possiblePaths = [
+        path.join(__dirname, '../public/logo.png'),           // Produção: /app/public/logo.png
+        path.join(__dirname, '../../frontend/public/logo.png'), // Dev: frontend/public/logo.png
+        path.join(__dirname, '../../public/logo.png')          // Alternativo
+    ];
+    
+    for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+            console.log(`✅ Logo encontrada em: ${p}`);
+            return p;
+        }
+    }
+    
+    console.warn('⚠️ Logo não encontrada em nenhum caminho esperado');
+    return null;
+};
+
 // Middleware para verificar se é admin
 const adminMiddleware = async (req, res, next) => {
     try {
@@ -151,11 +172,11 @@ router.post('/config/smtp/test', authMiddleware, adminMiddleware, async (req, re
         }
 
         // Send a test email to the logged in admin
-        const logoPath = path.join(__dirname, '../../frontend/public/logo.png');
+        const logoPath = getLogoPath();
         const attachments = [];
         let htmlContent = '<p>Se você recebeu este e-mail, sua <b>configuração SMTP</b> está funcionando corretamente.</p>';
 
-        if (fs.existsSync(logoPath)) {
+        if (logoPath) {
             attachments.push({
                 filename: 'logo.png',
                 path: logoPath,

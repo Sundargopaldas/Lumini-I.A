@@ -11,13 +11,22 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 
 # Instalar dependências do frontend
-RUN npm ci
+RUN echo "=== INSTALANDO DEPENDÊNCIAS DO FRONTEND ===" && \
+    npm ci && \
+    echo "=== DEPENDÊNCIAS INSTALADAS ===" && \
+    ls -la node_modules/ | head -20
 
 # Copiar código do frontend
 COPY frontend/ ./
 
 # Build do frontend (gera pasta dist/)
-RUN npm run build
+RUN echo "=== INICIANDO BUILD DO FRONTEND ===" && \
+    npm run build && \
+    echo "=== BUILD CONCLUÍDO ===" && \
+    echo "=== ARQUIVOS GERADOS EM dist/ ===" && \
+    ls -la dist/ && \
+    echo "=== VERIFICANDO INDEX.HTML ===" && \
+    cat dist/index.html | head -20
 
 # ========================================
 # Stage 2: Backend + Frontend servido
@@ -48,10 +57,20 @@ COPY backend/ ./
 COPY --from=frontend-builder /app/frontend/dist ./public
 
 # DEBUG: Verificar se os arquivos foram copiados
-RUN echo "=== Verificando arquivos do frontend ===" && \
+RUN echo "=== VERIFICANDO ARQUIVOS DO FRONTEND ===" && \
     ls -la ./public/ && \
-    echo "=== Conteúdo do index.html ===" && \
-    if [ -f ./public/index.html ]; then echo "index.html EXISTE!"; else echo "index.html NAO EXISTE!"; fi
+    echo "=== ARQUIVOS DENTRO DE ASSETS (se existir) ===" && \
+    (ls -la ./public/assets/ || echo "Pasta assets não existe") && \
+    echo "=== VERIFICANDO INDEX.HTML ===" && \
+    if [ -f ./public/index.html ]; then \
+        echo "✅ index.html EXISTE!"; \
+        echo "=== PRIMEIRAS LINHAS DO INDEX.HTML ==="; \
+        head -20 ./public/index.html; \
+    else \
+        echo "❌ index.html NAO EXISTE!"; \
+        echo "=== LISTANDO TUDO EM ./public RECURSIVAMENTE ==="; \
+        find ./public -type f; \
+    fi
 
 # Criar diretórios necessários
 RUN mkdir -p uploads/logos uploads/certificates logs
@@ -65,7 +84,7 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8080/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+  CMD node -e "require('http').get('http://localhost:8080/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Usar tini como entrypoint
 ENTRYPOINT ["/sbin/tini", "--"]

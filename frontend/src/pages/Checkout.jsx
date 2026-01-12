@@ -8,7 +8,7 @@ import api from '../services/api';
 import { useTheme } from '../contexts/ThemeContext';
 
 // Initialize Stripe outside component to avoid recreation
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_live_51SHVp6Rv6V0vaAnPReLRLbmk7pFYdBUKzwh19zr5Cl42mncVIQELphhY67g9aPXt4dXsP7bkljFIUzh8mpOJ3sO5002bWJrPpY');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const PLANS_DATA = {
     'free': {

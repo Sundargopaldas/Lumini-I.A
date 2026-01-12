@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Logo from '../components/Logo';
 import CustomAlert from '../components/CustomAlert';
+import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -47,7 +48,18 @@ const Register = () => {
       }, 2000);
     } catch (error) {
       console.error('Registration failed:', error);
-      showAlert('Erro no Cadastro', error.response?.data?.message || 'Falha ao cadastrar.', 'error');
+      
+      // Se houver erros de validação de senha
+      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        const errorTitle = error.response.data.message || 'Senha Insegura';
+        const errorList = '• ' + error.response.data.errors.join('\n• ');
+        const fullMessage = `${errorList}\n\nForça da senha: ${error.response.data.strength || 0}%`;
+        showAlert(errorTitle, fullMessage, 'error');
+      } else if (error.response?.data?.message) {
+        showAlert('Erro no Cadastro', error.response.data.message, 'error');
+      } else {
+        showAlert('Erro no Cadastro', 'Falha ao cadastrar. Verifique os dados e tente novamente.', 'error');
+      }
     }
   };
 
@@ -106,6 +118,7 @@ const Register = () => {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
+              <PasswordStrengthIndicator password={formData.password} />
             </div>
             <div>
               <label htmlFor="confirmPassword" className="sr-only">Confirm Password</label>

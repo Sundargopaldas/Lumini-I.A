@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { sendCancellationEmail, sendWelcomeEmail } = require('../services/EmailService');
 // Initialize Stripe with the Secret Key
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy');
 
@@ -312,8 +313,6 @@ router.get('/my-invoices', auth, async (req, res) => {
         res.status(500).json({ message: 'Error fetching invoices' });
     }
 });
-
-const { sendCancellationEmail, sendWelcomeEmail } = require('../services/EmailService');
 
 // Cancel Subscription
 router.post('/cancel-subscription', auth, async (req, res) => {

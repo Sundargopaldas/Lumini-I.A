@@ -55,30 +55,6 @@ const Login = () => {
     }
   };
 
-  const handleEmergencyFix = async () => {
-    const email = prompt("Por favor, digite o email da conta que deve ser ADMINISTRADOR:");
-    if (!email) return;
-
-    try {
-        setLoading(true);
-        const response = await fetch(`/api/auth/emergency-admin?email=${email}&secret=lumini_sabado_magico`);
-        const text = await response.text();
-        
-        // Remove HTML tags for alert
-        const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-
-        if (response.ok) {
-            alert("✅ SUCESSO!\n\n" + cleanText + "\n\nAgora faça login novamente.");
-        } else {
-            alert("❌ ERRO: " + cleanText);
-        }
-    } catch (error) {
-        alert("Erro de conexão: " + error.message);
-    } finally {
-        setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 transition-colors py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white dark:bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-xl border border-slate-200 dark:border-white/20 transition-colors">
@@ -178,15 +154,6 @@ const Login = () => {
               Criar conta
             </Link>
           </p>
-
-          {/* EMERGENCY ADMIN FIX BUTTON */}
-          <button 
-            type="button"
-            onClick={handleEmergencyFix}
-            className="w-full mt-8 py-2 text-xs text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors border border-dashed border-slate-300 dark:border-slate-700 rounded hover:border-purple-500"
-          >
-            🛠️ Problemas com acesso Admin? Clique aqui para corrigir
-          </button>
         </div>
       </div>
       <CustomAlert 

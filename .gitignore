@@ -8,7 +8,7 @@ coverage
 
 # Production
 build
-dist
+# dist temporariamente permitido para deploy
 
 # Misc
 .DS_Store

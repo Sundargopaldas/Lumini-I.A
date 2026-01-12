@@ -16,8 +16,8 @@ require('dotenv').config(); // Load .env BEFORE database config
 const sequelize = require('./config/database');
 
 const app = express();
-// Force rebuild - Deploy v3
-const PORT = process.env.PORT || 5000;
+// Force rebuild - Deploy v4 com frontend
+const PORT = process.env.PORT || 8080;
 
 // Middleware
 app.use(helmet({
@@ -51,6 +51,32 @@ app.use(cors({
   origin: allowedOrigins,
   credentials: true
 }));
+
+// 🔒 HEADERS DE SEGURANÇA ADICIONAIS
+app.use((req, res, next) => {
+  // Previne clickjacking
+  res.setHeader('X-Frame-Options', 'DENY');
+  
+  // Previne MIME-sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  
+  // Política de referrer
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // Política de permissões (desabilita funcionalidades desnecessárias)
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  
+  // XSS Protection (para navegadores antigos)
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // Strict Transport Security (HSTS) - força HTTPS
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
+  
+  next();
+});
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -102,10 +128,10 @@ app.use('/api/auth/forgot-password', strictAuthLimiter);
 app.use('/api/', apiLimiter);
 app.use(globalLimiter);
 
-// Health Check Route (MOVED BEFORE PRODUCTION CATCH-ALL)
-app.get('/', (req, res) => {
+// Health Check Route - usando /api/health para não conflitar com frontend
+app.get('/api/health', (req, res) => {
   console.log('>>> [HEALTH CHECK] Health check endpoint accessed');
-  res.status(200).send('OK - Lumini I.A Backend is running');
+  res.status(200).json({ status: 'OK', message: 'Lumini I.A Backend is running' });
 });
 
 // Routes
@@ -122,6 +148,7 @@ const integrationRoutes = require('./routes/integrations');
 const paymentRoutes = require('./routes/payments');
 const aiRoutes = require('./routes/ai');
 const webhookRoutes = require('./routes/webhooks');
+const setupRoutes = require('./routes/setup');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
@@ -136,6 +163,7 @@ app.use('/api/integrations', integrationRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/webhooks', webhookRoutes);
+app.use('/api/setup', setupRoutes);
 
 // Serve static files from React app
 if (process.env.NODE_ENV === 'production') {
@@ -153,11 +181,22 @@ if (process.env.NODE_ENV === 'production') {
     console.log(`>>> [STARTUP] Files in public path:`, fs.readdirSync(publicPath));
   }
   
-  app.use(express.static(publicPath));
+  // Servir arquivos estáticos do React
+  app.use(express.static(publicPath, {
+    index: false, // Não servir index.html automaticamente
+    maxAge: '1d'
+  }));
   
-  // The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.
-  app.get('*', (req, res) => {
+  // The "catchall" handler: para qualquer rota que não seja /api/*, servir o React
+  app.get('*', (req, res, next) => {
+    // Se for rota de API, pular para próximo handler
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
+    
+    console.log(`>>> [FRONTEND] Serving index.html for route: ${req.path}`);
     const indexPath = path.join(publicPath, 'index.html');
+    
     if (fs.existsSync(indexPath)) {
       res.sendFile(indexPath);
     } else {
