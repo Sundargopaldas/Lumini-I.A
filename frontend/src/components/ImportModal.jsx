@@ -58,9 +58,10 @@ const ImportModal = ({ isOpen, onClose, onImportSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div className="p-6">
+    <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="min-h-screen flex items-center justify-center py-8">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="p-6 overflow-y-auto flex-1">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('transactions.import_ofx')}</h2>
             <button 
@@ -149,6 +150,7 @@ const ImportModal = ({ isOpen, onClose, onImportSuccess }) => {
               </button>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>

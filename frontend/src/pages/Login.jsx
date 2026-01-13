@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Logo from '../components/Logo';
 import CustomAlert from '../components/CustomAlert';
+import { trackLogin, trackError } from '../utils/analytics';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -41,6 +42,9 @@ const Login = () => {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
+      // Track login success no GA4
+      trackLogin('email');
+
       // Redirect to dashboard
       navigate('/dashboard');
     } catch (error) {
@@ -49,6 +53,10 @@ const Login = () => {
       if (error.message === 'Network Error') {
           msg = 'Erro de conexão com o servidor. Verifique sua internet ou tente novamente mais tarde.';
       }
+      
+      // Track login error no GA4
+      trackError(`Login Error: ${msg}`, 'warning');
+      
       showAlert('Erro no Login', msg, 'error');
     } finally {
       setLoading(false);

@@ -140,6 +140,7 @@ router.get('/', auth, async (req, res) => {
 
 // Create transaction
 router.post('/', auth, validate(schemas.createTransactionSchema), async (req, res) => {
+  console.log('📝 [POST /transactions] Request body:', JSON.stringify(req.body, null, 2));
   const { amount, description, date, type, source, goalId, isRecurring } = req.body;
 
   try {

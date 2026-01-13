@@ -86,7 +86,7 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
 
   if (certificate) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 transition-all">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 transition-all p-4">
           <CustomAlert 
             isOpen={alertState.isOpen}
             onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))}
@@ -150,7 +150,7 @@ const CertificateModal = ({ isOpen, onClose, onSave, certificate }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm transition-all p-4">
       <CustomAlert 
         isOpen={alertState.isOpen}
         onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))}

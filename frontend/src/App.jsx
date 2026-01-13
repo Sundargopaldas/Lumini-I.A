@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -77,9 +78,17 @@ const AccountantRoute = ({ children }) => {
 
 import ErrorBoundary from './components/ErrorBoundary';
 
+// Component para rastrear mudanças de rota - DESABILITADO (GA4 via HTML)
+function RouteTracker() {
+  return null;
+}
+
 function App() {
+  // GA4 está carregado diretamente no HTML, não precisa inicializar via JS
+
   return (
     <Router>
+      <RouteTracker />
       <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-white transition-colors">
         <Routes>
           <Route path="/login" element={<Login />} />

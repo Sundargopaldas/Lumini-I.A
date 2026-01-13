@@ -285,7 +285,7 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
       <CustomAlert 
         isOpen={alertState.isOpen}
         onClose={closeAlert}
@@ -293,15 +293,19 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
         message={alertState.message}
         type={alertState.type}
       />
-      <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl relative max-h-[90vh] overflow-y-auto">
-        <button 
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
-        >
-          ✕
-        </button>
-        
-        <h2 className="text-2xl font-bold text-white mb-6">Central Fiscal Lumini</h2>
+      <div className="min-h-screen flex items-center justify-center py-8">
+        <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl relative flex flex-col max-h-[90vh]">
+          <div className="flex items-center justify-between p-6 pb-4 border-b border-white/10 shrink-0">
+            <h2 className="text-2xl font-bold text-white">Central Fiscal Lumini</h2>
+            <button 
+              onClick={onClose}
+              className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"
+            >
+              ✕
+            </button>
+          </div>
+          
+          <div className="p-6 pt-4 overflow-y-auto flex-1">
         
         {/* Mode Toggle */}
         <div className="flex bg-slate-800 rounded-lg p-1 mb-6">
@@ -475,6 +479,8 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
           >
             Fechar Simulador
           </button>
+        </div>
+        </div>
         </div>
       </div>
     </div>

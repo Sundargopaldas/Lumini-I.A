@@ -19,6 +19,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
   });
   const [customSource, setCustomSource] = useState('');
   const [goals, setGoals] = useState([]);
+  const [displayAmount, setDisplayAmount] = useState('R$ 0,00');
   
   // Custom Alert State
   const [alertState, setAlertState] = useState({
@@ -60,6 +61,13 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
           isRecurring: transactionToEdit.isRecurring || false
         });
         
+        // Formata o valor existente para exibição
+        const formatted = new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        }).format(transactionToEdit.amount);
+        setDisplayAmount(formatted);
+        
         if (isCustom) {
           setCustomSource(transactionToEdit.source);
         } else {
@@ -76,11 +84,40 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
           isRecurring: false
         });
         setCustomSource('');
+        setDisplayAmount('R$ 0,00');
       }
     }
   }, [isOpen, transactionToEdit]);
 
   if (!isOpen) return null;
+
+  // Função para formatar valor monetário automaticamente
+  const handleAmountChange = (e) => {
+    // Remove tudo que não é número
+    let value = e.target.value.replace(/\D/g, '');
+    
+    // Se estiver vazio, reseta
+    if (value === '') {
+      setDisplayAmount('R$ 0,00');
+      setFormData(prev => ({ ...prev, amount: '' }));
+      return;
+    }
+    
+    // Converte para número (em centavos)
+    const numericValue = parseInt(value, 10);
+    
+    // Converte centavos para reais
+    const realValue = (numericValue / 100).toFixed(2);
+    
+    // Formata com separadores de milhares e decimais
+    const formatted = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(realValue);
+    
+    setDisplayAmount(formatted);
+    setFormData(prev => ({ ...prev, amount: realValue }));
+  };
 
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -118,7 +155,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
       <CustomAlert 
         isOpen={alertState.isOpen}
         onClose={closeAlert}
@@ -126,7 +163,8 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
         message={alertState.message}
         type={alertState.type}
       />
-      <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl relative flex flex-col max-h-[90vh]">
+      <div className="min-h-screen flex items-center justify-center py-8">
+        <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl relative flex flex-col max-h-[90vh]">
         {/* Header - Fixed at top */}
         <div className="p-6 pb-2 flex justify-between items-center shrink-0">
             <h2 className="text-2xl font-bold text-white">
@@ -186,15 +224,15 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
           <div>
             <label className="block text-sm font-medium text-white mb-1">{t('transactions.amount_label')}</label>
             <input 
-              type="number" 
+              type="text" 
               name="amount" 
-              value={formData.amount} 
-              onChange={handleChange}
+              value={displayAmount} 
+              onChange={handleAmountChange}
               required
-              min="0.01"
-              step="0.01"
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="R$ 0,00"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white text-xl font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
+            <p className="text-xs text-gray-400 mt-1">💡 {t('transactions.amount_hint') || 'Digite apenas números. Ex: 123 = R$ 1,23'}</p>
           </div>
 
           <div>
@@ -290,6 +328,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSave, transactionToEdit }) => 
             {t('transactions.save_button')}
           </button>
         </form>
+        </div>
         </div>
       </div>
     </div>

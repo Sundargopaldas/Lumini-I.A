@@ -15,11 +15,16 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config(); // Load .env BEFORE database config
 const sequelize = require('./config/database');
 
+// 🐛 Error Logging System
+const logger = require('./utils/errorLogger');
+const requestLogger = require('./middleware/requestLogger');
+const errorHandler = require('./middleware/errorHandler');
+
 const app = express();
-// Force rebuild - Deploy v4 com frontend
+// Force rebuild - Deploy v9 UMAMI API GATEWAY - 2026-01-13-20:05 - FINAL FIX
 const PORT = process.env.PORT || 8080;
 
-// Middleware
+// Middleware - CSP configurado para permitir GA4 COMPLETO
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -27,9 +32,25 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com"],
+      scriptSrc: [
+        "'self'", 
+        "'unsafe-inline'", 
+        "https://js.stripe.com", 
+        "https://cloud.umami.is"
+      ],
+      scriptSrcElem: [
+        "'self'", 
+        "'unsafe-inline'", 
+        "https://js.stripe.com", 
+        "https://cloud.umami.is"
+      ],
       frameSrc: ["'self'", "https://js.stripe.com"],
-      connectSrc: ["'self'", "https://api.stripe.com"],
+      connectSrc: [
+        "'self'", 
+        "https://api.stripe.com", 
+        "https://cloud.umami.is",
+        "https://api-gateway.umami.dev"
+      ],
     },
   },
 }));
@@ -79,6 +100,9 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// 📊 Request Logger (todas as requisições)
+app.use(requestLogger);
 
 // Sanitização de inputs (protege contra XSS)
 // Temporariamente desativado para deploy - reativar depois
@@ -298,16 +322,22 @@ const startServer = async () => {
     console.error('!!!      SERVER STARTUP FAILED       !!!');
     console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
     console.error('Error details:', error);
+    logger.error('Server Startup Failed', error);
     process.exit(1); // Força a saída para garantir que o erro seja registrado
   }
 };
 
+// 🛡️ Global Error Handler (deve vir depois de todas as rotas)
+app.use(errorHandler);
+
 process.on('exit', (code) => {
   console.log(`>>> [SHUTDOWN] Process exiting with code: ${code}`);
+  logger.info(`Process exiting with code: ${code}`);
 });
 
 process.on('SIGINT', () => {
   console.log('>>> [SHUTDOWN] Received SIGINT, shutting down gracefully...');
+  logger.info('Server shutting down gracefully (SIGINT)');
   process.exit(0);
 });
 

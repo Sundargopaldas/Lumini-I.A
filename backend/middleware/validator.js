@@ -27,6 +27,12 @@ const validate = (schema, property = 'body') => {
         message: detail.message
       }));
 
+      console.error('❌ [VALIDATOR] Validation failed:', JSON.stringify({
+        property,
+        data: req[property],
+        errors
+      }, null, 2));
+
       return res.status(400).json({
         message: 'Erro de validação',
         errors
@@ -89,10 +95,14 @@ const updateProfileSchema = Joi.object({
 
 // Transactions
 const createTransactionSchema = Joi.object({
-  amount: Joi.number()
+  amount: Joi.alternatives()
+    .try(
+      Joi.number(),
+      Joi.string().pattern(/^\d+(\.\d{1,2})?$/).custom((value) => parseFloat(value))
+    )
     .required()
     .messages({
-      'number.base': 'Valor deve ser um número',
+      'alternatives.match': 'Valor deve ser um número válido',
       'any.required': 'Valor é obrigatório'
     }),
   
@@ -116,7 +126,7 @@ const createTransactionSchema = Joi.object({
   
   source: Joi.string().max(50).optional(),
   categoryId: Joi.number().integer().optional(),
-  goalId: Joi.number().integer().optional(),
+  goalId: Joi.number().integer().allow(null).optional(),
   isRecurring: Joi.boolean().optional()
 });
 

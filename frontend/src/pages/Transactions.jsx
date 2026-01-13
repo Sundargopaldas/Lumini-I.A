@@ -15,6 +15,8 @@ const Transactions = () => {
   const [transactionToEdit, setTransactionToEdit] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [showConfirmationCard, setShowConfirmationCard] = useState(false);
+  const [savedTransaction, setSavedTransaction] = useState(null);
 
   const [alertState, setAlertState] = useState({ isOpen: false, title: '', message: '', type: 'info' });
   const showAlert = (title, message, type, onConfirm) => setAlertState({ isOpen: true, title, message, type, onConfirm });
@@ -45,12 +47,18 @@ const Transactions = () => {
       if (transactionToEdit) {
         const response = await api.put(`/transactions/${transactionToEdit.id}`, transactionData);
         setTransactions(transactions.map(t => t.id === transactionToEdit.id ? response.data : t));
+        setSavedTransaction(response.data);
       } else {
         const response = await api.post('/transactions', transactionData);
         setTransactions([response.data, ...transactions]);
+        setSavedTransaction(response.data);
       }
       setIsModalOpen(false);
       setTransactionToEdit(null);
+      
+      // Mostrar card de confirmação
+      setShowConfirmationCard(true);
+      setTimeout(() => setShowConfirmationCard(false), 5000);
     } catch (error) {
       console.error('Error saving transaction:', error);
       showAlert(t('common.error'), t('transactions.save_error'), 'error');
@@ -99,6 +107,36 @@ const Transactions = () => {
         type={alertState.type}
         onConfirm={alertState.onConfirm}
       />
+      
+      {/* Card de Confirmação - Centralizado */}
+      {showConfirmationCard && savedTransaction && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-xl border border-green-500/50 bg-white dark:bg-slate-900 bg-green-500/10 p-6 shadow-2xl">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="text-4xl">✅</div>
+              
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t('common.success')}</h3>
+                <p className="text-sm opacity-90 text-slate-700 dark:text-slate-300">
+                  {savedTransaction.description}
+                </p>
+                <p className={`text-2xl font-bold ${savedTransaction.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {savedTransaction.type === 'income' ? '+' : '-'}
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(savedTransaction.amount)}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowConfirmationCard(false)}
+                className="w-full py-2 px-4 rounded-lg bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 transition-colors font-semibold text-sm text-slate-700 dark:text-white"
+              >
+                {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{t('transactions.title')}</h1>
         <div className="flex gap-3">

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import CustomAlert from '../components/CustomAlert';
 import CancelSurveyModal from '../components/CancelSurveyModal';
+import { trackPlanCancel, trackEvent } from '../utils/analytics';
 
 const Plans = () => {
   const { t } = useTranslation();
@@ -46,6 +47,7 @@ const Plans = () => {
   }, []);
 
   const handleUpgrade = (plan) => {
+    trackEvent('Subscription', 'upgrade_click', plan);
     navigate('/checkout', { state: { plan } });
   };
 
@@ -57,6 +59,10 @@ const Plans = () => {
       setLoading(true);
       try {
           const res = await api.post('/payments/cancel-subscription', { reason });
+          
+          // Track cancelamento no GA4
+          trackPlanCancel(currentPlan, reason);
+          
           setIsCancelModalOpen(false); // Close survey modal
           showAlert('Sucesso', res.data.message, 'success');
           // Reload after a short delay to let user read the message

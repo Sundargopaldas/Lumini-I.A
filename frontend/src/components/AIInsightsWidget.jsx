@@ -37,38 +37,48 @@ const AIInsightsWidget = () => {
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lastUpdate, setLastUpdate] = useState(null);
+
+  const fetchInsights = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Remove simulated delay, real API takes time
+      // Increase timeout for AI request as it might take longer
+      const response = await api.get('/ai/insights', { timeout: 45000 });
+      
+      console.log('AI Insights response:', response.data);
+      
+      if (Array.isArray(response.data)) {
+           setInsights(response.data);
+      } else {
+           console.error('AI Insights received invalid format:', response.data);
+           // Fallback if backend sends object instead of array
+           if (response.data && typeof response.data === 'object') {
+               setInsights([response.data]);
+           } else {
+               setInsights([]);
+           }
+      }
+      setLastUpdate(new Date());
+      setLoading(false);
+    } catch (err) {
+      console.error('Failed to fetch AI insights', err);
+      setError('Não foi possível conectar ao Consultor IA no momento. Tente novamente mais tarde.');
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchInsights = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        // Remove simulated delay, real API takes time
-        // Increase timeout for AI request as it might take longer
-        const response = await api.get('/ai/insights', { timeout: 45000 });
-        
-        console.log('AI Insights response:', response.data);
-        
-        if (Array.isArray(response.data)) {
-             setInsights(response.data);
-        } else {
-             console.error('AI Insights received invalid format:', response.data);
-             // Fallback if backend sends object instead of array
-             if (response.data && typeof response.data === 'object') {
-                 setInsights([response.data]);
-             } else {
-                 setInsights([]);
-             }
-        }
-        setLoading(false);
-      } catch (err) {
-        console.error('Failed to fetch AI insights', err);
-        setError('Não foi possível conectar ao Consultor IA no momento. Tente novamente mais tarde.');
-        setLoading(false);
-      }
-    };
-
     fetchInsights();
+    
+    // Auto-refresh a cada 5 minutos
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refresh do Consultor IA');
+      fetchInsights();
+    }, 5 * 60 * 1000); // 5 minutos
+
+    return () => clearInterval(interval);
   }, []);
 
   const getIcon = (type) => {
@@ -115,10 +125,36 @@ const AIInsightsWidget = () => {
         )}
 
         {loading && (
-            <span className="flex h-3 w-3 relative">
+            <span className="flex h-3 w-3 relative ml-auto">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
             </span>
+        )}
+
+        {/* Botão de Refresh */}
+        {!loading && (
+          <button
+            onClick={fetchInsights}
+            className="ml-auto p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all group"
+            title="Atualizar análise"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-4 w-4 text-slate-300 group-hover:text-white group-hover:rotate-180 transition-all duration-300" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        )}
+
+        {/* Última atualização */}
+        {lastUpdate && !loading && (
+          <span className="text-xs text-slate-400 ml-2">
+            {new Date(lastUpdate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+          </span>
         )}
       </div>
 

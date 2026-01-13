@@ -23,7 +23,7 @@ const CancelSurveyModal = ({ isOpen, onClose, onConfirm, loading }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="w-full max-w-md rounded-xl border border-white/10 p-6 shadow-2xl transform transition-all scale-100 animate-in zoom-in-95 duration-200 bg-slate-900">
         <div className="space-y-4">
           <div className="text-center">

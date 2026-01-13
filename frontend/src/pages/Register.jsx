@@ -4,6 +4,7 @@ import api from '../services/api';
 import Logo from '../components/Logo';
 import CustomAlert from '../components/CustomAlert';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
+import { trackSignup, trackError } from '../utils/analytics';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -42,12 +43,19 @@ const Register = () => {
         email: formData.email,
         password: formData.password
       });
+      
+      // Track signup success no GA4
+      trackSignup('email');
+      
       showAlert('Sucesso', 'Cadastro realizado com sucesso! Por favor faça login.', 'success');
       setTimeout(() => {
         navigate('/login');
       }, 2000);
     } catch (error) {
       console.error('Registration failed:', error);
+      
+      // Track signup error no GA4
+      trackError(`Registration Error: ${error.response?.data?.message || 'Unknown'}`, 'warning');
       
       // Se houver erros de validação de senha
       if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {

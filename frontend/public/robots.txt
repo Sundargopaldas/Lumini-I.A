@@ -1,0 +1,32 @@
+# Lumini I.A - Robots.txt
+# https://luminiiadigital.com.br/robots.txt
+
+User-agent: *
+Allow: /
+
+# Páginas públicas permitidas
+Allow: /login
+Allow: /register
+Allow: /forgot-password
+
+# Bloquear páginas privadas/autenticadas
+Disallow: /dashboard
+Disallow: /transactions
+Disallow: /reports
+Disallow: /invoices
+Disallow: /admin
+Disallow: /settings
+Disallow: /checkout
+Disallow: /integrations
+Disallow: /accountant-dashboard
+
+# Bloquear diretórios técnicos
+Disallow: /api/
+Disallow: /*.json$
+Disallow: /*?*
+
+# Sitemap
+Sitemap: https://luminiiadigital.com.br/sitemap.xml
+
+# Crawl-delay (opcional)
+Crawl-delay: 1

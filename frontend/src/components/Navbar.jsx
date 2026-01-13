@@ -14,6 +14,12 @@ const Navbar = () => {
   
   // Fetch latest user data on mount and route change to ensure plan is up to date
   useEffect(() => {
+    // Proteção: verificar se location e pathname existem antes de usar
+    if (!location || !location.pathname) {
+      console.warn('Navbar: location ou pathname undefined, pulando fetchUser');
+      return;
+    }
+    
     const fetchUser = async () => {
         try {
             const response = await api.get('/auth/me');
@@ -44,7 +50,7 @@ const Navbar = () => {
         }
     };
     fetchUser();
-  }, [location.pathname]); // Run on mount and route change
+  }, [location?.pathname]); // Run on mount and route change (com optional chaining)
   const userPlan = user.plan?.toLowerCase() || 'free';
   const isPro = ['pro', 'premium', 'agency'].includes(userPlan);
   const isPremium = ['premium', 'agency'].includes(userPlan);

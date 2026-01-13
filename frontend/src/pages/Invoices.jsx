@@ -137,6 +137,17 @@ const Invoices = () => {
     
     // Helper to draw barcode (Mock implementation of Interleaved 2 of 5 visual)
     const drawBarcode = (x, y, width, height, code) => {
+        // Verificação de segurança ROBUSTA
+        if (!code || typeof code !== 'string' || code.length === 0) {
+            console.warn('drawBarcode: código inválido ou indefinido', code);
+            // Desenhar texto de erro em vez de quebrar
+            doc.setFontSize(8);
+            doc.setTextColor(200, 0, 0);
+            doc.text('Código de barras indisponível', x + (width/2), y + (height/2), { align: 'center' });
+            doc.setTextColor(0, 0, 0); // Reset color
+            return;
+        }
+        
         doc.setFillColor(0, 0, 0);
         
         // Calculate total units to ensure it fills the width exactly
@@ -156,10 +167,20 @@ const Invoices = () => {
             currentX += barW + thin; // Gap
         }
         
-        // Code text
+        // Code text - com verificação adicional
         doc.setFontSize(9);
         doc.setFont('courier', 'bold');
-        doc.text(code.match(/.{1,4}/g).join(' '), x + (width/2), y + height + 4, { align: 'center' });
+        try {
+            const formattedCode = code.match(/.{1,4}/g);
+            if (formattedCode) {
+                doc.text(formattedCode.join(' '), x + (width/2), y + height + 4, { align: 'center' });
+            } else {
+                doc.text(code, x + (width/2), y + height + 4, { align: 'center' });
+            }
+        } catch (error) {
+            console.error('Erro ao formatar código de barras:', error);
+            doc.text(code, x + (width/2), y + height + 4, { align: 'center' });
+        }
     };
 
     // --- HEADER ---
