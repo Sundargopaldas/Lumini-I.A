@@ -102,6 +102,9 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// 📁 Serve uploads folder (accountant images, certificates, etc)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // 📊 Request Logger (todas as requisições)
 app.use(requestLogger);
 

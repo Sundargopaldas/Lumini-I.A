@@ -73,7 +73,7 @@ RUN echo "=== VERIFICANDO ARQUIVOS DO FRONTEND ===" && \
     fi
 
 # Criar diretórios necessários
-RUN mkdir -p uploads/logos uploads/certificates logs
+RUN mkdir -p uploads/logos uploads/certificates uploads/accountants logs
 
 # Variáveis de ambiente padrão
 ENV NODE_ENV=production
