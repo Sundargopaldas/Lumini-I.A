@@ -21,8 +21,8 @@ const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
-// Force rebuild - Deploy v13 FIX IMAGES UPLOADS - 2026-01-14-15:30
-const CACHEBUST = '2026-01-14-15:30:00'; // Force Docker cache invalidation
+// Force rebuild - Deploy v14 DELETE ACCOUNTANT BUTTON - 2026-01-14-15:40
+const CACHEBUST = '2026-01-14-15:40:00'; // Force Docker cache invalidation
 const PORT = process.env.PORT || 8080;
 
 // Middleware - CSP configurado para permitir GA4 COMPLETO
