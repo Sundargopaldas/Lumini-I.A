@@ -275,6 +275,10 @@ router.get('/admin', authMiddleware, async (req, res) => {
 // POST /api/accountants - Register a new accountant
 router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
   try {
+    console.log('📝 [POST /accountants] Dados recebidos:', req.body);
+    console.log('👤 [POST /accountants] User ID:', req.user?.id);
+    console.log('📷 [POST /accountants] Arquivo:', req.file ? req.file.filename : 'Sem imagem');
+
     const { name, email, phone, specialty, description, tags, crc } = req.body;
     const userId = req.user.id; // From authMiddleware
 
@@ -282,23 +286,29 @@ router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
     // Regex for CRC: UF-000000/O-0 (Example: SP-123456/O-0)
     const crcRegex = /^[A-Z]{2}-\d{6}\/[A-Z]-\d$/;
     if (crc && !crcRegex.test(crc)) {
+        console.log('❌ [POST /accountants] CRC inválido:', crc);
         return res.status(400).json({ message: 'Formato de CRC inválido. Use o formato UF-000000/T-D (ex: SP-123456/O-0)' });
     }
 
     // Check if user already has an accountant profile
+    console.log('🔍 [POST /accountants] Verificando se usuário já tem perfil...');
     const existingAccountant = await Accountant.findOne({ where: { userId } });
     if (existingAccountant) {
+        console.log('⚠️ [POST /accountants] Usuário já possui perfil de contador');
         return res.status(400).json({ message: 'Você já possui um perfil de contador cadastrado.' });
     }
 
     // Check if CRC is already in use
     if (crc) {
+        console.log('🔍 [POST /accountants] Verificando se CRC já existe...');
         const existingCRC = await Accountant.findOne({ where: { crc } });
         if (existingCRC) {
+             console.log('⚠️ [POST /accountants] CRC já em uso:', crc);
              return res.status(400).json({ message: 'Este CRC já está em uso por outro contador.' });
         }
     }
 
+    console.log('💾 [POST /accountants] Criando contador...');
     const newAccountant = await Accountant.create({
       name,
       email,
@@ -312,10 +322,13 @@ router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
       verified: false // Security: Must be verified by admin
     });
 
+    console.log('✅ [POST /accountants] Contador criado com sucesso! ID:', newAccountant.id);
     res.status(201).json(newAccountant);
   } catch (error) {
-    console.error('Error creating accountant:', error);
+    console.error('❌ [POST /accountants] Erro completo:', error);
+    console.error('Stack trace:', error.stack);
     if (error.name === 'SequelizeValidationError') {
+        console.error('Validation errors:', error.errors);
         return res.status(400).json({ message: 'Validation Error', errors: error.errors });
     }
     res.status(500).json({ message: 'Error registering accountant', error: error.message });

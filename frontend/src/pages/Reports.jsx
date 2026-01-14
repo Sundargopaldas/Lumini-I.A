@@ -318,16 +318,18 @@ const Reports = () => {
         isOpen={isPlanningModalOpen}
         onClose={() => setIsPlanningModalOpen(false)}
       />
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="flex flex-col gap-4">
         <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 transition-colors">{t('reports.title')}</h1>
             <p className="text-slate-500 dark:text-gray-400">{t('reports.subtitle')}</p>
         </div>
-        <div className="flex gap-2">
+        
+        {/* Filtros de Mês/Ano */}
+        <div className="flex flex-col sm:flex-row gap-2">
             <select 
                 value={selectedMonth} 
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
+                className="w-full sm:w-auto bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
             >
                 <option value="all">{t('reports.all_months')}</option>
                 {Array.from({ length: 12 }, (_, i) => (
@@ -339,13 +341,17 @@ const Reports = () => {
             <select 
                 value={selectedYear} 
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
+                className="w-full sm:w-auto bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
             >
                 {Array.from({ length: 5 }, (_, i) => {
                     const year = new Date().getFullYear() - 2 + i;
                     return <option key={year} value={year}>{year}</option>;
                 })}
             </select>
+        </div>
+
+        {/* Botões de Ação */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             <button 
                 onClick={() => {
                     if (isPremium) {
@@ -354,21 +360,21 @@ const Reports = () => {
                         showAlert(t('reports.feature_locked'), t('reports.planning_locked_msg'), 'locked');
                     }
                 }}
-                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isPremium ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${isPremium ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
-                <span>📈</span> {t('reports.planning_btn')} {!isPremium && '🔒'}
+                <span>📈</span> <span className="truncate">{t('reports.planning_btn')} {!isPremium && '🔒'}</span>
             </button>
             <button 
                 onClick={exportCSV}
-                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isPro ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${isPro ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
-                <span>📊</span> {t('reports.export_csv')} {!isPro && '🔒'}
+                <span>📊</span> <span className="truncate">{t('reports.export_csv')} {!isPro && '🔒'}</span>
             </button>
             <button 
                 onClick={exportPDF}
-                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isPro ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${isPro ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
-                <span>📄</span> {t('reports.export_pdf')} {!isPro && '🔒'}
+                <span>📄</span> <span className="truncate">{t('reports.export_pdf')} {!isPro && '🔒'}</span>
             </button>
         </div>
       </div>
