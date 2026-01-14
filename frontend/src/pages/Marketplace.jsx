@@ -212,6 +212,24 @@ const Marketplace = () => {
     );
   };
 
+  const handleDeleteMyAccountant = (accountantId, accountantName) => {
+    showAlert(
+        `Tem certeza que deseja deletar seu escritório "${accountantName}"? Esta ação não pode ser desfeita.`,
+        'confirm',
+        'Deletar Escritório',
+        async () => {
+            try {
+                await api.delete(`/accountants/${accountantId}`);
+                showAlert('Escritório deletado com sucesso!', 'success', 'Sucesso');
+                fetchAccountants(); // Refresh list
+            } catch (error) {
+                console.error('Error deleting accountant:', error);
+                showAlert(error.response?.data?.message || 'Erro ao deletar escritório.', 'error', 'Erro');
+            }
+        }
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
       <CustomAlert 
@@ -335,38 +353,51 @@ const Marketplace = () => {
                       ))}
                     </div>
 
-                    <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center gap-2">
-                      <button 
-                        onClick={() => handleContact(acc.email)}
-                        className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
-                      >
-                        Entrar em Contato
-                      </button>
-                      
-                      {/* Ensure types match for comparison */}
-                      {String(currentUser?.accountantId) === String(acc.id) ? (
+                    <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 space-y-2">
+                      {/* Ações principais (Contato e Vincular) */}
+                      <div className="flex justify-between items-center gap-2">
                         <button 
-                            onClick={handleUnlink}
-                            className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"
+                          onClick={() => handleContact(acc.email)}
+                          className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
                         >
-                            Desvincular
+                          Entrar em Contato
                         </button>
-                      ) : (
+                        
+                        {/* Ensure types match for comparison */}
+                        {String(currentUser?.accountantId) === String(acc.id) ? (
+                          <button 
+                              onClick={handleUnlink}
+                              className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"
+                          >
+                              Desvincular
+                          </button>
+                        ) : (
+                          <button 
+                              onClick={() => handleLink(acc.id)}
+                              disabled={!!currentUser?.accountantId}
+                              className={`flex-1 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm ${
+                                  // Convert both to String/Number to avoid type mismatch
+                                  String(currentUser?.accountantId) === String(acc.id)
+                                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700' 
+                                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+                              }`}
+                              title={currentUser?.accountantId ? 'Você já possui um contador vinculado' : ''}
+                          >
+                              {/* Explicit check for already linked same ID */}
+                              {String(currentUser?.accountantId) === String(acc.id) 
+                                  ? 'Vinculado' 
+                                  : (currentUser?.accountantId ? 'Indisponível' : 'Vincular Perfil')}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Botão de deletar (só aparece se for o dono do escritório) */}
+                      {currentUser && String(currentUser.id) === String(acc.userId) && (
                         <button 
-                            onClick={() => handleLink(acc.id)}
-                            disabled={!!currentUser?.accountantId}
-                            className={`flex-1 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm ${
-                                // Convert both to String/Number to avoid type mismatch
-                                String(currentUser?.accountantId) === String(acc.id)
-                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700' 
-                                : 'bg-blue-600 hover:bg-blue-700 text-white'
-                            }`}
-                            title={currentUser?.accountantId ? 'Você já possui um contador vinculado' : ''}
+                          onClick={() => handleDeleteMyAccountant(acc.id, acc.name)}
+                          className="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 py-2 rounded-lg font-medium text-xs hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors border border-red-200 dark:border-red-800"
                         >
-                            {/* Explicit check for already linked same ID */}
-                            {String(currentUser?.accountantId) === String(acc.id) 
-                                ? 'Vinculado' 
-                                : (currentUser?.accountantId ? 'Indisponível' : 'Vincular Perfil')}
+                          🗑️ Remover Meu Cadastro
                         </button>
                       )}
                     </div>
