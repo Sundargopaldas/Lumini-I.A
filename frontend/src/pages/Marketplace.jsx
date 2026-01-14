@@ -274,10 +274,10 @@ const Marketplace = () => {
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-800 dark:text-white">
-              Marketplace de Contadores
+              {t('marketplace.title')}
             </h1>
             <p className="text-slate-600 dark:text-slate-400 mt-2">
-              Encontre o especialista ideal para o seu negócio
+              {t('marketplace.subtitle')}
             </p>
           </div>
           <button
@@ -287,7 +287,7 @@ const Marketplace = () => {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
             </svg>
-            Cadastrar meu Escritório
+            {t('marketplace.register_button')}
           </button>
         </div>
 
@@ -300,7 +300,7 @@ const Marketplace = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {accountants.length === 0 ? (
               <div className="col-span-full text-center py-12 text-slate-500 dark:text-slate-400">
-                Nenhum escritório encontrado. Seja o primeiro a se cadastrar!
+                {t('marketplace.no_accountants')}
               </div>
             ) : (
               accountants.map((acc) => (
@@ -388,7 +388,7 @@ const Marketplace = () => {
                           onClick={() => handleContact(acc)}
                           className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
                         >
-                          Entrar em Contato
+                          {t('marketplace.contact')}
                         </button>
                         
                         {/* Ensure types match for comparison */}
@@ -397,7 +397,7 @@ const Marketplace = () => {
                               onClick={handleUnlink}
                               className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"
                           >
-                              Desvincular
+                              {t('marketplace.unlink')}
                           </button>
                         ) : (
                           <button 
@@ -413,8 +413,8 @@ const Marketplace = () => {
                           >
                               {/* Explicit check for already linked same ID */}
                               {String(currentUser?.accountantId) === String(acc.id) 
-                                  ? 'Vinculado' 
-                                  : (currentUser?.accountantId ? 'Indisponível' : 'Vincular Perfil')}
+                                  ? t('marketplace.linked') 
+                                  : (currentUser?.accountantId ? t('marketplace.unavailable') : t('marketplace.link_profile'))}
                           </button>
                         )}
                       </div>
@@ -428,7 +428,7 @@ const Marketplace = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
-                            <span className="group-hover:tracking-wide transition-all duration-300">Remover Meu Cadastro</span>
+                            <span className="group-hover:tracking-wide transition-all duration-300">{t('marketplace.remove_my_registration')}</span>
                           </button>
                       )}
                     </div>
@@ -594,7 +594,7 @@ const Marketplace = () => {
               className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl"
             >
               <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white">Cadastrar Escritório</h2>
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white">{t('marketplace.modal_title')}</h2>
                 <button 
                   onClick={() => setShowModal(false)}
                   className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
@@ -607,7 +607,7 @@ const Marketplace = () => {
               
               <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome do Escritório</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('marketplace.office_name')}</label>
                   <input
                     type="text"
                     name="name"
@@ -644,7 +644,7 @@ const Marketplace = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Número do CRC</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('marketplace.crc_label')}</label>
                   <input
                     type="text"
                     name="crc"
@@ -658,7 +658,7 @@ const Marketplace = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Especialidade Principal</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('marketplace.specialty')}</label>
                   <select
                     name="specialty"
                     required
@@ -676,7 +676,7 @@ const Marketplace = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descrição</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('marketplace.description')}</label>
                   <textarea
                     name="description"
                     rows="3"
@@ -688,7 +688,7 @@ const Marketplace = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tags (separadas por vírgula)</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('marketplace.tags_label')}</label>
                   <input
                     type="text"
                     name="tags"
@@ -700,7 +700,7 @@ const Marketplace = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Logo / Foto</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('marketplace.image_label')}</label>
                   <input
                     type="file"
                     name="image"
@@ -717,7 +717,7 @@ const Marketplace = () => {
                     onClick={() => setShowModal(false)}
                     className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                   >
-                    Cancelar
+                    {t('marketplace.cancel')}
                   </button>
                   <button
                     type="submit"
@@ -727,7 +727,7 @@ const Marketplace = () => {
                     {uploading ? (
                       <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     ) : (
-                      'Cadastrar'
+                      t('marketplace.register')
                     )}
                   </button>
                 </div>
