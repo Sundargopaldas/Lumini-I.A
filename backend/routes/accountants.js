@@ -65,22 +65,31 @@ router.post('/invite', authMiddleware, async (req, res) => {
             // Send notification to the accountant
             try {
                 await EmailService.sendNewClientNotification(user, email);
+                console.log(`✅ New client notification sent to accountant: ${email}`);
             } catch (emailErr) {
-                console.error('Failed to send new client notification:', emailErr);
+                console.error('⚠️  Failed to send new client notification:', emailErr);
+                // Continue even if email fails (user is already linked)
             }
 
-            return res.json({ status: 'linked', message: 'Contador vinculado com sucesso! Agora ele tem acesso aos seus dados fiscais.' });
+            return res.json({ 
+                status: 'linked', 
+                message: 'Contador vinculado com sucesso! Agora ele tem acesso aos seus dados fiscais.' 
+            });
         }
 
         // 2. If not found, send invite email
         try {
             await EmailService.sendInviteEmail(user, email);
+            return res.json({ 
+                status: 'invited', 
+                message: `✅ Convite enviado com sucesso para ${email}! Verifique sua caixa de entrada e spam.` 
+            });
         } catch (emailErr) {
             console.error('Failed to send invite email:', emailErr);
-            // Continue even if email fails, to tell user we tried
+            return res.status(500).json({ 
+                message: `Erro ao enviar email: ${emailErr.message}. Verifique a configuração SMTP em Admin → Configurações do Sistema.` 
+            });
         }
-
-        return res.json({ status: 'invited', message: `Convite enviado para ${email}. Assim que ele se cadastrar como contador, o vínculo será automático.` });
 
     } catch (error) {
         console.error('Invite error:', error);

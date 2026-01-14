@@ -387,9 +387,16 @@ const sendInvoiceEmail = async (user, invoiceData) => {
  * @param {String} email - Accountant email
  */
 const sendInviteEmail = async (inviter, email) => {
+    console.log(`📧 Attempting to send invite email to: ${email}`);
+    
     const transporter = await getTransporter();
-    if (!transporter) return;
+    if (!transporter) {
+        console.error('❌ SMTP not configured! Cannot send invite email.');
+        throw new Error('SMTP não configurado. Configure em Admin → Configurações do Sistema.');
+    }
+    
     const fromAddress = await getFromAddress();
+    console.log(`📤 Sending from: ${fromAddress}`);
 
     const logoPath = getLogoPath();
     const attachments = [];
@@ -446,10 +453,18 @@ const sendInviteEmail = async (inviter, email) => {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
-        console.log(`Invite email sent to ${email}`);
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`✅ Invite email sent successfully to ${email}`);
+        console.log(`   Message ID: ${info.messageId}`);
+        return info;
     } catch (error) {
-        console.error('Error sending invite email:', error);
+        console.error('❌ Error sending invite email:', error);
+        console.error('   Error details:', {
+            message: error.message,
+            code: error.code,
+            command: error.command
+        });
+        throw error; // Re-throw para que o erro seja capturado na rota
     }
 };
 
