@@ -140,19 +140,6 @@ const Navbar = () => {
             </Link>
 
             <Link to="/settings" className="flex items-center gap-2 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors group">
-                <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-full border border-slate-200 dark:border-slate-700 group-hover:border-purple-500 transition-colors w-8 h-8 flex items-center justify-center overflow-hidden">
-                    {user.logo ? (
-                        <img 
-                            src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}/uploads/logos/${user.logo}`} 
-                            alt={user.username} 
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                        </svg>
-                    )}
-                </div>
                 <span className="text-sm font-medium">{user.username}</span>
             </Link>
 
