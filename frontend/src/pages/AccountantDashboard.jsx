@@ -126,10 +126,22 @@ const AccountantDashboard = () => {
                         {t('accountant.tax_regime')}: <span className="font-medium text-blue-600">{report.financials.taxSim.regime}</span>
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="flex items-center gap-3">
                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
                         {t('reports.creator_mode')}
                       </span>
+                      <button
+                        onClick={() => {
+                          setSelectedClient(null);
+                          setReport(null);
+                        }}
+                        className="group p-2 rounded-lg bg-slate-100 hover:bg-red-100 dark:bg-slate-700 dark:hover:bg-red-900/30 transition-all duration-200 hover:scale-110"
+                        title="Fechar relatório"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-600 group-hover:text-red-600 dark:text-slate-400 dark:group-hover:text-red-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 </div>
