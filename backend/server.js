@@ -1,4 +1,4 @@
-// CACHEBUST: 2026-01-14-i18n-complete
+// CACHEBUST: 2026-01-14-navbar-centered
 // CATCH ALL UNHANDLED ERRORS (VERY IMPORTANT)
 process.on('unhandledRejection', (reason, promise) => {
   console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
