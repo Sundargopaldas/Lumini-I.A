@@ -413,17 +413,27 @@ const Marketplace = () => {
                       </div>
 
                       {/* Botão de deletar (só aparece se for o dono do escritório) */}
-                      {currentUser && String(currentUser.id) === String(acc.userId) && (
-                        <button 
-                          onClick={() => handleDeleteMyAccountant(acc.id, acc.name)}
-                          className="w-full bg-gradient-to-r from-red-500/10 to-orange-500/10 hover:from-red-500/20 hover:to-orange-500/20 dark:from-red-500/20 dark:to-orange-500/20 dark:hover:from-red-500/30 dark:hover:to-orange-500/30 text-red-600 dark:text-red-400 py-2.5 rounded-lg font-medium text-xs transition-all duration-200 border border-red-300/50 dark:border-red-500/30 hover:border-red-400 dark:hover:border-red-400 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          <span>Remover Meu Cadastro</span>
-                        </button>
-                      )}
+                      {(() => {
+                        const isOwner = currentUser && String(currentUser.id) === String(acc.userId);
+                        console.log('🔍 DELETE BUTTON CHECK:', {
+                          accountantName: acc.name,
+                          accountantUserId: acc.userId,
+                          currentUserId: currentUser?.id,
+                          isOwner,
+                          willShow: isOwner
+                        });
+                        return isOwner && (
+                          <button 
+                            onClick={() => handleDeleteMyAccountant(acc.id, acc.name)}
+                            className="w-full bg-gradient-to-r from-red-500/10 to-orange-500/10 hover:from-red-500/20 hover:to-orange-500/20 dark:from-red-500/20 dark:to-orange-500/20 dark:hover:from-red-500/30 dark:hover:to-orange-500/30 text-red-600 dark:text-red-400 py-2.5 rounded-lg font-medium text-xs transition-all duration-200 border border-red-300/50 dark:border-red-500/30 hover:border-red-400 dark:hover:border-red-400 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            <span>Remover Meu Cadastro</span>
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 </motion.div>
