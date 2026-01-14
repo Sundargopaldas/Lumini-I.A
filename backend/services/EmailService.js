@@ -474,9 +474,16 @@ const sendInviteEmail = async (inviter, email) => {
  * @param {String} accountantEmail - Accountant email
  */
 const sendNewClientNotification = async (client, accountantEmail) => {
+    console.log(`📧 Attempting to send new client notification to: ${accountantEmail}`);
+    
     const transporter = await getTransporter();
-    if (!transporter) return;
+    if (!transporter) {
+        console.error('❌ SMTP not configured! Cannot send new client notification.');
+        throw new Error('SMTP não configurado. Configure em Admin → Configurações do Sistema.');
+    }
+    
     const fromAddress = await getFromAddress();
+    console.log(`📤 Sending notification from: ${fromAddress}`);
 
     const logoPath = getLogoPath();
     const attachments = [];
@@ -529,10 +536,18 @@ const sendNewClientNotification = async (client, accountantEmail) => {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
-        console.log(`New client notification sent to ${accountantEmail}`);
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`✅ New client notification sent successfully to ${accountantEmail}`);
+        console.log(`   Message ID: ${info.messageId}`);
+        return info;
     } catch (error) {
-        console.error('Error sending new client notification:', error);
+        console.error('❌ Error sending new client notification:', error);
+        console.error('   Error details:', {
+            message: error.message,
+            code: error.code,
+            command: error.command
+        });
+        throw error; // Re-throw para que o erro seja capturado na rota
     }
 };
 

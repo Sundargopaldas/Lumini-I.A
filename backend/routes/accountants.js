@@ -63,17 +63,24 @@ router.post('/invite', authMiddleware, async (req, res) => {
             await User.update({ accountantId: accountant.id }, { where: { id: req.user.id } });
 
             // Send notification to the accountant
+            let emailSent = false;
+            let emailError = null;
             try {
                 await EmailService.sendNewClientNotification(user, email);
                 console.log(`✅ New client notification sent to accountant: ${email}`);
+                emailSent = true;
             } catch (emailErr) {
                 console.error('⚠️  Failed to send new client notification:', emailErr);
+                emailError = emailErr.message;
                 // Continue even if email fails (user is already linked)
             }
 
             return res.json({ 
                 status: 'linked', 
-                message: 'Contador vinculado com sucesso! Agora ele tem acesso aos seus dados fiscais.' 
+                message: emailSent 
+                    ? `✅ Contador vinculado com sucesso! Uma notificação foi enviada para ${email}.`
+                    : `⚠️  Contador vinculado, mas não foi possível enviar email de notificação: ${emailError}`,
+                emailSent
             });
         }
 
