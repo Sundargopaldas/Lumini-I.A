@@ -712,11 +712,10 @@ const Settings = () => {
                 {/* Language Section */}
                 <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white transition-colors">{t('settings.language')}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[
                             { code: 'pt', label: 'Português', flag: '🇧🇷' },
-                            { code: 'en', label: 'English', flag: '🇺🇸' },
-                            { code: 'es', label: 'Español', flag: '🇪🇸' }
+                            { code: 'en', label: 'English', flag: '🇺🇸' }
                         ].map((lang) => (
                             <button
                                 key={lang.code}
