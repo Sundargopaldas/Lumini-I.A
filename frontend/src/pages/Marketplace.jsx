@@ -49,6 +49,17 @@ const Marketplace = () => {
     try {
       setLoading(true);
       const response = await api.get('/accountants');
+      console.log('📋 CONTADORES RECEBIDOS DA API:', response.data);
+      response.data.forEach((acc, idx) => {
+        console.log(`\n📸 CONTADOR ${idx + 1}:`, {
+          id: acc.id,
+          name: acc.name,
+          userId: acc.userId,
+          image: acc.image,
+          imageType: typeof acc.image,
+          verified: acc.verified
+        });
+      });
       setAccountants(response.data);
     } catch (error) {
       console.error('Error fetching accountants:', error);
@@ -120,10 +131,15 @@ const Marketplace = () => {
         },
       });
 
-      console.log('✅ Contador criado:', response.data);
+      console.log('✅ CONTADOR CRIADO:', response.data);
 
       // Adicionar o novo contador à lista imediatamente (otimização otimista)
       const newAccountant = response.data;
+      console.log('📸 IMAGEM DO NOVO CONTADOR:', {
+        image: newAccountant.image,
+        imageType: typeof newAccountant.image,
+        imageExists: !!newAccountant.image
+      });
       setAccountants(prev => [newAccountant, ...prev]);
 
       showAlert('Escritório cadastrado com sucesso! Seu perfil já está visível no Marketplace!', 'success');
