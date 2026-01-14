@@ -1,3 +1,4 @@
+// CACHEBUST: 2026-01-14-i18n-complete
 // CATCH ALL UNHANDLED ERRORS (VERY IMPORTANT)
 process.on('unhandledRejection', (reason, promise) => {
   console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
