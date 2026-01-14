@@ -49,17 +49,6 @@ const Marketplace = () => {
     try {
       setLoading(true);
       const response = await api.get('/accountants');
-      console.log('📋 CONTADORES RECEBIDOS DA API:', response.data);
-      response.data.forEach((acc, idx) => {
-        console.log(`\n📸 CONTADOR ${idx + 1}:`, {
-          id: acc.id,
-          name: acc.name,
-          userId: acc.userId,
-          image: acc.image,
-          imageType: typeof acc.image,
-          verified: acc.verified
-        });
-      });
       setAccountants(response.data);
     } catch (error) {
       console.error('Error fetching accountants:', error);
@@ -131,15 +120,8 @@ const Marketplace = () => {
         },
       });
 
-      console.log('✅ CONTADOR CRIADO:', response.data);
-
       // Adicionar o novo contador à lista imediatamente (otimização otimista)
       const newAccountant = response.data;
-      console.log('📸 IMAGEM DO NOVO CONTADOR:', {
-        image: newAccountant.image,
-        imageType: typeof newAccountant.image,
-        imageExists: !!newAccountant.image
-      });
       setAccountants(prev => [newAccountant, ...prev]);
 
       showAlert('Escritório cadastrado com sucesso! Seu perfil já está visível no Marketplace!', 'success');
@@ -429,27 +411,17 @@ const Marketplace = () => {
                       </div>
 
                       {/* Botão de deletar (só aparece se for o dono do escritório) */}
-                      {(() => {
-                        const isOwner = currentUser && String(currentUser.id) === String(acc.userId);
-                        console.log('🔍 DELETE BUTTON CHECK:', {
-                          accountantName: acc.name,
-                          accountantUserId: acc.userId,
-                          currentUserId: currentUser?.id,
-                          isOwner,
-                          willShow: isOwner
-                        });
-                        return isOwner && (
+                      {currentUser && String(currentUser.id) === String(acc.userId) && (
                           <button 
                             onClick={() => handleDeleteMyAccountant(acc.id, acc.name)}
-                            className="w-full bg-gradient-to-r from-rose-500/10 to-red-500/10 hover:from-rose-500/20 hover:to-red-500/20 dark:from-rose-400/15 dark:to-red-400/15 dark:hover:from-rose-400/25 dark:hover:to-red-400/25 text-rose-700 dark:text-rose-300 hover:text-rose-800 dark:hover:text-rose-200 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 border border-rose-200/60 dark:border-rose-400/30 hover:border-rose-300 dark:hover:border-rose-300/50 flex items-center justify-center gap-2 group shadow-sm hover:shadow-md"
+                            className="w-full bg-gradient-to-r from-amber-400/20 via-yellow-500/20 to-orange-400/20 hover:from-amber-400/30 hover:via-yellow-500/30 hover:to-orange-400/30 dark:from-amber-500/25 dark:via-yellow-400/25 dark:to-orange-500/25 dark:hover:from-amber-500/40 dark:hover:via-yellow-400/40 dark:hover:to-orange-500/40 text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 py-2.5 rounded-lg font-semibold text-sm transition-all duration-300 border border-amber-300/60 dark:border-amber-400/40 hover:border-amber-400 dark:hover:border-amber-300/60 flex items-center justify-center gap-2 group shadow-md hover:shadow-xl hover:shadow-amber-500/20 dark:hover:shadow-amber-400/20 hover:scale-[1.02] active:scale-[0.98]"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
-                            <span>Remover Meu Cadastro</span>
+                            <span className="group-hover:tracking-wide transition-all duration-300">Remover Meu Cadastro</span>
                           </button>
-                        );
-                      })()}
+                      )}
                     </div>
                   </div>
                 </motion.div>
