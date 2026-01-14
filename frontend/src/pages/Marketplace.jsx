@@ -59,13 +59,14 @@ const Marketplace = () => {
   };
 
   const validateCRC = (crc) => {
-    // Regex for CRC: UF-000000/O-0 (Example: SP-123456/O-0)
+    // Regex for CRC: UF-000000/O-0 (Example: SP-123456/O-8)
     // UF: 2 uppercase letters
     // Number: 6 digits
-    // Type: O (Original), P (Provisional), S (Secondary)
-    // Digit: 1 digit
-    const crcRegex = /^[A-Z]{2}-\d{6}\/[A-Z]-\d$/;
-    return crcRegex.test(crc);
+    // Type: O (Original), P (Provisional), S (Secondary), T (Transferido)
+    // Digit: 1 digit (0-9)
+    // Aceita também formato sem dígito verificador: UF-000000/O
+    const crcRegex = /^[A-Z]{2}-\d{6}\/[A-Z](-\d)?$/;
+    return crcRegex.test(crc.trim().toUpperCase());
   };
 
   const handleInputChange = (e) => {
@@ -74,7 +75,7 @@ const Marketplace = () => {
 
     if (name === 'crc') {
       if (value && !validateCRC(value)) {
-        setCrcError('Formato inválido. Ex: SP-123456/O-0');
+        setCrcError('Formato inválido. Ex: SP-123456/O-8 ou RJ-654321/P-5');
       } else {
         setCrcError('');
       }
@@ -435,9 +436,10 @@ const Marketplace = () => {
                     value={formData.crc}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-2 rounded-lg border ${crcError ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none`}
-                    placeholder="Ex: SP-123456/O-0"
+                    placeholder="Ex: SP-123456/O-8"
                   />
                   {crcError && <p className="text-red-500 text-xs mt-1">{crcError}</p>}
+                  <p className="text-xs text-slate-500 mt-1">Formato: UF-000000/T-D (Ex: SP-123456/O-8, RJ-654321/P-5)</p>
                 </div>
 
                 <div>
