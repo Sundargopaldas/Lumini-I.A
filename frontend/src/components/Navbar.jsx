@@ -125,9 +125,13 @@ const Navbar = () => {
           </div>
           </div>
           
-          <div className="hidden xl:flex items-center space-x-4">
+          <div className="hidden xl:flex items-center gap-4">
             {/* Plan Badge removed to reduce clutter as requested */}
             
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+              {user.username}
+            </span>
+
             <Link 
                 to="/settings" 
                 className="p-2 text-slate-400 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 transition-colors"
@@ -139,13 +143,9 @@ const Navbar = () => {
                 </svg>
             </Link>
 
-            <Link to="/settings" className="flex items-center gap-2 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors group">
-                <span className="text-sm font-medium">{user.username}</span>
-            </Link>
-
             <button 
               onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
             >
               Logout
             </button>
