@@ -21,8 +21,8 @@ const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
-// Force rebuild - Deploy v17 AUTO REFRESH MARKETPLACE - 2026-01-14-16:10
-const CACHEBUST = '2026-01-14-16:10:00'; // Force Docker cache invalidation
+// Force rebuild - Deploy v18 INSTANT CARD DISPLAY - 2026-01-14-16:20
+const CACHEBUST = '2026-01-14-16:20:00'; // Force Docker cache invalidation
 const PORT = process.env.PORT || 8080;
 
 // Middleware - CSP configurado para permitir GA4 COMPLETO
