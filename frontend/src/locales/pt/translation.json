@@ -10,7 +10,10 @@
     "integrations": "Integrações",
     "reports": "Relatórios",
     "profile": "Perfil",
-    "accountant": "Contador"
+    "accountant": "Contador",
+    "marketplace": "Marketplace",
+    "accountant_area": "Área do Contador",
+    "admin": "Admin"
   },
   "transactions": {
     "title": "Transações",

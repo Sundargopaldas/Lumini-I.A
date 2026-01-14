@@ -9,7 +9,11 @@
     "transactions": "Transactions",
     "integrations": "Integrations",
     "reports": "Reports",
-    "profile": "Profile"
+    "profile": "Profile",
+    "accountant": "Accountant",
+    "marketplace": "Marketplace",
+    "accountant_area": "Accountant Area",
+    "admin": "Admin"
   },
   "transactions": {
     "title": "Transactions",

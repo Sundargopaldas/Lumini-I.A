@@ -104,22 +104,22 @@ const Navbar = () => {
               {t('sidebar.reports')}
             </Link>
             <Link to="/marketplace" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
-              Marketplace
+              {t('sidebar.marketplace')}
             </Link>
             {user.isAccountant && (
               <Link to="/accountant-dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
-                Área do Contador
+                {t('sidebar.accountant_area')}
               </Link>
             )}
             <Link to="/invoices" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
-              Notas Fiscais
+              {t('sidebar.invoices')}
             </Link>
             <Link to="/integrations" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
               {t('sidebar.integrations')}
             </Link>
             {user.isAdmin && (
               <Link to="/admin" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap font-medium">
-                Admin
+                {t('sidebar.admin')}
               </Link>
             )}
           </div>
@@ -202,21 +202,23 @@ const Navbar = () => {
               className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
-              Marketplace
+              {t('sidebar.marketplace')}
             </Link>
-            <Link 
-              to="/accountant-dashboard" 
-              className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Área do Contador
-            </Link>
+            {user.isAccountant && (
+              <Link 
+                to="/accountant-dashboard" 
+                className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {t('sidebar.accountant_area')}
+              </Link>
+            )}
             <Link 
               to="/invoices" 
               className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
-              Notas Fiscais
+              {t('sidebar.invoices')}
             </Link>
             <Link 
               to="/integrations" 
@@ -231,7 +233,7 @@ const Navbar = () => {
                 className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Painel Admin
+                {t('sidebar.admin')}
               </Link>
             )}
           </div>
@@ -248,7 +250,7 @@ const Navbar = () => {
                 className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Configurações
+                {t('settings.title')}
               </Link>
               <button
                 onClick={() => {
