@@ -87,13 +87,18 @@ const Navbar = () => {
         type={alertState.type}
       />
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link to="/dashboard" className="flex-shrink-0 flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white transition-colors">
-          <Logo className="w-8 h-8" />
-          <span>Lumini I.A</span>
-        </Link>
-            <div className="hidden xl:ml-6 xl:flex xl:space-x-6">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo - Esquerda */}
+          <div className="flex-shrink-0">
+            <Link to="/dashboard" className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white transition-colors">
+              <Logo className="w-8 h-8" />
+              <span>Lumini I.A</span>
+            </Link>
+          </div>
+
+          {/* Links de Navegação - Centro */}
+          <div className="hidden xl:flex flex-1 justify-center">
+            <div className="flex space-x-6">
             <Link to="/dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
               {t('sidebar.dashboard')}
             </Link>
@@ -122,10 +127,11 @@ const Navbar = () => {
                 {t('sidebar.admin')}
               </Link>
             )}
-          </div>
+            </div>
           </div>
           
-          <div className="hidden xl:flex items-center gap-4 ml-8">
+          {/* User Info & Actions - Direita */}
+          <div className="hidden xl:flex items-center gap-4 flex-shrink-0">
             {/* Plan Badge removed to reduce clutter as requested */}
             
             <span className="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
