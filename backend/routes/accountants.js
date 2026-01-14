@@ -265,7 +265,16 @@ router.get('/admin', authMiddleware, async (req, res) => {
       order: [['createdAt', 'DESC']]
     });
 
-    res.json(accountants);
+    // Add full URL to image (same as public route)
+    const accountantsWithUrl = accountants.map(acc => {
+      const accJson = acc.toJSON();
+      if (accJson.image) {
+        accJson.image = `${req.protocol}://${req.get('host')}/${accJson.image}`;
+      }
+      return accJson;
+    });
+
+    res.json(accountantsWithUrl);
   } catch (error) {
     console.error('Error fetching admin accountants:', error);
     res.status(500).json({ message: 'Error loading accountants' });
