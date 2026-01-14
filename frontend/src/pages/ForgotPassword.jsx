@@ -62,7 +62,7 @@ const ForgotPassword = () => {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="email" className="sr-only">Email</label>
+            <label htmlFor="email" className="sr-only">Endereço de email</label>
             <input
               id="email"
               name="email"
