@@ -21,8 +21,8 @@ const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
-// Force rebuild - Deploy v31 FIX NAVBAR SPACING V2 - 2026-01-14-19:20
-const CACHEBUST = '2026-01-14-19:20:00'; // Force Docker cache invalidation
+// Force rebuild - Deploy v32 ADD LOGO TO ADMIN PANEL - 2026-01-14-19:30
+const CACHEBUST = '2026-01-14-19:30:00'; // Force Docker cache invalidation
 const PORT = process.env.PORT || 8080;
 
 // Middleware - CSP configurado para permitir GA4 COMPLETO
