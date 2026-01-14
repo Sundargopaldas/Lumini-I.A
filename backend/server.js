@@ -21,8 +21,8 @@ const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
-// Force rebuild - Deploy v11 CRC VALIDATION FIX - 2026-01-14-15:10
-const CACHEBUST = '2026-01-14-15:10:00'; // Force Docker cache invalidation
+// Force rebuild - Deploy v12 AUTO-APPROVE + ADMIN PANEL - 2026-01-14-15:20
+const CACHEBUST = '2026-01-14-15:20:00'; // Force Docker cache invalidation
 const PORT = process.env.PORT || 8080;
 
 // Middleware - CSP configurado para permitir GA4 COMPLETO
