@@ -16,6 +16,7 @@ import Marketplace from './pages/Marketplace';
 import MobileApp from './pages/MobileApp';
 import Diferenciais from './pages/Diferenciais';
 import Admin from './pages/Admin';
+import AdminAccountants from './pages/AdminAccountants';
 import Settings from './pages/Settings';
 import Terms from './pages/Terms';
 import Footer from './components/Footer';
@@ -121,6 +122,11 @@ function App() {
                       <Route path="/admin" element={
                         <AdminRoute>
                           <Admin />
+                        </AdminRoute>
+                      } />
+                      <Route path="/admin/accountants" element={
+                        <AdminRoute>
+                          <AdminAccountants />
                         </AdminRoute>
                       } />
                       <Route path="/settings" element={<Settings />} />

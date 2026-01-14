@@ -319,7 +319,7 @@ router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
       crc,
       userId,
       image: req.file ? req.file.path.replace(/\\/g, '/') : null,
-      verified: false // Security: Must be verified by admin
+      verified: true // Auto-aprovado - Admin pode remover depois se fraudulento
     });
 
     console.log('✅ [POST /accountants] Contador criado com sucesso! ID:', newAccountant.id);
@@ -352,6 +352,26 @@ router.put('/:id/verify', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error verifying accountant:', error);
     res.status(500).json({ message: 'Error verifying accountant' });
+  }
+});
+
+// PUT /api/accountants/:id/unverify - Unverify an accountant (Admin only)
+router.put('/:id/unverify', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const accountant = await Accountant.findByPk(id);
+
+    if (!accountant) {
+      return res.status(404).json({ message: 'Accountant not found' });
+    }
+
+    accountant.verified = false;
+    await accountant.save();
+
+    res.json({ message: 'Accountant hidden from marketplace', accountant });
+  } catch (error) {
+    console.error('Error unverifying accountant:', error);
+    res.status(500).json({ message: 'Error unverifying accountant' });
   }
 });
 
