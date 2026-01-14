@@ -21,8 +21,8 @@ const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
-// Force rebuild - Deploy v24 ROSE GRADIENT BUTTON - 2026-01-14-17:05
-const CACHEBUST = '2026-01-14-17:05:00'; // Force Docker cache invalidation
+// Force rebuild - Deploy v25 GOLDEN BUTTON WITH EFFECTS - 2026-01-14-17:15
+const CACHEBUST = '2026-01-14-17:15:00'; // Force Docker cache invalidation
 const PORT = process.env.PORT || 8080;
 
 // Middleware - CSP configurado para permitir GA4 COMPLETO
