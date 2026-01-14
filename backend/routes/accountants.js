@@ -283,11 +283,13 @@ router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
     const userId = req.user.id; // From authMiddleware
 
     // Server-side CRC Validation
-    // Regex for CRC: UF-000000/O-0 (Example: SP-123456/O-0)
-    const crcRegex = /^[A-Z]{2}-\d{6}\/[A-Z]-\d$/;
-    if (crc && !crcRegex.test(crc)) {
-        console.log('❌ [POST /accountants] CRC inválido:', crc);
-        return res.status(400).json({ message: 'Formato de CRC inválido. Use o formato UF-000000/T-D (ex: SP-123456/O-0)' });
+    // Regex for CRC: UF-000000/T-D (Example: SP-123456/O-8, RJ-654321/P-5)
+    // Aceita formato com ou sem dígito verificador: UF-000000/T ou UF-000000/T-D
+    const crcRegex = /^[A-Z]{2}-\d{6}\/[A-Z](-\d)?$/;
+    const crcToValidate = crc ? crc.trim().toUpperCase() : '';
+    if (crcToValidate && !crcRegex.test(crcToValidate)) {
+        console.log('❌ [POST /accountants] CRC inválido:', crcToValidate);
+        return res.status(400).json({ message: 'Formato de CRC inválido. Use o formato UF-000000/T-D (ex: SP-123456/O-8 ou RJ-654321/P-5)' });
     }
 
     // Check if user already has an accountant profile
@@ -299,11 +301,11 @@ router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
     }
 
     // Check if CRC is already in use
-    if (crc) {
+    if (crcToValidate) {
         console.log('🔍 [POST /accountants] Verificando se CRC já existe...');
-        const existingCRC = await Accountant.findOne({ where: { crc } });
+        const existingCRC = await Accountant.findOne({ where: { crc: crcToValidate } });
         if (existingCRC) {
-             console.log('⚠️ [POST /accountants] CRC já em uso:', crc);
+             console.log('⚠️ [POST /accountants] CRC já em uso:', crcToValidate);
              return res.status(400).json({ message: 'Este CRC já está em uso por outro contador.' });
         }
     }
@@ -316,7 +318,7 @@ router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
       specialty,
       description,
       tags,
-      crc,
+      crc: crcToValidate || crc, // Use o valor formatado (uppercase e trimmed)
       userId,
       image: req.file ? req.file.path.replace(/\\/g, '/') : null,
       verified: true // Auto-aprovado - Admin pode remover depois se fraudulento
