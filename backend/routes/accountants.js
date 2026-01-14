@@ -27,12 +27,12 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('Only images are allowed'));
+      cb(new Error('Apenas imagens são permitidas'));
     }
   }
 });
@@ -273,7 +273,17 @@ router.get('/admin', authMiddleware, async (req, res) => {
 });
 
 // POST /api/accountants - Register a new accountant
-router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
+router.post('/', authMiddleware, (req, res, next) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'Imagem muito grande! Tamanho máximo: 10MB' });
+      }
+      return res.status(400).json({ message: err.message || 'Erro no upload da imagem' });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     console.log('📝 [POST /accountants] Dados recebidos:', req.body);
     console.log('👤 [POST /accountants] User ID:', req.user?.id);

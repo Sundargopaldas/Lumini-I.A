@@ -84,7 +84,16 @@ const Marketplace = () => {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData(prev => ({ ...prev, image: e.target.files[0] }));
+      const file = e.target.files[0];
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      
+      if (file.size > maxSize) {
+        showAlert(`Imagem muito grande! Tamanho máximo: 10MB. Sua imagem tem ${(file.size / 1024 / 1024).toFixed(2)}MB`, 'error', 'Arquivo muito grande');
+        e.target.value = ''; // Limpar o input
+        return;
+      }
+      
+      setFormData(prev => ({ ...prev, image: file }));
     }
   };
 
@@ -546,7 +555,7 @@ const Marketplace = () => {
                     onChange={handleFileChange}
                     className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                   />
-                  <p className="text-xs text-slate-500 mt-1">Formatos: JPG, PNG, WEBP (Max 5MB)</p>
+                  <p className="text-xs text-slate-500 mt-1">Formatos: JPG, PNG, WEBP (Max 10MB)</p>
                 </div>
 
                 <div className="pt-4 flex gap-3">
