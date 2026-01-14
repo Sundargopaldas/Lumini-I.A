@@ -105,21 +105,27 @@ const Marketplace = () => {
         data.append('image', formData.image);
       }
 
-      await api.post('/accountants', data, {
+      const response = await api.post('/accountants', data, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
+      console.log('✅ Contador criado:', response.data);
+
+      // Adicionar o novo contador à lista imediatamente (otimização otimista)
+      const newAccountant = response.data;
+      setAccountants(prev => [newAccountant, ...prev]);
+
       showAlert('Escritório cadastrado com sucesso! Seu perfil já está visível no Marketplace!', 'success');
       setShowModal(false);
       setFormData({ name: '', email: '', phone: '', specialty: '', description: '', tags: '', crc: '', image: null });
       
-      // Atualizar lista de contadores
-      fetchAccountants();
-      
       // Atualizar dados do usuário
       fetchCurrentUser();
+      
+      // Fazer um fetch completo em background para garantir consistência
+      setTimeout(() => fetchAccountants(), 1000);
     } catch (error) {
       console.error('Error registering accountant:', error);
       showAlert(error.response?.data?.message || 'Erro ao cadastrar escritório', 'error');
