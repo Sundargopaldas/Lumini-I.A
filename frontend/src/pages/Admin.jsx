@@ -291,7 +291,7 @@ const Admin = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Host SMTP
+                            {t('admin_smtp.host_label')}
                         </label>
                         <input 
                             type="text" 
@@ -305,7 +305,7 @@ const Admin = () => {
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Porta
+                            {t('admin_smtp.port_label')}
                         </label>
                         <input 
                             type="text" 
@@ -319,7 +319,7 @@ const Admin = () => {
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Segurança (SSL/TLS)
+                            {t('admin_smtp.security_label')}
                         </label>
                         <select 
                             name="SMTP_SECURE" 
@@ -327,14 +327,14 @@ const Admin = () => {
                             onChange={handleConfigChange}
                             className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                         >
-                            <option value="false">Não / STARTTLS (Padrão 587)</option>
-                            <option value="true">Sim / SSL (Padrão 465)</option>
+                            <option value="false">{t('admin_smtp.security_no')}</option>
+                            <option value="true">{t('admin_smtp.security_yes')}</option>
                         </select>
                     </div>
 
                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Email do Remetente (User)
+                            {t('admin_smtp.user_label')}
                         </label>
                         <input 
                             type="email" 
@@ -348,7 +348,7 @@ const Admin = () => {
 
                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Senha do Email
+                            {t('admin_smtp.password_label')}
                         </label>
                         <input 
                             type="password" 
@@ -358,12 +358,12 @@ const Admin = () => {
                             placeholder="********"
                             className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                         />
-                        <p className="mt-1 text-xs text-slate-500">Deixe em branco para manter a senha atual.</p>
+                        <p className="mt-1 text-xs text-slate-500">{t('admin_smtp.password_hint')}</p>
                     </div>
                     
                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Nome do Remetente (Opcional)
+                            {t('admin_smtp.from_label')}
                         </label>
                         <input 
                             type="text" 
@@ -404,7 +404,7 @@ const Admin = () => {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
-                        Salvar Configurações
+                        {t('admin_smtp.save_button')}
                     </button>
                 </div>
             </form>

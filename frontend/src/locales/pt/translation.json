@@ -440,11 +440,11 @@
   "invoices": {
     "title": "Automação de Notas Fiscais",
     "subtitle": "Emita notas fiscais de serviço (NFS-e) automaticamente para cada venda realizada na Hotmart, Kiwify ou Eduzz. Chega de trabalho manual e burocracia.",
-    "premium_benefit": "O que você ganha no Premium:",
-    "auto_emission": "Emissão automática pós-venda",
-    "pdf_email": "Envio de PDF por e-mail para o cliente",
-    "auto_tax_calc": "Cálculo automático de impostos",
-    "cert_support": "Suporte a Certificado A1",
+    "premium_title": "O que você ganha no Premium:",
+    "feature_1": "Emissão automática pós-venda",
+    "feature_2": "Envio de PDF por e-mail para o cliente",
+    "feature_3": "Cálculo automático de impostos",
+    "feature_4": "Suporte a Certificado A1",
     "upgrade_button": "Upgrade para Premium"
   },
   "admin": {
@@ -482,5 +482,34 @@
     "select_client_subtitle": "Selecione um cliente da lista ao lado para visualizar os relatórios financeiros detalhados e insights fiscais.",
     "tax_regime": "Regime Tributário",
     "export_savings": "Economia com Exportação"
+  },
+  "admin_accountants": {
+    "title": "Admin - Gerenciar Contadores",
+    "subtitle": "Modere contadores cadastrados no Marketplace",
+    "total": "Total de Contadores",
+    "verified": "Verificados",
+    "hidden": "Ocultos",
+    "no_accountants": "Nenhum contador cadastrado ainda.",
+    "table_logo": "Logo",
+    "table_name": "Nome",
+    "table_email": "Email",
+    "table_crc": "CRC",
+    "table_specialty": "Especialidade",
+    "table_status": "Status",
+    "table_actions": "Ações",
+    "hide": "Ocultar",
+    "show": "Mostrar"
+  },
+  "admin_smtp": {
+    "host_label": "Host SMTP",
+    "port_label": "Porta",
+    "security_label": "Segurança (SSL/TLS)",
+    "security_no": "Não / STARTTLS (Padrão 587)",
+    "security_yes": "Sim / SSL (Padrão 465)",
+    "user_label": "Email do Remetente (User)",
+    "password_label": "Senha do Email",
+    "password_hint": "Deixe em branco para manter a senha atual.",
+    "from_label": "Nome do Remetente (Opcional)",
+    "save_button": "Salvar Configurações"
   }
 }

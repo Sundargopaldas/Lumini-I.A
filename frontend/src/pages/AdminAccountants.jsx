@@ -92,29 +92,29 @@ const AdminAccountants = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-800 dark:text-white">
-            🛡️ Admin - Gerenciar Contadores
+            🛡️ {t('admin_accountants.title')}
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-2">
-            Modere contadores cadastrados no Marketplace
+            {t('admin_accountants.subtitle')}
           </p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-            <div className="text-sm text-slate-500 dark:text-slate-400">Total de Contadores</div>
+            <div className="text-sm text-slate-500 dark:text-slate-400">{t('admin_accountants.total')}</div>
             <div className="text-3xl font-bold text-slate-800 dark:text-white mt-2">
               {accountants.length}
             </div>
           </div>
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-            <div className="text-sm text-slate-500 dark:text-slate-400">Verificados</div>
+            <div className="text-sm text-slate-500 dark:text-slate-400">{t('admin_accountants.verified')}</div>
             <div className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">
               {accountants.filter(a => a.verified).length}
             </div>
           </div>
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-            <div className="text-sm text-slate-500 dark:text-slate-400">Ocultos</div>
+            <div className="text-sm text-slate-500 dark:text-slate-400">{t('admin_accountants.hidden')}</div>
             <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-2">
               {accountants.filter(a => !a.verified).length}
             </div>
@@ -129,7 +129,7 @@ const AdminAccountants = () => {
         ) : accountants.length === 0 ? (
           <div className="bg-white dark:bg-slate-800 rounded-xl p-12 text-center border border-slate-200 dark:border-slate-700">
             <div className="text-slate-500 dark:text-slate-400">
-              Nenhum contador cadastrado ainda.
+              {t('admin_accountants.no_accountants')}
             </div>
           </div>
         ) : (
@@ -139,25 +139,25 @@ const AdminAccountants = () => {
                 <thead className="bg-slate-100 dark:bg-slate-700">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                      Logo
+                      {t('admin_accountants.table_logo')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                      Nome
+                      {t('admin_accountants.table_name')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                      Email
+                      {t('admin_accountants.table_email')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                      CRC
+                      {t('admin_accountants.table_crc')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                      Especialidade
+                      {t('admin_accountants.table_specialty')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                      Status
+                      {t('admin_accountants.table_status')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                      Ações
+                      {t('admin_accountants.table_actions')}
                     </th>
                   </tr>
                 </thead>
@@ -235,7 +235,7 @@ const AdminAccountants = () => {
                               : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
                           }`}
                         >
-                          {acc.verified ? 'Ocultar' : 'Mostrar'}
+                          {acc.verified ? t('admin_accountants.hide') : t('admin_accountants.show')}
                         </button>
                         <button
                           onClick={() => handleDelete(acc.id, acc.name)}

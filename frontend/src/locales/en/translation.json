@@ -399,11 +399,11 @@
   "invoices": {
     "title": "Invoice Automation",
     "subtitle": "Issue service invoices (NFS-e) automatically for each sale made on Hotmart, Kiwify or Eduzz. No more manual work and bureaucracy.",
-    "premium_benefit": "What you get with Premium:",
-    "auto_emission": "Automatic post-sale emission",
-    "pdf_email": "PDF delivery via email to customer",
-    "auto_tax_calc": "Automatic tax calculation",
-    "cert_support": "A1 Certificate support",
+    "premium_title": "What you get with Premium:",
+    "feature_1": "Automatic post-sale emission",
+    "feature_2": "PDF delivery via email to customer",
+    "feature_3": "Automatic tax calculation",
+    "feature_4": "A1 Certificate support",
     "upgrade_button": "Upgrade to Premium"
   },
   "admin": {
@@ -441,5 +441,34 @@
     "select_client_subtitle": "Select a client from the list on the side to view detailed financial reports and tax insights.",
     "tax_regime": "Tax Regime",
     "export_savings": "Export Savings"
+  },
+  "admin_accountants": {
+    "title": "Admin - Manage Accountants",
+    "subtitle": "Moderate accountants registered in Marketplace",
+    "total": "Total Accountants",
+    "verified": "Verified",
+    "hidden": "Hidden",
+    "no_accountants": "No accountants registered yet.",
+    "table_logo": "Logo",
+    "table_name": "Name",
+    "table_email": "Email",
+    "table_crc": "CRC",
+    "table_specialty": "Specialty",
+    "table_status": "Status",
+    "table_actions": "Actions",
+    "hide": "Hide",
+    "show": "Show"
+  },
+  "admin_smtp": {
+    "host_label": "SMTP Host",
+    "port_label": "Port",
+    "security_label": "Security (SSL/TLS)",
+    "security_no": "No / STARTTLS (Default 587)",
+    "security_yes": "Yes / SSL (Default 465)",
+    "user_label": "Sender Email (User)",
+    "password_label": "Email Password",
+    "password_hint": "Leave blank to keep current password.",
+    "from_label": "Sender Name (Optional)",
+    "save_button": "Save Settings"
   }
 }

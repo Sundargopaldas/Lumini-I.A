@@ -448,21 +448,20 @@ const Invoices = () => {
         <div className="bg-purple-600/10 dark:bg-purple-600/20 p-6 rounded-full">
             <span className="text-6xl">🧾</span>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Automação de Notas Fiscais</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('invoices.title')}</h1>
         <p className="text-gray-600 dark:text-gray-400 max-w-lg">
-          Emita notas fiscais de serviço (NFS-e) automaticamente para cada venda realizada na Hotmart, Kiwify ou Eduzz.
-          Chega de trabalho manual e burocracia.
+          {t('invoices.subtitle')}
         </p>
         
         <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-gray-200 dark:border-slate-700 max-w-md w-full text-left space-y-3 shadow-lg dark:shadow-none">
             <h3 className="text-gray-900 dark:text-white font-semibold flex items-center gap-2">
-                <span>✨</span> O que você ganha no Premium:
+                <span>✨</span> {t('invoices.premium_title')}
             </h3>
             <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                <li className="flex gap-2">✅ Emissão automática pós-venda</li>
-                <li className="flex gap-2">✅ Envio de PDF por e-mail para o cliente</li>
-                <li className="flex gap-2">✅ Cálculo automático de impostos</li>
-                <li className="flex gap-2">✅ Suporte a Certificado A1</li>
+                <li className="flex gap-2">✅ {t('invoices.feature_1')}</li>
+                <li className="flex gap-2">✅ {t('invoices.feature_2')}</li>
+                <li className="flex gap-2">✅ {t('invoices.feature_3')}</li>
+                <li className="flex gap-2">✅ {t('invoices.feature_4')}</li>
             </ul>
         </div>
 
@@ -470,7 +469,7 @@ const Invoices = () => {
           to="/plans" 
           className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:shadow-lg hover:shadow-purple-500/30 transition-all transform hover:-translate-y-1"
         >
-          Upgrade para Premium
+          {t('invoices.upgrade_button')}
         </Link>
       </div>
     );

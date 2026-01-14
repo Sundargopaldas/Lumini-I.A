@@ -205,7 +205,7 @@ const AccountantDashboard = () => {
                   {t('accountant.select_client')}
                 </h3>
                 <p className="text-slate-500 max-w-sm mx-auto">
-                  Selecione um cliente da lista ao lado para visualizar os relatórios financeiros detalhados e insights fiscais.
+                  {t('accountant_dashboard.select_client_subtitle')}
                 </p>
               </div>
             )}
