@@ -21,7 +21,8 @@ const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
-// Force rebuild - Deploy v9 UMAMI API GATEWAY - 2026-01-13-20:05 - FINAL FIX
+// Force rebuild - Deploy v10 FRONTEND REBUILD - 2026-01-14-15:00 - UMAMI FIX
+const CACHEBUST = '2026-01-14-15:00:00'; // Force Docker cache invalidation
 const PORT = process.env.PORT || 8080;
 
 // Middleware - CSP configurado para permitir GA4 COMPLETO
