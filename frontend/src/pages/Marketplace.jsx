@@ -111,9 +111,15 @@ const Marketplace = () => {
         },
       });
 
-      showAlert('Escritório cadastrado com sucesso! Aguardando aprovação.', 'success');
+      showAlert('Escritório cadastrado com sucesso! Seu perfil já está visível no Marketplace!', 'success');
       setShowModal(false);
       setFormData({ name: '', email: '', phone: '', specialty: '', description: '', tags: '', crc: '', image: null });
+      
+      // Atualizar lista de contadores
+      fetchAccountants();
+      
+      // Atualizar dados do usuário
+      fetchCurrentUser();
     } catch (error) {
       console.error('Error registering accountant:', error);
       showAlert(error.response?.data?.message || 'Erro ao cadastrar escritório', 'error');
@@ -392,24 +398,14 @@ const Marketplace = () => {
                       </div>
 
                       {/* Botão de deletar (só aparece se for o dono do escritório) */}
-                      {(() => {
-                        const isOwner = currentUser && String(currentUser.id) === String(acc.userId);
-                        console.log('🔍 DELETE BUTTON CHECK:', {
-                          accountantName: acc.name,
-                          accountantUserId: acc.userId,
-                          currentUserId: currentUser?.id,
-                          isOwner,
-                          willShow: isOwner
-                        });
-                        return isOwner && (
-                          <button 
-                            onClick={() => handleDeleteMyAccountant(acc.id, acc.name)}
-                            className="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 py-2 rounded-lg font-medium text-xs hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors border border-red-200 dark:border-red-800"
-                          >
-                            🗑️ Remover Meu Cadastro
-                          </button>
-                        );
-                      })()}
+                      {currentUser && String(currentUser.id) === String(acc.userId) && (
+                        <button 
+                          onClick={() => handleDeleteMyAccountant(acc.id, acc.name)}
+                          className="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 py-2 rounded-lg font-medium text-xs hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors border border-red-200 dark:border-red-800"
+                        >
+                          🗑️ Remover Meu Cadastro
+                        </button>
+                      )}
                     </div>
                   </div>
                 </motion.div>
