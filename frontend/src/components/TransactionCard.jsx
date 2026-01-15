@@ -34,15 +34,36 @@ const TransactionCard = ({ transaction, onEdit, onDelete }) => {
       }
   };
 
+  // Format date nicely (fixing timezone issue)
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Data não disponível';
+    try {
+      // Parse date as local time, not UTC
+      // Split '2026-01-15' into [2026, 01, 15]
+      const [year, month, day] = dateString.split('T')[0].split('-');
+      // Create date in local timezone
+      const date = new Date(year, month - 1, day);
+      return date.toLocaleDateString('pt-BR', { 
+        day: '2-digit', 
+        month: 'short', 
+        year: 'numeric' 
+      });
+    } catch (error) {
+      return dateString;
+    }
+  };
+
   return (
     <div className="bg-slate-50 dark:bg-white/5 overflow-hidden rounded-lg p-4 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors group">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <p className="text-sm font-medium text-slate-500 dark:text-gray-400">{transaction.date}</p>
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <p className="text-sm font-semibold text-slate-600 dark:text-gray-300 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-600">
+              📅 {formatDate(transaction.date)}
+            </p>
             {transaction.source && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30">
-                {transaction.source}
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-sm">
+                🔗 {transaction.source}
               </span>
             )}
             

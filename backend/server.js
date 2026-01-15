@@ -137,7 +137,7 @@ const registerLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 30, // limit each IP to 30 requests per minute
+  max: 100, // limit each IP to 100 requests per minute (increased for testing)
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Muitas requisições. Tente novamente em 1 minuto.'

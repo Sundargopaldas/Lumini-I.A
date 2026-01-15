@@ -88,6 +88,8 @@ router.delete('/:id', auth, async (req, res) => {
 router.post('/sync', auth, async (req, res) => {
   const { provider } = req.body;
 
+  console.log(`\n🔄 [SYNC START] Provider: ${provider}, User: ${req.user.id}`);
+
   try {
     // Check if connected
     const integration = await Integration.findOne({
@@ -95,8 +97,11 @@ router.post('/sync', auth, async (req, res) => {
     });
 
     if (!integration) {
+      console.log(`❌ [SYNC] Provider ${provider} not connected for user ${req.user.id}`);
       return res.status(400).json({ message: 'Provider not connected' });
     }
+
+    console.log(`✅ [SYNC] Integration found:`, integration.toJSON());
 
     let newTransactions = [];
     
@@ -105,14 +110,20 @@ router.post('/sync', auth, async (req, res) => {
         const bankData = await BankingService.fetchTransactions('Nubank');
         newTransactions = bankData.map(t => ({
             description: t.description,
-            amount: t.amount,
+            amount: Math.abs(t.amount),
             type: t.type,
-            source: t.category, 
+            source: 'Nubank',
             date: t.date
         }));
-    } else if (provider === 'Open Finance' || provider === 'Pluggy') {
+    } else if (provider === 'Open Finance') {
         const pluggyData = await PluggyService.fetchTransactions();
-        newTransactions = pluggyData;
+        newTransactions = pluggyData.map(t => ({
+            description: t.description,
+            amount: Math.abs(t.amount),
+            type: t.type,
+            source: 'Open Finance',
+            date: t.date
+        }));
     } else if (provider === 'Stripe') {
         const stripeData = await StripeService.fetchRecentPayments(integration.apiKey);
         newTransactions = stripeData;
@@ -124,12 +135,14 @@ router.post('/sync', auth, async (req, res) => {
         newTransactions = hotmartData;
     }
 
-    console.log(`[Sync] Found ${newTransactions.length} transactions from ${provider}`);
+    console.log(`[Sync] Found ${newTransactions.length} transactions from ${provider}:`, newTransactions);
 
     // Insert into DB
     const createdTransactions = await Promise.all(newTransactions.map(t => {
       // Filter out fields that are not in the Transaction model to avoid Sequelize errors
-      const { method, ...transactionData } = t;
+      const { method, category, provider: _provider, external_id, ...transactionData } = t;
+      
+      console.log(`[Sync] Creating transaction:`, transactionData);
       
       return Transaction.create({
         ...transactionData,

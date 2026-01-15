@@ -274,11 +274,11 @@ const Dashboard = () => {
   if (loading) return <div className="text-center py-10">{t('plans.processing')}</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 px-2 md:px-0">
       
       {/* Subscription Status Widget */}
       <SubscriptionWidget user={user} />
-      <h1 className="text-3xl font-bold text-white mb-8">{t('dashboard.title')}</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-white mb-4 md:mb-8">{t('dashboard.title')}</h1>
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/50 text-red-200 p-4 rounded-lg mb-6 flex justify-between items-center">
@@ -299,15 +299,16 @@ const Dashboard = () => {
       )}
 
       {/* MEI Tracker Widget */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-6 shadow-xl border border-white/20">
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="text-white font-semibold text-lg">{t('dashboard.mei_tracker')}</h2>
+      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-4 md:p-6 shadow-xl border border-white/20">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-2">
+          <h2 className="text-white font-semibold text-base md:text-lg">{t('dashboard.mei_tracker')}</h2>
           <button 
             onClick={() => setIsTaxModalOpen(true)}
-            className="text-sm bg-white text-purple-700 hover:bg-gray-100 font-bold px-4 py-2 rounded-full shadow-lg transition-all transform hover:scale-105 flex items-center gap-2"
+            className="text-xs md:text-sm bg-white text-purple-700 hover:bg-gray-100 font-bold px-3 md:px-4 py-1.5 md:py-2 rounded-full shadow-lg transition-all transform hover:scale-105 flex items-center gap-1 md:gap-2 whitespace-nowrap"
           >
             <span>📊</span>
-            {t('dashboard.simulate_taxes')}
+            <span className="hidden sm:inline">{t('dashboard.simulate_taxes')}</span>
+            <span className="sm:hidden">Simular</span>
           </button>
         </div>
         <div className="flex justify-between items-center mb-2">
@@ -328,67 +329,71 @@ const Dashboard = () => {
       {/* AI Insights Widget */}
       <AIInsightsWidget />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
-          <h3 className="text-slate-600 dark:text-gray-300 text-sm font-medium">{t('dashboard.total_balance')}</h3>
-          <p className={`text-3xl font-bold break-all ${metrics.totalBalance >= 0 ? 'text-slate-900 dark:text-white' : 'text-red-500 dark:text-red-400'}`}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+          <h3 className="text-slate-600 dark:text-gray-300 text-xs md:text-sm font-medium mb-1">{t('dashboard.total_balance')}</h3>
+          <p className={`text-xl md:text-3xl font-bold break-all ${metrics.totalBalance >= 0 ? 'text-slate-900 dark:text-white' : 'text-red-500 dark:text-red-400'}`}>
             R$ {metrics.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </p>
         </div>
-        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
-          <h3 className="text-slate-600 dark:text-gray-300 text-sm font-medium">{t('dashboard.income_month')}</h3>
-          <p className="text-3xl font-bold text-green-600 dark:text-green-400 break-all">+R$ {metrics.monthlyIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-          <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 break-words">{t('dashboard.top_source')}: {metrics.topSource}</p>
+        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+          <h3 className="text-slate-600 dark:text-gray-300 text-xs md:text-sm font-medium mb-1">{t('dashboard.income_month')}</h3>
+          <p className="text-xl md:text-3xl font-bold text-green-600 dark:text-green-400 break-all">+R$ {metrics.monthlyIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+          <p className="text-[10px] md:text-xs text-slate-500 dark:text-gray-400 mt-1 break-words truncate" title={`${t('dashboard.top_source')}: ${metrics.topSource}`}>
+            {t('dashboard.top_source')}: {metrics.topSource}
+          </p>
         </div>
-        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
-          <h3 className="text-slate-600 dark:text-gray-300 text-sm font-medium">{t('dashboard.expenses_month')}</h3>
-          <p className="text-3xl font-bold text-red-600 dark:text-red-400 break-all">-R$ {metrics.monthlyExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-          <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 break-words">{t('dashboard.top_expense')}: {metrics.topExpense}</p>
+        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors sm:col-span-2 md:col-span-1">
+          <h3 className="text-slate-600 dark:text-gray-300 text-xs md:text-sm font-medium mb-1">{t('dashboard.expenses_month')}</h3>
+          <p className="text-xl md:text-3xl font-bold text-red-600 dark:text-red-400 break-all">-R$ {metrics.monthlyExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+          <p className="text-[10px] md:text-xs text-slate-500 dark:text-gray-400 mt-1 break-words truncate" title={`${t('dashboard.top_expense')}: ${metrics.topExpense}`}>
+            {t('dashboard.top_expense')}: {metrics.topExpense}
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{t('dashboard.balance_evolution')}</h2>
-          <div className="h-64">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="lg:col-span-2 bg-white dark:bg-white/10 backdrop-blur-lg p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+          <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white mb-3 md:mb-4">{t('dashboard.balance_evolution')}</h2>
+          <div className="h-48 md:h-64">
              {trendData ? (
                  <TrendChart data={trendData} />
              ) : (
-                 <p className="text-slate-500 dark:text-gray-400 text-center mt-10">{t('dashboard.no_chart_data')}</p>
+                 <p className="text-slate-500 dark:text-gray-400 text-center mt-8 md:mt-10 text-sm">{t('dashboard.no_chart_data')}</p>
              )}
           </div>
         </div>
         
-        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{t('dashboard.income_source')}</h2>
-            <div className="h-64">
+        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+            <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white mb-3 md:mb-4">{t('dashboard.income_source')}</h2>
+            <div className="h-48 md:h-64">
                 {sourceData ? (
                     <SourceChart data={sourceData} />
                 ) : (
-                    <p className="text-slate-500 dark:text-gray-400 text-center mt-10">{t('dashboard.no_chart_data')}</p>
+                    <p className="text-slate-500 dark:text-gray-400 text-center mt-8 md:mt-10 text-sm">{t('dashboard.no_chart_data')}</p>
                 )}
             </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="lg:col-span-2 space-y-4 md:space-y-6">
             <GoalsWidget />
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
-            <div className="flex justify-between items-center mb-4">
-               <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('dashboard.recent_transactions')}</h2>
-               <Link to="/transactions" className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300">{t('dashboard.view_all')}</Link>
+        <div className="space-y-4 md:space-y-6">
+          <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+            <div className="flex justify-between items-center mb-3 md:mb-4">
+               <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">{t('dashboard.recent_transactions')}</h2>
+               <Link to="/transactions" className="text-xs md:text-sm text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 whitespace-nowrap">{t('dashboard.view_all')}</Link>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {transactions.length > 0 ? (
                 transactions.slice(0, 3).map((transaction) => (
                   <TransactionCard key={transaction.id} transaction={transaction} />
                 ))
               ) : (
-                <p className="text-slate-500 dark:text-gray-400">{t('dashboard.no_transactions')}</p>
+                <p className="text-slate-500 dark:text-gray-400 text-sm">{t('dashboard.no_transactions')}</p>
               )}
             </div>
           </div>

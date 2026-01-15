@@ -51,13 +51,20 @@ class BankingService {
       console.log(`[BankingService] (Sandbox) Connecting to ${bankName}...`);
       await new Promise(resolve => setTimeout(resolve, 800)); // Latency sim
   
-      const today = new Date().toISOString().split('T')[0];
+      // Get today's date in Brazil timezone (UTC-3)
+      // Brazil is 3 hours BEHIND UTC, so we SUBTRACT 3 hours
+      const now = new Date();
+      const brazilOffsetHours = -3; // UTC-3
+      const brazilTime = new Date(now.getTime() + (brazilOffsetHours * 60 * 60 * 1000));
+      const today = brazilTime.toISOString().split('T')[0];
+      
+      console.log(`[BankingService] UTC Time: ${now.toISOString()}`);
+      console.log(`[BankingService] Brazil Time: ${brazilTime.toISOString()}`);
+      console.log(`[BankingService] Today's date: ${today}`);
   
       if (bankName === 'Nubank') {
         return [
-          { external_id: 'n_1', description: 'Uber *Trip', amount: -24.90, type: 'expense', category: 'Transport', date: today },
-          { external_id: 'n_2', description: 'Spotify Premium', amount: -21.90, type: 'expense', category: 'Subscriptions', date: today },
-          { external_id: 'n_3', description: 'Starbucks Coffee', amount: -18.50, type: 'expense', category: 'Food', date: today }
+          { external_id: 'n_1', description: 'Compra no Supermercado', amount: -150.75, type: 'expense', category: 'Alimentação', date: today }
         ];
       }
       return [];

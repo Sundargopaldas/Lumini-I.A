@@ -1,0 +1,53 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fundo com gradiente roxo/azul -->
+  <defs>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Fundo arredondado -->
+  <rect width="512" height="512" rx="96" fill="url(#grad2)"/>
+  
+  <!-- Logo do Lumini (maior e mais detalhado) -->
+  <g transform="translate(256, 256)">
+    <!-- Estrela principal -->
+    <path d="M0,-120 L25,-40 L105,-40 L40,15 L65,95 L0,40 L-65,95 L-40,15 L-105,-40 L-25,-40 Z" 
+          fill="white" 
+          opacity="0.95"
+          filter="drop-shadow(0 4px 8px rgba(0,0,0,0.2))"/>
+    
+    <!-- Círculo central brilhante -->
+    <circle cx="0" cy="0" r="32" fill="white" opacity="1"/>
+    <circle cx="0" cy="0" r="24" fill="#fbbf24" opacity="0.8"/>
+    
+    <!-- Raios de luz ao redor -->
+    <g opacity="0.7">
+      <path d="M0,-150 L-5,-130 L5,-130 Z" fill="white"/>
+      <path d="M106,0 L86,-5 L86,5 Z" fill="white"/>
+      <path d="M75,75 L60,65 L70,55 Z" fill="white"/>
+      <path d="M0,150 L-5,130 L5,130 Z" fill="white"/>
+      <path d="M-106,0 L-86,-5 L-86,5 Z" fill="white"/>
+      <path d="M-75,-75 L-60,-65 L-70,-55 Z" fill="white"/>
+      <path d="M75,-75 L65,-85 L55,-70 Z" fill="white"/>
+      <path d="M-75,75 L-65,85 L-55,70 Z" fill="white"/>
+    </g>
+  </g>
+  
+  <!-- Texto LUMINI I.A -->
+  <text x="256" y="420" 
+        font-family="Arial, sans-serif" 
+        font-size="48" 
+        font-weight="bold" 
+        fill="white" 
+        text-anchor="middle"
+        opacity="0.95">LUMINI</text>
+  <text x="256" y="460" 
+        font-family="Arial, sans-serif" 
+        font-size="28" 
+        font-weight="normal" 
+        fill="white" 
+        text-anchor="middle"
+        opacity="0.8">Inteligência Artificial</text>
+</svg>

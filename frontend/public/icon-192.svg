@@ -1,0 +1,37 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fundo com gradiente roxo/azul -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Círculo de fundo -->
+  <rect width="192" height="192" rx="48" fill="url(#grad1)"/>
+  
+  <!-- Estrela/Logo do Lumini -->
+  <g transform="translate(96, 96)">
+    <!-- Estrela central -->
+    <path d="M0,-45 L10,-15 L40,-15 L15,5 L25,35 L0,15 L-25,35 L-15,5 L-40,-15 L-10,-15 Z" 
+          fill="white" 
+          opacity="0.95"/>
+    
+    <!-- Círculo central -->
+    <circle cx="0" cy="0" r="12" fill="white"/>
+    
+    <!-- Raios de luz -->
+    <path d="M0,-60 L-2,-50 L2,-50 Z" fill="white" opacity="0.6"/>
+    <path d="M42,0 L32,-2 L32,2 Z" fill="white" opacity="0.6"/>
+    <path d="M0,60 L-2,50 L2,50 Z" fill="white" opacity="0.6"/>
+    <path d="M-42,0 L-32,-2 L-32,2 Z" fill="white" opacity="0.6"/>
+  </g>
+  
+  <!-- Texto LUMINI (opcional, pode remover se preferir só o ícone) -->
+  <text x="96" y="155" 
+        font-family="Arial, sans-serif" 
+        font-size="18" 
+        font-weight="bold" 
+        fill="white" 
+        text-anchor="middle">LUMINI</text>
+</svg>

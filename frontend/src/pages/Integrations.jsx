@@ -12,6 +12,7 @@ const Integrations = () => {
   const [selectedIntegration, setSelectedIntegration] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userData, setUserData] = useState(null);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   
   // Custom Alert State
   const [alertState, setAlertState] = useState({
@@ -39,6 +40,7 @@ const Integrations = () => {
       logo: 'https://docs.pluggy.ai/img/logo.png',
       color: 'bg-blue-600',
       description: t('integrations.pluggy_desc'),
+      tooltip: 'Conecte qualquer banco brasileiro (Itaú, Bradesco, Santander, etc). Suas transações são importadas automaticamente via Open Finance do Banco Central. 100% seguro!',
       isNew: true
     },
     {
@@ -48,6 +50,7 @@ const Integrations = () => {
       logo: 'https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg',
       color: 'bg-indigo-600',
       description: t('integrations.stripe_desc'),
+      tooltip: 'Receba pagamentos de clientes do mundo todo! Todas as vendas feitas pelo Stripe aparecem automaticamente aqui. Perfeito para e-commerce e serviços online.',
       isNew: true
     },
     // Existing
@@ -57,7 +60,8 @@ const Integrations = () => {
       type: 'Bank',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Nubank_logo_2021.svg/2560px-Nubank_logo_2021.svg.png',
       color: 'bg-purple-800',
-      description: t('integrations.nubank_desc')
+      description: t('integrations.nubank_desc'),
+      tooltip: 'Todas as suas compras no cartão de crédito e débito Nubank são sincronizadas automaticamente. Nunca mais digite uma transação manualmente!'
     },
     {
       id: 'hotmart',
@@ -66,6 +70,7 @@ const Integrations = () => {
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Hotmart_logo.svg/2560px-Hotmart_logo.svg.png',
       color: 'bg-orange-600',
       description: t('integrations.hotmart_desc'),
+      tooltip: 'Vende cursos, ebooks ou infoprodutos? Configure o webhook e suas vendas da Hotmart aparecem em tempo real! Acompanhe comissões e pagamentos.',
       hasWebhook: true
     },
     {
@@ -74,7 +79,8 @@ const Integrations = () => {
       type: 'Platform',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/2560px-YouTube_full-color_icon_%282017%29.svg.png',
       color: 'bg-red-600',
-      description: t('integrations.youtube_desc')
+      description: t('integrations.youtube_desc'),
+      tooltip: 'Monetiza seus vídeos? Sincronize seu canal e acompanhe os ganhos do YouTube AdSense mês a mês. Controle sua receita de creator!'
     }
   ];
 
@@ -97,6 +103,13 @@ const Integrations = () => {
   useEffect(() => {
     fetchIntegrations();
     fetchUserData();
+    
+    // Check if it's the user's first visit to the Integrations page
+    const hasVisitedIntegrations = localStorage.getItem('lumini_integrations_visited');
+    if (!hasVisitedIntegrations) {
+      setShowWelcomeModal(true);
+      localStorage.setItem('lumini_integrations_visited', 'true');
+    }
   }, []);
 
   const fetchIntegrations = async () => {
@@ -175,14 +188,34 @@ const Integrations = () => {
   };
 
   const handleSync = async (integrationName) => {
+    console.log(`🔄 [Frontend] INICIANDO SINCRONIZAÇÃO: ${integrationName}`);
+    console.log(`🔄 [Frontend] Estado atual loading:`, loading);
+    
     setLoading(prev => ({ ...prev, [integrationName]: true }));
+    
     try {
+      console.log(`📤 [Frontend] Enviando requisição POST para /integrations/sync`);
+      console.log(`📤 [Frontend] Payload:`, { provider: integrationName });
+      
       const response = await api.post('/integrations/sync', { provider: integrationName });
-      showAlert("Sync Success", response.data.message, "success");
+      
+      console.log(`✅ [Frontend] RESPOSTA RECEBIDA:`, response.data);
+      
+      // Show success with redirect option
+      showAlert(
+        "✅ Sincronização Concluída!", 
+        `${response.data.message}\n\n💡 Acesse "Transações" para ver as novas movimentações importadas!`, 
+        "success"
+      );
+      
+      console.log(`✅ [Sync Success] ${response.data.transactions?.length || 0} transações sincronizadas de ${integrationName}`);
     } catch (error) {
-        console.error('Sync error:', error);
-        showAlert("Sync Failed", error.response?.data?.message || 'Server error', "error");
+        console.error('❌ [Sync Error] ERRO COMPLETO:', error);
+        console.error('❌ [Sync Error] Response:', error.response);
+        console.error('❌ [Sync Error] Message:', error.message);
+        showAlert("Erro na Sincronização", error.response?.data?.message || error.message || 'Erro desconhecido', "error");
     } finally {
+      console.log(`🏁 [Frontend] FINALIZANDO sincronização de ${integrationName}`);
       setLoading(prev => ({ ...prev, [integrationName]: false }));
     }
   };
@@ -236,6 +269,38 @@ const Integrations = () => {
         <p className="text-gray-600 dark:text-gray-400">{t('integrations.subtitle')}</p>
       </div>
 
+      {/* How It Works Banner */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-2xl p-6 shadow-sm">
+        <div className="flex items-start gap-4">
+          <div className="text-4xl">🔗</div>
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+              💡 Como funciona a mágica das Integrações?
+            </h3>
+            <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+              <p className="flex items-start gap-2">
+                <span className="text-green-500 font-bold text-lg">✓</span>
+                <span><strong>Conecte uma vez</strong> - Autorize o Lumini a acessar suas transações de forma segura</span>
+              </p>
+              <p className="flex items-start gap-2">
+                <span className="text-green-500 font-bold text-lg">✓</span>
+                <span><strong>Sincronize quando quiser</strong> - Clique em "Sincronizar Agora" para buscar suas transações</span>
+              </p>
+              <p className="flex items-start gap-2">
+                <span className="text-green-500 font-bold text-lg">✓</span>
+                <span><strong>Tudo automático</strong> - Suas compras, vendas e pagamentos aparecem aqui sem digitação!</span>
+              </p>
+            </div>
+            <div className="mt-4 p-3 bg-white dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-blue-700">
+              <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                <span className="text-lg">🔒</span>
+                <span><strong>100% Seguro:</strong> Usamos Open Finance (padrão do Banco Central) e nunca armazenamos senhas bancárias!</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {integrations.map((integration) => (
           <div key={integration.id} className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-6 flex flex-col justify-between hover:shadow-lg dark:hover:bg-white/10 transition-all">
@@ -264,6 +329,15 @@ const Integrations = () => {
                             Novo
                         </span>
                     )}
+                    {/* Tooltip Info */}
+                    <div className="group relative">
+                        <span className="text-blue-500 dark:text-blue-400 cursor-help text-sm">ℹ️</span>
+                        <div className="absolute left-0 top-6 w-64 bg-gray-900 dark:bg-slate-800 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 border border-gray-700">
+                            <p className="font-semibold mb-1">Como funciona:</p>
+                            <p className="mb-2">{integration.tooltip || integration.description}</p>
+                            <p className="text-gray-400 text-[10px]">💡 Dica: Sincronize regularmente para manter tudo atualizado!</p>
+                        </div>
+                    </div>
                 </div>
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 px-2 py-1 rounded border border-gray-200 dark:border-none">{integration.type}</span>
               </div>
@@ -283,7 +357,21 @@ const Integrations = () => {
                 {isConnected(integration.name) ? (
                     <>
                         <button 
-                            onClick={() => handleSync(integration.name)}
+                            onClick={(e) => {
+                                console.log('🖱️🖱️🖱️ [CLICK EVENT DISPARADO!]');
+                                console.log('🖱️ Event:', e);
+                                console.log('🖱️ Integration Name:', integration.name);
+                                console.log('🖱️ Loading State:', loading);
+                                console.log('🖱️ Is Disabled?:', loading[integration.name]);
+                                console.log('🖱️ User Data:', userData);
+                                console.log('🖱️ User Plan:', userData?.plan);
+                                
+                                try {
+                                    handleSync(integration.name);
+                                } catch (err) {
+                                    console.error('❌ ERRO AO CHAMAR handleSync:', err);
+                                }
+                            }}
                             disabled={loading[integration.name]}
                             className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
                         >
@@ -321,10 +409,7 @@ const Integrations = () => {
       {/* Roadmap Section */}
       <div className="mt-16 pt-8 border-t border-gray-200 dark:border-white/10">
         <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('integrations.roadmap_title') || "Em Breve (Roadmap)"}</h2>
-            <span className="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-bold uppercase tracking-wider">
-                Fase 3
-            </span>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('integrations.roadmap_title') || "Expansão & Acesso"}</h2>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -378,6 +463,84 @@ const Integrations = () => {
             ))}
         </div>
       </div>
+
+      {/* Welcome Modal - First Visit */}
+      {showWelcomeModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full p-8 relative animate-fade-in">
+            <button 
+              onClick={() => setShowWelcomeModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span className="text-4xl">🚀</span>
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Bem-vindo às Integrações!
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Automatize sua gestão financeira conectando seus bancos e plataformas favoritas
+              </p>
+            </div>
+
+            <div className="space-y-4 mb-8">
+              <div className="flex items-start gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                <span className="text-3xl">1️⃣</span>
+                <div>
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-1">Conecte sua conta</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Clique em "Conectar" e autorize o Lumini a acessar suas transações de forma segura (Open Finance/API)
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                <span className="text-3xl">2️⃣</span>
+                <div>
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-1">Sincronize quando quiser</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Depois de conectado, clique em "Sincronizar Agora" para buscar suas transações mais recentes
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                <span className="text-3xl">3️⃣</span>
+                <div>
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-1">Tudo automático!</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Suas transações aparecem automaticamente na página "Transações". Nunca mais digite manualmente!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 p-4 rounded-xl border border-orange-200 dark:border-orange-800 mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">🔒</span>
+                <h4 className="font-bold text-gray-900 dark:text-white">100% Seguro</h4>
+              </div>
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                Utilizamos o <strong>Open Finance</strong> (padrão do Banco Central) e APIs oficiais. 
+                <strong> Nunca armazenamos suas senhas bancárias!</strong> Todas as conexões são criptografadas.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowWelcomeModal(false)}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl"
+            >
+              Entendi! Vamos começar 🚀
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

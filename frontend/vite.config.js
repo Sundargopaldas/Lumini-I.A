@@ -9,27 +9,52 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['logo.svg', 'logo.png'],
+      includeAssets: ['logo.svg', 'logo.png', 'icon-192.svg', 'icon-512.svg'],
       manifest: {
-        name: 'Lumini IA',
+        name: 'Lumini I.A - Gestão Financeira Inteligente',
         short_name: 'Lumini',
-        description: 'Seu assistente financeiro pessoal com inteligência artificial',
+        description: 'Gestão financeira inteligente com IA. Controle suas finanças, integre bancos e emita notas fiscais.',
         theme_color: '#8b5cf6',
-        background_color: '#ffffff',
+        background_color: '#1e1b4b',
         display: 'standalone',
         scope: '/',
         start_url: '/',
-        orientation: 'portrait',
+        orientation: 'any',
+        categories: ['finance', 'business', 'productivity'],
+        lang: 'pt-BR',
+        dir: 'ltr',
         icons: [
           {
-            src: 'logo.png',
+            src: 'icon-192.svg',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/svg+xml',
+            purpose: 'any'
           },
           {
-            src: 'logo.png',
+            src: 'icon-512.svg',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/svg+xml',
+            purpose: 'any'
+          },
+          {
+            src: 'icon-192.svg',
+            sizes: '192x192',
+            type: 'image/svg+xml',
+            purpose: 'maskable'
+          },
+          {
+            src: 'icon-512.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml',
+            purpose: 'maskable'
+          }
+        ],
+        screenshots: [
+          {
+            src: 'logo.png',
+            sizes: '540x720',
+            type: 'image/png',
+            form_factor: 'narrow'
           }
         ]
       }

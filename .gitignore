@@ -38,3 +38,6 @@ debug_payments.log
 *.njsproj
 *.sln
 *.sw?
+
+# Website (repositório separado)
+website/

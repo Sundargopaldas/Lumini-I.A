@@ -22,23 +22,41 @@ const Transactions = () => {
   const showAlert = (title, message, type, onConfirm) => setAlertState({ isOpen: true, title, message, type, onConfirm });
 
   const fetchTransactions = async () => {
+    console.log('🔄 [Transactions] INICIANDO FETCH DE TRANSAÇÕES...');
     try {
+      console.log('📤 [Transactions] Fazendo requisição GET /transactions');
       const response = await api.get('/transactions');
+      console.log('✅ [Transactions] RESPOSTA RECEBIDA:', response);
+      console.log('✅ [Transactions] Response.data:', response.data);
+      console.log('✅ [Transactions] É Array?:', Array.isArray(response.data));
+      
       if (Array.isArray(response.data)) {
+        console.log(`📊 [Transactions] Carregadas ${response.data.length} transações:`, response.data);
+        
+        // Log detalhado de cada transação
+        response.data.forEach((t, index) => {
+          console.log(`  ${index + 1}. [${t.type}] ${t.description} - R$ ${t.amount} (source: ${t.source})`);
+        });
+        
         setTransactions(response.data);
+        console.log('✅ [Transactions] Estado atualizado com', response.data.length, 'transações');
       } else {
-        console.error('Invalid transactions data:', response.data);
+        console.error('❌ [Transactions] Dados inválidos:', response.data);
         setTransactions([]);
       }
     } catch (error) {
-      console.error('Error fetching transactions:', error);
+      console.error('❌ [Transactions] ERRO ao buscar:', error);
+      console.error('❌ [Transactions] Error.response:', error.response);
+      console.error('❌ [Transactions] Error.message:', error.message);
       setTransactions([]);
     } finally {
       setLoading(false);
+      console.log('🏁 [Transactions] Fetch finalizado. Loading:', false);
     }
   };
 
   useEffect(() => {
+    console.log('🚀 [Transactions] COMPONENTE MONTADO - Iniciando fetch inicial');
     fetchTransactions();
   }, []);
 
