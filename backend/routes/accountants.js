@@ -9,6 +9,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const EmailService = require('../services/EmailService');
+const EmailValidator = require('../utils/emailValidator');
 
 // Configure Multer for Image Upload
 const storage = multer.diskStorage({
@@ -47,6 +48,15 @@ router.post('/invite', authMiddleware, async (req, res) => {
         
         if (!email) {
             return res.status(400).json({ message: 'Email is required' });
+        }
+
+        // Validate email existence
+        const emailValidation = await EmailValidator.validate(email);
+        if (!emailValidation.valid) {
+            console.log(`❌ [POST /accountants/invite] Email inválido: ${email} - Razão: ${emailValidation.reason}`);
+            return res.status(400).json({ 
+                message: emailValidation.reason
+            });
         }
 
         // Fetch full user data to ensure we have name/email for the email template
@@ -316,6 +326,15 @@ router.post('/', authMiddleware, (req, res, next) => {
 
     const { name, email, phone, specialty, description, tags, crc } = req.body;
     const userId = req.user.id; // From authMiddleware
+
+    // Validate email existence
+    const emailValidation = await EmailValidator.validate(email);
+    if (!emailValidation.valid) {
+      console.log(`❌ [POST /accountants] Email inválido: ${email} - Razão: ${emailValidation.reason}`);
+      return res.status(400).json({ 
+        message: emailValidation.reason
+      });
+    }
 
     // Server-side CRC Validation
     // Regex for CRC: UF-000000/T-D (Example: SP-123456/O-8, RJ-654321/P-5)

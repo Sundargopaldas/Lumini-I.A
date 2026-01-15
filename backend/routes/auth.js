@@ -15,6 +15,7 @@ const { recordFailedAttempt, isBlocked, clearAttempts } = require('../utils/logi
 const { validate, schemas } = require('../middleware/validator');
 const { createLogger } = require('../utils/logger');
 const TokenService = require('../services/TokenService');
+const EmailValidator = require('../utils/emailValidator');
 
 const logger = createLogger('AUTH');
 
@@ -75,6 +76,15 @@ router.post('/register', validate(schemas.registerSchema), async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
+    // Validate email existence
+    const emailValidation = await EmailValidator.validate(email);
+    if (!emailValidation.valid) {
+      console.log(`❌ [REGISTER] Email inválido: ${email} - Razão: ${emailValidation.reason}`);
+      return res.status(400).json({ 
+        message: emailValidation.reason
+      });
+    }
+
     // Validate password strength
     const passwordValidation = validatePasswordStrength(password);
     if (!passwordValidation.valid) {
@@ -124,6 +134,15 @@ router.post('/login', validate(schemas.loginSchema), async (req, res) => {
   
   try {
     const { email, password } = req.body;
+    
+    // Validate email existence
+    const emailValidation = await EmailValidator.validate(email);
+    if (!emailValidation.valid) {
+      console.log(`❌ [LOGIN] Email inválido: ${email} - Razão: ${emailValidation.reason}`);
+      return res.status(400).json({ 
+        message: 'Email inválido ou não existe'
+      });
+    }
     
     // 🔒 SEGURANÇA: Verificar se a conta está bloqueada
     const blockStatus = isBlocked(email);
