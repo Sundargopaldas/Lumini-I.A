@@ -32,7 +32,7 @@ const Integrations = () => {
   };
 
   const integrations = [
-    // Phase 2: Open Finance & Payments
+    // Phase 2: Open Finance
     {
       id: 'pluggy',
       name: 'Open Finance',
@@ -41,16 +41,6 @@ const Integrations = () => {
       color: 'bg-blue-600',
       description: t('integrations.pluggy_desc'),
       tooltip: 'Conecte qualquer banco brasileiro (Itaú, Bradesco, Santander, etc). Suas transações são importadas automaticamente via Open Finance do Banco Central. 100% seguro!',
-      isNew: true
-    },
-    {
-      id: 'stripe',
-      name: 'Stripe',
-      type: 'Payment',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg',
-      color: 'bg-indigo-600',
-      description: t('integrations.stripe_desc'),
-      tooltip: 'Receba pagamentos de clientes do mundo todo! Todas as vendas feitas pelo Stripe aparecem automaticamente aqui. Perfeito para e-commerce e serviços online.',
       isNew: true
     },
     // Existing

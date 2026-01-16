@@ -34,6 +34,7 @@ class NuvemFiscalService {
             params.append('client_id', clientId);
             params.append('client_secret', clientSecret);
             params.append('scope', scope);
+            params.append('audience', this.baseUrl); // IMPORTANTE: Audience obrigatório!
 
             const response = await axios.post(`https://auth.nuvemfiscal.com.br/oauth/token`, params, {
                 headers: {
