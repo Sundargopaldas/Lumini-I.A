@@ -1,7 +1,7 @@
 // Service to handle YouTube Analytics API
 // In Production, this requires Google Cloud OAuth2 Credentials.
 
-const USE_SANDBOX = true; // Set to FALSE when you have real Google Cloud Creds
+const USE_SANDBOX = false; // YouTube API configurada! ✅
 
 class YouTubeService {
     
