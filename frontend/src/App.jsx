@@ -24,6 +24,7 @@ import WhatsAppWidget from './components/WhatsAppWidget';
 import CookieConsent from './components/CookieConsent';
 
 import AccountantDashboard from './pages/AccountantDashboard';
+import InvoiceTemplate from './components/InvoiceTemplate';
 
 const PrivateRoute = ({ children }) => {
   try {
@@ -108,6 +109,7 @@ function App() {
                       <Route path="/transactions" element={<Transactions />} />
                       <Route path="/reports" element={<Reports />} />
                       <Route path="/invoices" element={<Invoices />} />
+                      <Route path="/invoices/:id" element={<InvoiceTemplate />} />
                       <Route path="/plans" element={<Plans />} />
                       <Route path="/checkout" element={<Checkout />} />
                       <Route path="/integrations" element={<Integrations />} />

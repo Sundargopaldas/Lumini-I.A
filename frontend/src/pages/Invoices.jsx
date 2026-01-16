@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import { useTranslation } from 'react-i18next';
 import CertificateModal from '../components/CertificateModal';
@@ -9,6 +9,7 @@ import api from '../services/api';
 
 const Invoices = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isPremium = user.plan === 'premium';
   
@@ -586,6 +587,16 @@ const Invoices = () => {
                                 </span>
                             </td>
                             <td className="p-4 align-middle text-right space-x-2">
+                                <button 
+                                    onClick={() => navigate(`/invoices/${inv.originalId}`)}
+                                    className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                                    title="Ver Nota Fiscal"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </button>
                                 <button 
                                     onClick={() => generatePDF(inv)}
                                     className="p-2 text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 rounded-lg transition-colors"

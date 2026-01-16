@@ -30,6 +30,7 @@ router.get('/', auth, checkPremium, async (req, res) => {
       clientAddress: inv.clientAddress,
       clientEmail: inv.clientEmail,
       amount: parseFloat(inv.amount),
+      taxAmount: parseFloat(inv.taxAmount || 0),
       status: inv.status,
       type: inv.type, // Added type
       service: inv.serviceDescription
@@ -39,6 +40,44 @@ router.get('/', auth, checkPremium, async (req, res) => {
   } catch (error) {
     console.error('Error fetching invoices:', error);
     res.status(500).json({ message: 'Server error fetching invoices' });
+  }
+});
+
+// Get Single Invoice by ID (Protected + Premium Only)
+router.get('/:id', auth, checkPremium, async (req, res) => {
+  try {
+    const invoice = await Invoice.findOne({
+      where: { 
+        id: req.params.id,
+        userId: req.user.id 
+      }
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ message: 'Invoice not found' });
+    }
+
+    // Format for frontend
+    const formattedInvoice = {
+      id: invoice.id.toString().padStart(6, '0'),
+      originalId: invoice.id,
+      date: invoice.issueDate,
+      client: invoice.clientName,
+      clientDocument: invoice.clientDocument,
+      clientStateRegistration: invoice.clientStateRegistration,
+      clientAddress: invoice.clientAddress,
+      clientEmail: invoice.clientEmail,
+      amount: parseFloat(invoice.amount),
+      taxAmount: parseFloat(invoice.taxAmount || 0),
+      status: invoice.status,
+      type: invoice.type,
+      service: invoice.serviceDescription
+    };
+
+    res.json(formattedInvoice);
+  } catch (error) {
+    console.error('Error fetching invoice:', error);
+    res.status(500).json({ message: 'Server error fetching invoice' });
   }
 });
 
