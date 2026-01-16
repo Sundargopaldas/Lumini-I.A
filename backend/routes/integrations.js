@@ -8,7 +8,7 @@ const BankingService = require('../services/BankingService');
 const YouTubeService = require('../services/YouTubeService');
 const HotmartService = require('../services/HotmartService');
 const PluggyService = require('../services/PluggyService');
-const StripeService = require('../services/StripeService');
+// const StripeService = require('../services/StripeService'); // Removido: Stripe apenas para pagamentos, não integrações
 
 // Get all connected integrations
 router.get('/', auth, async (req, res) => {
@@ -124,9 +124,10 @@ router.post('/sync', auth, async (req, res) => {
             source: 'Open Finance',
             date: t.date
         }));
-    } else if (provider === 'Stripe') {
-        const stripeData = await StripeService.fetchRecentPayments(integration.apiKey);
-        newTransactions = stripeData;
+    // } else if (provider === 'Stripe') {
+    //     // REMOVIDO: Stripe apenas para pagamentos, não integrações
+    //     const stripeData = await StripeService.fetchRecentPayments(integration.apiKey);
+    //     newTransactions = stripeData;
     } else if (provider === 'YouTube') {
         const ytData = await YouTubeService.getChannelRevenue('CHANNEL_ID_MOCK');
         newTransactions = ytData.transactions;
