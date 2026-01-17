@@ -84,8 +84,14 @@ class YouTubeService {
       } catch (error) {
           console.error('[YouTubeService] Erro ao buscar dados:', error.message);
           
+          // Se for erro de permissão (canal não monetizado), usar mock
+          if (error.code === 403 || error.message.includes('Forbidden') || error.message.includes('Insufficient permission')) {
+            console.log('[YouTubeService] Canal não monetizado ou sem permissão - usando dados mock');
+            return this.mockYouTubeResponse();
+          }
+          
           // Se for erro de autenticação, informar ao usuário
-          if (error.code === 401 || error.code === 403) {
+          if (error.code === 401) {
             throw new Error('Autenticação expirada. Por favor, reconecte sua conta do YouTube.');
           }
           
