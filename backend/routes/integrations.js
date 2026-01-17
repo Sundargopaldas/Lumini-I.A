@@ -35,7 +35,8 @@ router.get('/youtube/auth', auth, async (req, res) => {
 
     const scopes = [
       'https://www.googleapis.com/auth/youtube.readonly',
-      'https://www.googleapis.com/auth/yt-analytics.readonly'
+      'https://www.googleapis.com/auth/yt-analytics.readonly',
+      'https://www.googleapis.com/auth/yt-analytics-monetary.readonly' // Para acessar receitas do AdSense
     ];
 
     const authUrl = oauth2Client.generateAuthUrl({
