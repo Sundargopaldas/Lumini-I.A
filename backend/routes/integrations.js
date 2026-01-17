@@ -103,11 +103,13 @@ router.get('/youtube/callback', async (req, res) => {
     }
 
     // Redirecionar de volta para a página de integrações
-    res.redirect('/integrations?youtube=success');
+    const frontendUrl = process.env.FRONTEND_URL || 'https://lumini-i-a.fly.dev';
+    res.redirect(`${frontendUrl}/integrations?youtube=success`);
 
   } catch (error) {
     console.error('[YouTube OAuth] Erro no callback:', error);
-    res.redirect('/integrations?youtube=error');
+    const frontendUrl = process.env.FRONTEND_URL || 'https://lumini-i-a.fly.dev';
+    res.redirect(`${frontendUrl}/integrations?youtube=error`);
   }
 });
 
