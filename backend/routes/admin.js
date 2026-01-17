@@ -228,4 +228,39 @@ router.post('/config/smtp/test', authMiddleware, adminMiddleware, async (req, re
     }
 });
 
+// ROTA TEMPORÁRIA: Promover usuário para Premium
+router.post('/promote-to-premium', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ message: 'Email é obrigatório' });
+        }
+        
+        const user = await User.findOne({ where: { email } });
+        
+        if (!user) {
+            return res.status(404).json({ message: 'Usuário não encontrado' });
+        }
+        
+        const oldPlan = user.plan;
+        user.plan = 'premium';
+        await user.save();
+        
+        res.json({ 
+            message: `Usuário promovido de ${oldPlan} para premium com sucesso!`,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                oldPlan,
+                newPlan: user.plan
+            }
+        });
+    } catch (error) {
+        console.error('Erro ao promover usuário:', error);
+        res.status(500).json({ message: 'Erro ao promover usuário: ' + error.message });
+    }
+});
+
 module.exports = router;
