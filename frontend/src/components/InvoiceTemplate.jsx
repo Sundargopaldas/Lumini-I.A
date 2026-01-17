@@ -85,13 +85,13 @@ const InvoiceTemplate = () => {
 
   // Gerar chave de acesso (simulação)
   const generateAccessKey = () => {
-    const numero = String(invoice.number || invoice.originalId).padStart(9, '0');
-    const ano = new Date(invoice.issueDate || invoice.date).getFullYear();
-    const mes = String(new Date(invoice.issueDate || invoice.date).getMonth() + 1).padStart(2, '0');
+    const numero = String(invoice.originalId || '1').padStart(9, '0');
+    const ano = new Date(invoice.date).getFullYear();
+    const mes = String(new Date(invoice.date).getMonth() + 1).padStart(2, '0');
     return `${numero}${ano}${mes}${Math.floor(Math.random() * 10000000000000000000).toString().padStart(20, '0')}`;
   };
 
-  const accessKey = invoice.verificationCode || generateAccessKey();
+  const accessKey = generateAccessKey();
 
   return (
     <div className="min-h-screen bg-gray-100 py-4 print:py-0 print:bg-white">
@@ -158,9 +158,9 @@ const InvoiceTemplate = () => {
             {/* Coluna 3: Número e Série */}
             <div className="p-2 flex flex-col items-center justify-center">
               <p className="text-[10px] font-bold">NFS-e</p>
-              <p className="text-lg font-bold">Nº {String(invoice.number || invoice.originalId).padStart(9, '0')}</p>
+              <p className="text-lg font-bold">Nº {String(invoice.originalId).padStart(9, '0')}</p>
               <p className="text-[10px] font-bold mt-1">Série 001</p>
-              <p className="text-[8px] mt-2 text-center">{formatDateTime(invoice.issueDate || invoice.date)}</p>
+              <p className="text-[8px] mt-2 text-center">{formatDateTime(invoice.date)}</p>
             </div>
           </div>
 
@@ -186,37 +186,33 @@ const InvoiceTemplate = () => {
               <div className="grid grid-cols-3 gap-2">
                 <div className="col-span-2">
                   <p className="text-[7px] text-gray-600">Nome / Razão Social</p>
-                  <p className="text-[9px] font-bold">{invoice.providerName || issuer.name || issuer.email}</p>
+                  <p className="text-[9px] font-bold">{issuer.name || issuer.email || 'Não informado'}</p>
                   
                   <div className="grid grid-cols-2 gap-2 mt-1">
                     <div>
                       <p className="text-[7px] text-gray-600">CPF/CNPJ</p>
-                      <p className="text-[8px]">{invoice.providerDocument || issuer.cpfCnpj || 'Não informado'}</p>
+                      <p className="text-[8px]">{issuer.cpfCnpj || 'Não informado'}</p>
                     </div>
-                    {invoice.providerMunicipalRegistration && (
-                      <div>
-                        <p className="text-[7px] text-gray-600">Inscrição Municipal</p>
-                        <p className="text-[8px]">{invoice.providerMunicipalRegistration}</p>
-                      </div>
-                    )}
+                    <div>
+                      <p className="text-[7px] text-gray-600">Inscrição Municipal</p>
+                      <p className="text-[8px]">Isento</p>
+                    </div>
                   </div>
 
                   <div className="mt-1">
                     <p className="text-[7px] text-gray-600">Endereço</p>
-                    <p className="text-[8px]">{invoice.providerAddress || 'Não cadastrado'}</p>
+                    <p className="text-[8px]">{issuer.address || 'Não cadastrado'}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 mt-1">
                     <div>
                       <p className="text-[7px] text-gray-600">Email</p>
-                      <p className="text-[8px]">{invoice.providerEmail || issuer.email}</p>
+                      <p className="text-[8px]">{issuer.email}</p>
                     </div>
-                    {invoice.providerPhone && (
-                      <div>
-                        <p className="text-[7px] text-gray-600">Telefone</p>
-                        <p className="text-[8px]">{invoice.providerPhone}</p>
-                      </div>
-                    )}
+                    <div>
+                      <p className="text-[7px] text-gray-600">Telefone</p>
+                      <p className="text-[8px]">{issuer.phone || 'Não informado'}</p>
+                    </div>
                   </div>
                 </div>
 
@@ -242,30 +238,28 @@ const InvoiceTemplate = () => {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <p className="text-[7px] text-gray-600">Nome / Razão Social</p>
-                  <p className="text-[9px] font-bold">{invoice.borrowerName || invoice.client}</p>
+                  <p className="text-[9px] font-bold">{invoice.client || 'Não informado'}</p>
                 </div>
                 <div>
                   <p className="text-[7px] text-gray-600">CPF/CNPJ</p>
-                  <p className="text-[8px]">{invoice.borrowerDocument || invoice.clientDocument || 'Não informado'}</p>
+                  <p className="text-[8px]">{invoice.clientDocument || 'Não informado'}</p>
                 </div>
               </div>
 
               <div className="mt-1">
                 <p className="text-[7px] text-gray-600">Endereço</p>
-                <p className="text-[8px]">{invoice.borrowerAddress || invoice.clientAddress || 'Não informado'}</p>
+                <p className="text-[8px]">{invoice.clientAddress || 'Não informado'}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-2 mt-1">
                 <div>
                   <p className="text-[7px] text-gray-600">Email</p>
-                  <p className="text-[8px]">{invoice.borrowerEmail || invoice.clientEmail || 'Não informado'}</p>
+                  <p className="text-[8px]">{invoice.clientEmail || 'Não informado'}</p>
                 </div>
-                {(invoice.borrowerPhone || invoice.clientPhone) && (
-                  <div>
-                    <p className="text-[7px] text-gray-600">Telefone</p>
-                    <p className="text-[8px]">{invoice.borrowerPhone || invoice.clientPhone}</p>
-                  </div>
-                )}
+                <div>
+                  <p className="text-[7px] text-gray-600">Telefone</p>
+                  <p className="text-[8px]">Não informado</p>
+                </div>
               </div>
             </div>
           </div>
@@ -277,31 +271,25 @@ const InvoiceTemplate = () => {
             </div>
             <div className="p-2">
               <div className="min-h-[80px] text-[9px] leading-relaxed whitespace-pre-wrap">
-                {invoice.serviceDescription || invoice.service || 'Descrição não informada'}
+                {invoice.service || 'Descrição não informada'}
               </div>
               
-              {invoice.serviceCode && (
-                <div className="mt-2 pt-2 border-t border-gray-300">
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <p className="text-[7px] text-gray-600">Código do Serviço</p>
-                      <p className="text-[8px] font-semibold">{invoice.serviceCode}</p>
-                    </div>
-                    {invoice.operationNature && (
-                      <div>
-                        <p className="text-[7px] text-gray-600">Natureza da Operação</p>
-                        <p className="text-[8px]">{invoice.operationNature}</p>
-                      </div>
-                    )}
-                    {invoice.taxRegime && (
-                      <div>
-                        <p className="text-[7px] text-gray-600">Regime Tributário</p>
-                        <p className="text-[8px]">{invoice.taxRegime}</p>
-                      </div>
-                    )}
+              <div className="mt-2 pt-2 border-t border-gray-300">
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <p className="text-[7px] text-gray-600">Código do Serviço</p>
+                    <p className="text-[8px] font-semibold">010101</p>
+                  </div>
+                  <div>
+                    <p className="text-[7px] text-gray-600">Natureza da Operação</p>
+                    <p className="text-[8px]">Tributação no município</p>
+                  </div>
+                  <div>
+                    <p className="text-[7px] text-gray-600">Regime Tributário</p>
+                    <p className="text-[8px]">Simples Nacional</p>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
@@ -325,52 +313,40 @@ const InvoiceTemplate = () => {
               <tbody>
                 <tr className="border-b border-black">
                   <td className="border-r border-black p-1 font-semibold">{formatCurrency(invoice.amount)}</td>
-                  <td className="border-r border-black p-1">{formatCurrency(invoice.deductions || 0)}</td>
-                  <td className="border-r border-black p-1">{formatCurrency(invoice.amount - (invoice.deductions || 0))}</td>
-                  <td className="border-r border-black p-1">{invoice.issRate || '2,00'}%</td>
-                  <td className="p-1 font-semibold text-red-600">{formatCurrency(invoice.issAmount || 0)}</td>
+                  <td className="border-r border-black p-1">{formatCurrency(0)}</td>
+                  <td className="border-r border-black p-1">{formatCurrency(invoice.amount)}</td>
+                  <td className="border-r border-black p-1">2,00%</td>
+                  <td className="p-1 font-semibold text-red-600">{formatCurrency(invoice.amount * 0.02)}</td>
                 </tr>
               </tbody>
             </table>
 
             {/* Outros Impostos Retidos */}
-            {(invoice.irAmount > 0 || invoice.pisAmount > 0 || invoice.cofinsAmount > 0 || invoice.csllAmount > 0 || invoice.inssAmount > 0) && (
-              <div className="border-t border-black p-2">
-                <p className="text-[7px] font-bold mb-1">IMPOSTOS FEDERAIS RETIDOS NA FONTE</p>
-                <div className="grid grid-cols-5 gap-2 text-[8px]">
-                  {invoice.irAmount > 0 && (
-                    <div>
-                      <p className="text-[7px] text-gray-600">IR</p>
-                      <p className="font-semibold">{formatCurrency(invoice.irAmount)}</p>
-                    </div>
-                  )}
-                  {invoice.pisAmount > 0 && (
-                    <div>
-                      <p className="text-[7px] text-gray-600">PIS</p>
-                      <p className="font-semibold">{formatCurrency(invoice.pisAmount)}</p>
-                    </div>
-                  )}
-                  {invoice.cofinsAmount > 0 && (
-                    <div>
-                      <p className="text-[7px] text-gray-600">COFINS</p>
-                      <p className="font-semibold">{formatCurrency(invoice.cofinsAmount)}</p>
-                    </div>
-                  )}
-                  {invoice.csllAmount > 0 && (
-                    <div>
-                      <p className="text-[7px] text-gray-600">CSLL</p>
-                      <p className="font-semibold">{formatCurrency(invoice.csllAmount)}</p>
-                    </div>
-                  )}
-                  {invoice.inssAmount > 0 && (
-                    <div>
-                      <p className="text-[7px] text-gray-600">INSS</p>
-                      <p className="font-semibold">{formatCurrency(invoice.inssAmount)}</p>
-                    </div>
-                  )}
+            <div className="border-t border-black p-2">
+              <p className="text-[7px] font-bold mb-1">IMPOSTOS FEDERAIS RETIDOS NA FONTE</p>
+              <div className="grid grid-cols-5 gap-2 text-[8px]">
+                <div>
+                  <p className="text-[7px] text-gray-600">IR</p>
+                  <p className="font-semibold">{formatCurrency(0)}</p>
+                </div>
+                <div>
+                  <p className="text-[7px] text-gray-600">PIS</p>
+                  <p className="font-semibold">{formatCurrency(0)}</p>
+                </div>
+                <div>
+                  <p className="text-[7px] text-gray-600">COFINS</p>
+                  <p className="font-semibold">{formatCurrency(0)}</p>
+                </div>
+                <div>
+                  <p className="text-[7px] text-gray-600">CSLL</p>
+                  <p className="font-semibold">{formatCurrency(0)}</p>
+                </div>
+                <div>
+                  <p className="text-[7px] text-gray-600">INSS</p>
+                  <p className="font-semibold">{formatCurrency(0)}</p>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Valor Total */}
             <div className="bg-gray-100 border-t-2 border-black p-2">
@@ -394,35 +370,28 @@ const InvoiceTemplate = () => {
             </div>
             <div className="p-2 min-h-[40px]">
               <p className="text-[8px] leading-relaxed">
-                {invoice.notes || 'Documento emitido por meio eletrônico. Consulte a autenticidade no portal da prefeitura.'}
+                Documento emitido por meio eletrônico. Consulte a autenticidade no portal da prefeitura ou através do QR Code acima.
               </p>
-              {invoice.rps && (
-                <p className="text-[7px] text-gray-600 mt-1">
-                  RPS Nº {invoice.rps} convertido nesta NFS-e
-                </p>
-              )}
             </div>
           </div>
 
           {/* PROTOCOLO DE AUTORIZAÇÃO */}
-          {invoice.verificationCode && (
-            <div className="bg-green-50 p-2">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-[7px] font-bold text-green-700">PROTOCOLO DE AUTORIZAÇÃO DE USO</p>
-                  <p className="text-[8px] font-mono">{invoice.verificationCode}</p>
-                  <p className="text-[7px] text-gray-600">
-                    Data de Autorização: {formatDateTime(invoice.issueDate || invoice.date)}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[8px] font-bold text-green-600">
-                    {invoice.status === 'issued' ? '✓ NFS-e AUTORIZADA' : '⏳ PROCESSANDO'}
-                  </p>
-                </div>
+          <div className="bg-green-50 p-2">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-[7px] font-bold text-green-700">PROTOCOLO DE AUTORIZAÇÃO DE USO</p>
+                <p className="text-[8px] font-mono">{accessKey.substring(0, 20)}</p>
+                <p className="text-[7px] text-gray-600">
+                  Data de Autorização: {formatDateTime(invoice.date)}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[8px] font-bold text-green-600">
+                  {invoice.status === 'issued' ? '✓ NFS-e AUTORIZADA' : '⏳ PROCESSANDO'}
+                </p>
               </div>
             </div>
-          )}
+          </div>
 
           {/* RODAPÉ */}
           <div className="bg-gray-100 p-2 text-center border-t border-black">
