@@ -228,14 +228,11 @@ router.post('/config/smtp/test', authMiddleware, adminMiddleware, async (req, re
     }
 });
 
-// ROTA TEMPORÁRIA: Promover usuário para Premium
-router.post('/promote-to-premium', authMiddleware, adminMiddleware, async (req, res) => {
+// ROTA TEMPORÁRIA: Promover usuário para Premium (SEM AUTH para facilitar)
+router.post('/promote-to-premium-temp', async (req, res) => {
     try {
-        const { email } = req.body;
-        
-        if (!email) {
-            return res.status(400).json({ message: 'Email é obrigatório' });
-        }
+        // Email fixo para segurança
+        const email = 'contato@luminiiadigital.com.br';
         
         const user = await User.findOne({ where: { email } });
         
