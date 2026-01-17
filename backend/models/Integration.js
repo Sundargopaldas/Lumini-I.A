@@ -16,6 +16,18 @@ const Integration = sequelize.define('Integration', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  oauthAccessToken: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  oauthRefreshToken: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  oauthTokenExpiry: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
   status: {
     type: DataTypes.STRING, // 'active', 'error'
     defaultValue: 'active',

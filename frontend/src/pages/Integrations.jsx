@@ -100,6 +100,19 @@ const Integrations = () => {
       setShowWelcomeModal(true);
       localStorage.setItem('lumini_integrations_visited', 'true');
     }
+
+    // Check for YouTube OAuth callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const youtubeStatus = urlParams.get('youtube');
+    
+    if (youtubeStatus === 'success') {
+      showAlert("✅ YouTube Conectado!", "Sua conta do YouTube foi conectada com sucesso! Agora você pode sincronizar suas receitas do AdSense.", "success");
+      // Limpar query params da URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (youtubeStatus === 'error') {
+      showAlert("❌ Erro ao Conectar", "Não foi possível conectar sua conta do YouTube. Por favor, tente novamente.", "error");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
 
   const fetchIntegrations = async () => {
@@ -118,12 +131,26 @@ const Integrations = () => {
       if (user) setUserData(user);
   };
 
-  const handleOpenConnect = (integration) => {
+  const handleOpenConnect = async (integration) => {
       // Check limit client-side for better UX (fail fast)
       const isFree = userData?.plan === 'free';
       
       if (isFree) {
           showAlert("Premium Feature", "Integrations are available for PRO users only. Upgrade to unlock!", "locked");
+          return;
+      }
+
+      // YouTube usa OAuth - redirecionar para Google
+      if (integration.id === 'youtube') {
+          try {
+              const response = await api.get('/integrations/youtube/auth');
+              if (response.data.authUrl) {
+                  window.location.href = response.data.authUrl;
+              }
+          } catch (error) {
+              console.error('Error starting YouTube OAuth:', error);
+              showAlert("Error", "Failed to start YouTube authentication", "error");
+          }
           return;
       }
 
