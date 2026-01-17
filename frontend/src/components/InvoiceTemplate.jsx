@@ -4,6 +4,28 @@ import Barcode from 'react-barcode';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
 
+// Estilos CSS para impressão
+const printStyles = `
+  @media print {
+    @page {
+      size: A4;
+      margin: 0;
+    }
+    
+    body {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+  }
+`;
+
 const InvoiceTemplate = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -61,7 +83,7 @@ const InvoiceTemplate = () => {
   }
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
   };
 
   const formatDate = (dateString) => {
@@ -83,20 +105,55 @@ const InvoiceTemplate = () => {
     });
   };
 
-  // Gerar chave de acesso (simulação)
+  const formatCPFCNPJ = (doc) => {
+    if (!doc) return 'Não informado';
+    const clean = doc.replace(/\D/g, '');
+    if (clean.length === 11) {
+      return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    } else if (clean.length === 14) {
+      return clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+    }
+    return doc;
+  };
+
+  // Gerar chave de acesso (simulação realista)
   const generateAccessKey = () => {
     const numero = String(invoice.originalId || '1').padStart(9, '0');
-    const ano = new Date(invoice.date).getFullYear();
-    const mes = String(new Date(invoice.date).getMonth() + 1).padStart(2, '0');
-    return `${numero}${ano}${mes}${Math.floor(Math.random() * 10000000000000000000).toString().padStart(20, '0')}`;
+    const date = new Date(invoice.date);
+    const ano = date.getFullYear().toString().slice(-2);
+    const mes = String(date.getMonth() + 1).padStart(2, '0');
+    const dia = String(date.getDate()).padStart(2, '0');
+    const random = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
+    const serie = '001';
+    const modelo = '55';
+    const uf = '35'; // SP
+    
+    return `${uf}${ano}${mes}${numero}${modelo}${serie}${random}${dia}`;
   };
 
   const accessKey = generateAccessKey();
 
+  // Calcular impostos
+  const calculateTax = (amount, rate) => {
+    return (amount || 0) * rate;
+  };
+
+  const iss = calculateTax(invoice.amount, 0.02); // 2%
+  const ir = calculateTax(invoice.amount, 0.015); // 1.5%
+  const pis = calculateTax(invoice.amount, 0.0065); // 0.65%
+  const cofins = calculateTax(invoice.amount, 0.03); // 3%
+  const csll = calculateTax(invoice.amount, 0.01); // 1%
+  const totalTributos = iss + ir + pis + cofins + csll;
+  const valorLiquido = invoice.amount - totalTributos;
+
   return (
-    <div className="min-h-screen bg-gray-100 py-4 print:py-0 print:bg-white">
-      {/* Botões de ação (não imprime) */}
-      <div className="max-w-[210mm] mx-auto mb-4 px-4 print:hidden">
+    <>
+      {/* Estilos de impressão */}
+      <style>{printStyles}</style>
+      
+      <div className="min-h-screen bg-gray-100 py-4 print:py-0 print:bg-white">
+        {/* Botões de ação (não imprime) */}
+        <div className="max-w-[210mm] mx-auto mb-4 px-4 print:hidden">
         <div className="flex gap-2">
           <button
             onClick={() => navigate('/invoices')}
@@ -117,294 +174,330 @@ const InvoiceTemplate = () => {
       </div>
 
       {/* DANFE - Documento Auxiliar da Nota Fiscal Eletrônica de Serviços */}
-      <div className="max-w-[210mm] mx-auto bg-white shadow-lg print:shadow-none p-2">
+      <div className="max-w-[210mm] mx-auto bg-white shadow-2xl print:shadow-none">
         
-        {/* CABEÇALHO - Identificação e Código de Barras */}
-        <div className="border-2 border-black">
-          <div className="grid grid-cols-3 border-b-2 border-black">
-            {/* Coluna 1: Recibo/Título */}
-            <div className="border-r-2 border-black p-2">
-              <div className="text-[8px] leading-tight mb-1">
-                <p className="font-bold">PREFEITURA MUNICIPAL</p>
-                <p>SECRETARIA DE FINANÇAS</p>
-                <p className="mt-1 text-[7px]">
-                  Nota Fiscal de Serviços Eletrônica - NFS-e
-                </p>
-                <p className="text-[7px]">
-                  Emitida em ambiente de {process.env.NUVEM_FISCAL_ENV === 'production' ? 'PRODUÇÃO' : 'HOMOLOGAÇÃO'}
-                </p>
+        {/* CABEÇALHO PRINCIPAL - DESTAQUE */}
+        <div className="border-4 border-black">
+          
+          {/* Título Principal com Fundo */}
+          <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-3 text-center border-b-4 border-black">
+            <h1 className="text-2xl font-black tracking-wide mb-1">
+              NOTA FISCAL DE SERVIÇOS ELETRÔNICA
+            </h1>
+            <p className="text-sm font-semibold tracking-wider">NFS-e - DOCUMENTO AUXILIAR (DANFE)</p>
+          </div>
+
+          {/* Informações Principais e Número */}
+          <div className="grid grid-cols-12 border-b-3 border-black">
+            
+            {/* Coluna Esquerda: Dados do Emitente */}
+            <div className="col-span-4 border-r-3 border-black p-3 bg-gray-50">
+              <div className="text-xs space-y-1">
+                <p className="font-bold text-gray-800 text-sm mb-2">EMITENTE</p>
+                <p className="font-bold text-base">{issuer.name || 'Emissor Lumini'}</p>
+                <p><span className="font-semibold">CNPJ:</span> {formatCPFCNPJ(issuer.cpfCnpj)}</p>
+                <p><span className="font-semibold">Endereço:</span> {issuer.address || 'Não cadastrado'}</p>
+                <p><span className="font-semibold">Email:</span> {issuer.email}</p>
+                <p><span className="font-semibold">Fone:</span> {issuer.phone || 'Não informado'}</p>
               </div>
             </div>
 
-            {/* Coluna 2: DANFE e Código de Barras */}
-            <div className="border-r-2 border-black p-2 flex flex-col items-center justify-center">
-              <p className="text-xs font-bold mb-1">DANF-e</p>
-              <p className="text-[9px] mb-1">Documento Auxiliar da Nota</p>
-              <p className="text-[9px] mb-2">Fiscal Eletrônica de Serviços</p>
-              
-              {/* Código de Barras */}
-              <div className="w-full flex justify-center">
+            {/* Coluna Central: CÓDIGO DE BARRAS GIGANTE */}
+            <div className="col-span-5 border-r-3 border-black p-3 flex flex-col items-center justify-center bg-white">
+              <p className="text-lg font-black mb-2 text-blue-900">CÓDIGO DE BARRAS</p>
+              <div className="w-full flex justify-center py-2">
                 <Barcode 
                   value={accessKey}
-                  width={1}
-                  height={35}
-                  fontSize={8}
-                  margin={0}
-                  displayValue={false}
+                  width={2.5}
+                  height={60}
+                  fontSize={11}
+                  margin={5}
+                  displayValue={true}
+                  background="#ffffff"
+                  lineColor="#000000"
                 />
               </div>
+              <div className="mt-2 text-center">
+                <p className="text-[8px] font-semibold text-gray-600">CHAVE DE ACESSO DA NFS-e</p>
+                <p className="text-[10px] font-mono font-bold text-blue-900 tracking-wider mt-1">
+                  {accessKey.match(/.{1,4}/g)?.join(' ')}
+                </p>
+              </div>
             </div>
 
-            {/* Coluna 3: Número e Série */}
-            <div className="p-2 flex flex-col items-center justify-center">
-              <p className="text-[10px] font-bold">NFS-e</p>
-              <p className="text-lg font-bold">Nº {String(invoice.originalId).padStart(9, '0')}</p>
-              <p className="text-[10px] font-bold mt-1">Série 001</p>
-              <p className="text-[8px] mt-2 text-center">{formatDateTime(invoice.date)}</p>
-            </div>
-          </div>
-
-          {/* Chave de Acesso */}
-          <div className="border-b-2 border-black p-1 bg-gray-50">
-            <p className="text-[7px] font-bold text-center">CHAVE DE ACESSO</p>
-            <p className="text-[9px] font-mono text-center tracking-wider">{accessKey.match(/.{1,4}/g)?.join(' ')}</p>
-          </div>
-
-          {/* Consulta de autenticidade */}
-          <div className="border-b-2 border-black p-1 text-center">
-            <p className="text-[7px]">
-              Consulte a autenticidade desta NFS-e no portal da prefeitura ou escaneie o QR Code
-            </p>
-          </div>
-
-          {/* IDENTIFICAÇÃO DO PRESTADOR */}
-          <div className="border-b-2 border-black">
-            <div className="bg-gray-100 border-b border-black px-2 py-0.5">
-              <p className="text-[8px] font-bold">PRESTADOR DE SERVIÇOS</p>
-            </div>
-            <div className="p-2">
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-2">
-                  <p className="text-[7px] text-gray-600">Nome / Razão Social</p>
-                  <p className="text-[9px] font-bold">{issuer.name || issuer.email || 'Não informado'}</p>
-                  
-                  <div className="grid grid-cols-2 gap-2 mt-1">
-                    <div>
-                      <p className="text-[7px] text-gray-600">CPF/CNPJ</p>
-                      <p className="text-[8px]">{issuer.cpfCnpj || 'Não informado'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[7px] text-gray-600">Inscrição Municipal</p>
-                      <p className="text-[8px]">Isento</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-1">
-                    <p className="text-[7px] text-gray-600">Endereço</p>
-                    <p className="text-[8px]">{issuer.address || 'Não cadastrado'}</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 mt-1">
-                    <div>
-                      <p className="text-[7px] text-gray-600">Email</p>
-                      <p className="text-[8px]">{issuer.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-[7px] text-gray-600">Telefone</p>
-                      <p className="text-[8px]">{issuer.phone || 'Não informado'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* QR Code */}
-                <div className="flex flex-col items-center justify-center border-l border-gray-300 pl-2">
-                  <QRCodeSVG 
-                    value={invoice.verificationUrl || `https://luminiiadigital.com.br/nfse/${accessKey}`}
-                    size={80}
-                    level="H"
-                  />
-                  <p className="text-[6px] text-center mt-1">Consulta de Autenticidade</p>
+            {/* Coluna Direita: Número da Nota e Status */}
+            <div className="col-span-3 p-3 bg-yellow-50 flex flex-col items-center justify-center">
+              <div className="text-center">
+                <p className="text-xs font-bold text-gray-600 mb-1">NÚMERO DA NFS-e</p>
+                <p className="text-4xl font-black text-blue-900 mb-2">
+                  {String(invoice.originalId).padStart(6, '0')}
+                </p>
+                <p className="text-xs font-bold text-gray-600 mb-1">SÉRIE</p>
+                <p className="text-2xl font-bold text-blue-900 mb-3">001</p>
+                
+                <div className="mt-3 pt-3 border-t-2 border-gray-300">
+                  <p className="text-[9px] font-semibold text-gray-600">DATA DE EMISSÃO</p>
+                  <p className="text-xs font-bold text-gray-800">{formatDate(invoice.date)}</p>
+                  <p className="text-[10px] text-gray-600">{new Date(invoice.date).toLocaleTimeString('pt-BR')}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* IDENTIFICAÇÃO DO TOMADOR */}
-          <div className="border-b-2 border-black">
-            <div className="bg-gray-100 border-b border-black px-2 py-0.5">
-              <p className="text-[8px] font-bold">TOMADOR DE SERVIÇOS</p>
+          {/* QR Code e Consulta */}
+          <div className="grid grid-cols-12 border-b-3 border-black bg-blue-50">
+            <div className="col-span-3 border-r-3 border-black p-3 flex items-center justify-center">
+              <div className="text-center">
+                <QRCodeSVG 
+                  value={invoice.verificationUrl || `https://luminiiadigital.com.br/verify/${accessKey}`}
+                  size={110}
+                  level="H"
+                  includeMargin={true}
+                />
+                <p className="text-[8px] font-semibold mt-2 text-gray-700">Consulta por QR Code</p>
+              </div>
             </div>
-            <div className="p-2">
-              <div className="grid grid-cols-2 gap-2">
+            
+            <div className="col-span-9 p-3 flex items-center">
+              <div className="w-full">
+                <p className="text-xs font-bold text-blue-900 mb-2">⚠️ CONSULTA DE AUTENTICIDADE</p>
+                <p className="text-[11px] leading-relaxed text-gray-700">
+                  Este documento pode ser consultado no portal da prefeitura através da chave de acesso acima ou 
+                  escaneando o QR Code ao lado. A consulta confirma a autenticidade e validade jurídica desta NFS-e.
+                </p>
+                <div className="mt-2 bg-white p-2 rounded border-2 border-blue-200">
+                  <p className="text-[9px] font-semibold text-gray-600">PROTOCOLO DE AUTORIZAÇÃO</p>
+                  <p className="text-[10px] font-mono text-blue-900">{accessKey.substring(0, 25)}...</p>
+                  <p className="text-[9px] text-gray-600 mt-1">
+                    Autorizado em: {formatDateTime(invoice.date)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* TOMADOR DE SERVIÇOS */}
+          <div className="border-b-3 border-black">
+            <div className="bg-gradient-to-r from-green-700 to-green-600 text-white px-4 py-2 border-b-2 border-black">
+              <p className="text-sm font-bold tracking-wide">🏢 TOMADOR DE SERVIÇOS (CLIENTE)</p>
+            </div>
+            <div className="p-4 bg-white">
+              <div className="grid grid-cols-2 gap-4 mb-3">
                 <div>
-                  <p className="text-[7px] text-gray-600">Nome / Razão Social</p>
-                  <p className="text-[9px] font-bold">{invoice.client || 'Não informado'}</p>
+                  <p className="text-[10px] font-semibold text-gray-600 mb-1">NOME / RAZÃO SOCIAL</p>
+                  <p className="text-sm font-bold text-gray-900">{invoice.client || 'Cliente não identificado'}</p>
                 </div>
                 <div>
-                  <p className="text-[7px] text-gray-600">CPF/CNPJ</p>
-                  <p className="text-[8px]">{invoice.clientDocument || 'Não informado'}</p>
+                  <p className="text-[10px] font-semibold text-gray-600 mb-1">CPF / CNPJ</p>
+                  <p className="text-sm font-bold text-gray-900">{formatCPFCNPJ(invoice.clientDocument)}</p>
                 </div>
               </div>
 
-              <div className="mt-1">
-                <p className="text-[7px] text-gray-600">Endereço</p>
-                <p className="text-[8px]">{invoice.clientAddress || 'Não informado'}</p>
+              <div className="mb-3">
+                <p className="text-[10px] font-semibold text-gray-600 mb-1">ENDEREÇO COMPLETO</p>
+                <p className="text-xs text-gray-800">{invoice.clientAddress || 'Não informado'}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[7px] text-gray-600">Email</p>
-                  <p className="text-[8px]">{invoice.clientEmail || 'Não informado'}</p>
+                  <p className="text-[10px] font-semibold text-gray-600 mb-1">E-MAIL</p>
+                  <p className="text-xs text-gray-800">{invoice.clientEmail || 'Não informado'}</p>
                 </div>
                 <div>
-                  <p className="text-[7px] text-gray-600">Telefone</p>
-                  <p className="text-[8px]">Não informado</p>
+                  <p className="text-[10px] font-semibold text-gray-600 mb-1">INSCRIÇÃO ESTADUAL</p>
+                  <p className="text-xs text-gray-800">{invoice.clientStateRegistration || 'Não informado'}</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* DISCRIMINAÇÃO DOS SERVIÇOS */}
-          <div className="border-b-2 border-black">
-            <div className="bg-gray-100 border-b border-black px-2 py-0.5">
-              <p className="text-[8px] font-bold">DISCRIMINAÇÃO DOS SERVIÇOS</p>
+          <div className="border-b-3 border-black">
+            <div className="bg-gradient-to-r from-purple-700 to-purple-600 text-white px-4 py-2 border-b-2 border-black">
+              <p className="text-sm font-bold tracking-wide">📋 DISCRIMINAÇÃO DOS SERVIÇOS PRESTADOS</p>
             </div>
-            <div className="p-2">
-              <div className="min-h-[80px] text-[9px] leading-relaxed whitespace-pre-wrap">
-                {invoice.service || 'Descrição não informada'}
+            <div className="p-4 bg-gray-50">
+              <div className="bg-white border-2 border-gray-300 rounded p-3 min-h-[100px]">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-900">
+                  {invoice.service || 'Serviço de consultoria e assessoria técnica especializada conforme contrato firmado entre as partes.'}
+                </p>
               </div>
               
-              <div className="mt-2 pt-2 border-t border-gray-300">
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <p className="text-[7px] text-gray-600">Código do Serviço</p>
-                    <p className="text-[8px] font-semibold">010101</p>
-                  </div>
-                  <div>
-                    <p className="text-[7px] text-gray-600">Natureza da Operação</p>
-                    <p className="text-[8px]">Tributação no município</p>
-                  </div>
-                  <div>
-                    <p className="text-[7px] text-gray-600">Regime Tributário</p>
-                    <p className="text-[8px]">Simples Nacional</p>
-                  </div>
+              <div className="mt-3 grid grid-cols-4 gap-3 bg-white p-3 rounded border border-gray-300">
+                <div className="text-center">
+                  <p className="text-[9px] font-semibold text-gray-600 mb-1">CÓDIGO DO SERVIÇO</p>
+                  <p className="text-sm font-bold text-blue-900">01.01.01</p>
+                </div>
+                <div className="text-center border-l border-gray-300">
+                  <p className="text-[9px] font-semibold text-gray-600 mb-1">NATUREZA DA OPERAÇÃO</p>
+                  <p className="text-xs font-semibold text-gray-800">Tributação no Município</p>
+                </div>
+                <div className="text-center border-l border-gray-300">
+                  <p className="text-[9px] font-semibold text-gray-600 mb-1">REGIME TRIBUTÁRIO</p>
+                  <p className="text-xs font-semibold text-gray-800">Simples Nacional</p>
+                </div>
+                <div className="text-center border-l border-gray-300">
+                  <p className="text-[9px] font-semibold text-gray-600 mb-1">ITEM DA LC 116/03</p>
+                  <p className="text-sm font-bold text-blue-900">1.01</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* VALORES E IMPOSTOS */}
-          <div className="border-b-2 border-black">
-            <div className="bg-gray-100 border-b border-black px-2 py-0.5">
-              <p className="text-[8px] font-bold">VALORES E TRIBUTOS</p>
+          {/* CÁLCULO DO ISS */}
+          <div className="border-b-3 border-black">
+            <div className="bg-gradient-to-r from-orange-700 to-orange-600 text-white px-4 py-2 border-b-2 border-black">
+              <p className="text-sm font-bold tracking-wide">💰 CÁLCULO DO ISS - IMPOSTO SOBRE SERVIÇOS</p>
             </div>
             
-            {/* Tabela de Valores */}
-            <table className="w-full text-[8px]">
+            <table className="w-full bg-white">
               <thead>
-                <tr className="bg-gray-50 border-b border-black">
-                  <th className="border-r border-black p-1 text-left">Valor dos Serviços</th>
-                  <th className="border-r border-black p-1 text-left">(-) Deduções</th>
-                  <th className="border-r border-black p-1 text-left">Base de Cálculo</th>
-                  <th className="border-r border-black p-1 text-left">Alíquota</th>
-                  <th className="p-1 text-left">Valor do ISS</th>
+                <tr className="bg-orange-100 border-b-2 border-black">
+                  <th className="border-r-2 border-black p-2 text-xs font-bold text-left text-gray-800">VALOR DOS SERVIÇOS</th>
+                  <th className="border-r-2 border-black p-2 text-xs font-bold text-left text-gray-800">(-) DEDUÇÕES</th>
+                  <th className="border-r-2 border-black p-2 text-xs font-bold text-left text-gray-800">BASE DE CÁLCULO</th>
+                  <th className="border-r-2 border-black p-2 text-xs font-bold text-left text-gray-800">ALÍQUOTA ISS</th>
+                  <th className="p-2 text-xs font-bold text-left text-gray-800">VALOR DO ISS</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-black">
-                  <td className="border-r border-black p-1 font-semibold">{formatCurrency(invoice.amount)}</td>
-                  <td className="border-r border-black p-1">{formatCurrency(0)}</td>
-                  <td className="border-r border-black p-1">{formatCurrency(invoice.amount)}</td>
-                  <td className="border-r border-black p-1">2,00%</td>
-                  <td className="p-1 font-semibold text-red-600">{formatCurrency(invoice.amount * 0.02)}</td>
+                <tr className="border-b-2 border-black">
+                  <td className="border-r-2 border-black p-3 text-base font-bold text-green-700">{formatCurrency(invoice.amount)}</td>
+                  <td className="border-r-2 border-black p-3 text-sm">{formatCurrency(0)}</td>
+                  <td className="border-r-2 border-black p-3 text-base font-bold text-blue-700">{formatCurrency(invoice.amount)}</td>
+                  <td className="border-r-2 border-black p-3 text-sm font-bold">2,00%</td>
+                  <td className="p-3 text-base font-bold text-red-700">{formatCurrency(iss)}</td>
                 </tr>
               </tbody>
             </table>
+          </div>
 
-            {/* Outros Impostos Retidos */}
-            <div className="border-t border-black p-2">
-              <p className="text-[7px] font-bold mb-1">IMPOSTOS FEDERAIS RETIDOS NA FONTE</p>
-              <div className="grid grid-cols-5 gap-2 text-[8px]">
-                <div>
-                  <p className="text-[7px] text-gray-600">IR</p>
-                  <p className="font-semibold">{formatCurrency(0)}</p>
-                </div>
-                <div>
-                  <p className="text-[7px] text-gray-600">PIS</p>
-                  <p className="font-semibold">{formatCurrency(0)}</p>
-                </div>
-                <div>
-                  <p className="text-[7px] text-gray-600">COFINS</p>
-                  <p className="font-semibold">{formatCurrency(0)}</p>
-                </div>
-                <div>
-                  <p className="text-[7px] text-gray-600">CSLL</p>
-                  <p className="font-semibold">{formatCurrency(0)}</p>
-                </div>
-                <div>
-                  <p className="text-[7px] text-gray-600">INSS</p>
-                  <p className="font-semibold">{formatCurrency(0)}</p>
-                </div>
-              </div>
+          {/* TRIBUTOS FEDERAIS RETIDOS */}
+          <div className="border-b-3 border-black">
+            <div className="bg-gradient-to-r from-red-700 to-red-600 text-white px-4 py-2 border-b-2 border-black">
+              <p className="text-sm font-bold tracking-wide">🏛️ TRIBUTOS FEDERAIS RETIDOS NA FONTE</p>
             </div>
-
-            {/* Valor Total */}
-            <div className="bg-gray-100 border-t-2 border-black p-2">
-              <div className="flex justify-between items-center">
-                <p className="text-[9px] font-bold">VALOR TOTAL DA NOTA</p>
-                <p className="text-lg font-bold">{formatCurrency(invoice.amount)}</p>
+            
+            <div className="p-4 bg-red-50">
+              <div className="grid grid-cols-5 gap-3">
+                <div className="bg-white p-3 rounded border-2 border-red-200 text-center">
+                  <p className="text-[9px] font-semibold text-gray-600 mb-1">IR (1,5%)</p>
+                  <p className="text-xs font-bold text-gray-900">{formatCurrency(ir)}</p>
+                </div>
+                <div className="bg-white p-3 rounded border-2 border-red-200 text-center">
+                  <p className="text-[9px] font-semibold text-gray-600 mb-1">PIS (0,65%)</p>
+                  <p className="text-xs font-bold text-gray-900">{formatCurrency(pis)}</p>
+                </div>
+                <div className="bg-white p-3 rounded border-2 border-red-200 text-center">
+                  <p className="text-[9px] font-semibold text-gray-600 mb-1">COFINS (3%)</p>
+                  <p className="text-xs font-bold text-gray-900">{formatCurrency(cofins)}</p>
+                </div>
+                <div className="bg-white p-3 rounded border-2 border-red-200 text-center">
+                  <p className="text-[9px] font-semibold text-gray-600 mb-1">CSLL (1%)</p>
+                  <p className="text-xs font-bold text-gray-900">{formatCurrency(csll)}</p>
+                </div>
+                <div className="bg-white p-3 rounded border-2 border-red-200 text-center">
+                  <p className="text-[9px] font-semibold text-gray-600 mb-1">INSS</p>
+                  <p className="text-xs font-bold text-gray-900">{formatCurrency(0)}</p>
+                </div>
               </div>
-              <div className="flex justify-between items-center mt-1">
-                <p className="text-[8px]">Valor Líquido (Valor Total - Impostos Retidos)</p>
-                <p className="text-base font-bold text-green-600">
-                  {formatCurrency(invoice.amount - (invoice.taxAmount || 0))}
-                </p>
+
+              <div className="mt-3 bg-white p-3 rounded border-2 border-red-300">
+                <div className="flex justify-between items-center">
+                  <p className="text-xs font-bold text-gray-700">TOTAL DE TRIBUTOS RETIDOS:</p>
+                  <p className="text-lg font-bold text-red-700">{formatCurrency(totalTributos)}</p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* DADOS ADICIONAIS */}
-          <div className="border-b-2 border-black">
-            <div className="bg-gray-100 border-b border-black px-2 py-0.5">
-              <p className="text-[8px] font-bold">INFORMAÇÕES COMPLEMENTARES</p>
+          {/* VALORES TOTAIS - DESTAQUE MÁXIMO */}
+          <div className="border-b-4 border-black bg-gradient-to-r from-green-800 to-green-600 p-4">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="bg-white/95 p-4 rounded-lg shadow-lg border-2 border-green-900">
+                <p className="text-xs font-bold text-gray-600 mb-2">💵 VALOR TOTAL DA NOTA FISCAL</p>
+                <p className="text-4xl font-black text-green-700">
+                  {formatCurrency(invoice.amount)}
+                </p>
+              </div>
+              
+              <div className="bg-white/95 p-4 rounded-lg shadow-lg border-2 border-blue-900">
+                <p className="text-xs font-bold text-gray-600 mb-2">✅ VALOR LÍQUIDO A RECEBER</p>
+                <p className="text-4xl font-black text-blue-700">
+                  {formatCurrency(valorLiquido)}
+                </p>
+                <p className="text-[9px] text-gray-600 mt-1">(Valor Total - Tributos Retidos)</p>
+              </div>
             </div>
-            <div className="p-2 min-h-[40px]">
-              <p className="text-[8px] leading-relaxed">
-                Documento emitido por meio eletrônico. Consulte a autenticidade no portal da prefeitura ou através do QR Code acima.
+          </div>
+
+          {/* INFORMAÇÕES COMPLEMENTARES */}
+          <div className="border-b-3 border-black">
+            <div className="bg-gradient-to-r from-gray-700 to-gray-600 text-white px-4 py-2 border-b-2 border-black">
+              <p className="text-sm font-bold tracking-wide">📝 INFORMAÇÕES COMPLEMENTARES</p>
+            </div>
+            <div className="p-4 bg-gray-50">
+              <div className="bg-white border-2 border-blue-300 rounded p-3 min-h-[60px]">
+                <p className="text-xs leading-relaxed text-gray-800">
+                  ✅ Documento emitido eletronicamente nos termos da legislação vigente.<br />
+                  ✅ Consulte a autenticidade desta NFS-e no portal da prefeitura ou através do QR Code.<br />
+                  ✅ Nota fiscal emitida de acordo com a Lei Complementar nº 116/2003.<br />
+                  ✅ Prestador optante pelo Simples Nacional - LC 123/2006.
+                </p>
+              </div>
+
+              {/* Status da Nota */}
+              <div className="mt-3 bg-white p-3 rounded border-2 border-green-400 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-green-700">STATUS DA NFS-e</p>
+                  <p className="text-sm font-semibold text-gray-700">
+                    {invoice.status === 'issued' ? '✅ AUTORIZADA E VÁLIDA' : '⏳ EM PROCESSAMENTO'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] font-semibold text-gray-600">DATA/HORA AUTORIZAÇÃO</p>
+                  <p className="text-xs font-bold text-gray-800">{formatDateTime(invoice.date)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RODAPÉ INSTITUCIONAL */}
+          <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white p-4 text-center">
+            <div className="mb-2">
+              <p className="text-xs font-bold">NOTA FISCAL DE SERVIÇOS ELETRÔNICA - NFS-e</p>
+              <p className="text-[10px] mt-1">Documento Auxiliar da Nota Fiscal Eletrônica de Serviços</p>
+            </div>
+            
+            <div className="border-t border-blue-400 mt-2 pt-2">
+              <p className="text-[10px] leading-relaxed">
+                Esta nota fiscal foi processada eletronicamente e possui validade jurídica.<br />
+                A autenticidade pode ser confirmada através da chave de acesso no portal oficial.
+              </p>
+            </div>
+
+            <div className="border-t border-blue-400 mt-3 pt-3">
+              <p className="text-xs font-bold">🚀 Documento gerado por Lumini I.A</p>
+              <p className="text-[9px]">Gestão Financeira Inteligente | www.luminiiadigital.com.br</p>
+              <p className="text-[8px] mt-1 text-blue-300">
+                Tecnologia e Inovação em Gestão Fiscal e Financeira
               </p>
             </div>
           </div>
 
-          {/* PROTOCOLO DE AUTORIZAÇÃO */}
-          <div className="bg-green-50 p-2">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-[7px] font-bold text-green-700">PROTOCOLO DE AUTORIZAÇÃO DE USO</p>
-                <p className="text-[8px] font-mono">{accessKey.substring(0, 20)}</p>
-                <p className="text-[7px] text-gray-600">
-                  Data de Autorização: {formatDateTime(invoice.date)}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-[8px] font-bold text-green-600">
-                  {invoice.status === 'issued' ? '✓ NFS-e AUTORIZADA' : '⏳ PROCESSANDO'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* RODAPÉ */}
-          <div className="bg-gray-100 p-2 text-center border-t border-black">
-            <p className="text-[7px] leading-tight">
-              Nota Fiscal de Serviços Eletrônica - NFS-e<br />
-              Emitida nos termos da legislação vigente. Consulte a autenticidade através da chave de acesso.<br />
-              <span className="font-semibold">Documento gerado por Lumini I.A - Gestão Financeira Inteligente</span><br />
-              www.luminiiadigital.com.br
+          {/* AVISO DE IMPRESSÃO */}
+          <div className="print:hidden mt-4 p-3 bg-yellow-100 border-2 border-yellow-400 rounded text-center">
+            <p className="text-sm font-bold text-yellow-800">
+              ⚠️ Para imprimir, clique no botão "Imprimir NFS-e" acima
+            </p>
+            <p className="text-xs text-yellow-700 mt-1">
+              Este documento será ajustado automaticamente para impressão em formato A4
             </p>
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
