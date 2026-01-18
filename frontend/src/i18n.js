@@ -19,11 +19,19 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
+    lng: 'pt', // FORÇA PORTUGUÊS SEMPRE
     fallbackLng: 'pt',
-    debug: true,
+    debug: false, // Desabilita logs de debug
     interpolation: {
       escapeValue: false // not needed for react as it escapes by default
+    },
+    detection: {
+      order: ['localStorage', 'cookie', 'navigator'],
+      caches: ['localStorage', 'cookie']
     }
   });
+
+// Garante que sempre inicie em português
+i18n.changeLanguage('pt');
 
 export default i18n;
