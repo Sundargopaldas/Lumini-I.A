@@ -297,7 +297,7 @@
   },
   "invoices": {
     "title": "Notas Fiscais (NFS-e)",
-    "subtitle": "Gerencie suas emissões automáticas",
+    "subtitle": "Emita notas fiscais de serviço (NFS-e) automaticamente para cada venda realizada na Hotmart, Kiwify ou Eduzz. Chega de trabalho manual e burocracia.",
     "issue_invoice": "Emitir Nota",
     "certificate_active": "Certificado Ativo",
     "configure_certificate": "Configurar Certificado",
@@ -321,11 +321,17 @@
     "automation_title": "Automação de Notas Fiscais",
     "automation_desc": "Emita notas fiscais de serviço (NFS-e) automaticamente para cada venda realizada na Hotmart, Kiwify ou Eduzz. Chega de trabalho manual e burocracia.",
     "premium_benefits_title": "O que você ganha no Premium:",
+    "premium_title": "O que você ganha no Premium:",
     "benefit_1": "Emissão automática pós-venda",
+    "feature_1": "Emissão automática pós-venda",
     "benefit_2": "Envio de PDF por e-mail para o cliente",
+    "feature_2": "Envio de PDF por e-mail para o cliente",
     "benefit_3": "Cálculo automático de impostos",
+    "feature_3": "Cálculo automático de impostos",
     "benefit_4": "Suporte a Certificado A1",
+    "feature_4": "Suporte a Certificado A1",
     "upgrade_btn": "Upgrade para Premium",
+    "upgrade_button": "Upgrade para Premium",
     "cert_connected_success": "Certificado Digital conectado com sucesso! Agora você pode emitir notas.",
     "cert_removed_success": "Certificado removido com sucesso.",
     "invoice_issued_success": "Nota fiscal emitida com sucesso!",
@@ -437,16 +443,6 @@
     "image_label": "Logo do Escritório (opcional)",
     "cancel": "Cancelar",
     "register": "Cadastrar"
-  },
-  "invoices": {
-    "title": "Automação de Notas Fiscais",
-    "subtitle": "Emita notas fiscais de serviço (NFS-e) automaticamente para cada venda realizada na Hotmart, Kiwify ou Eduzz. Chega de trabalho manual e burocracia.",
-    "premium_title": "O que você ganha no Premium:",
-    "feature_1": "Emissão automática pós-venda",
-    "feature_2": "Envio de PDF por e-mail para o cliente",
-    "feature_3": "Cálculo automático de impostos",
-    "feature_4": "Suporte a Certificado A1",
-    "upgrade_button": "Upgrade para Premium"
   },
   "admin": {
     "title": "Painel Administrativo",
