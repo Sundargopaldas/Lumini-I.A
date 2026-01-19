@@ -101,16 +101,24 @@ const Integrations = () => {
       localStorage.setItem('lumini_integrations_visited', 'true');
     }
 
-    // Check for YouTube OAuth callback
+    // Check for OAuth callbacks (YouTube, Hotmart)
     const urlParams = new URLSearchParams(window.location.search);
     const youtubeStatus = urlParams.get('youtube');
+    const hotmartStatus = urlParams.get('hotmart');
     
     if (youtubeStatus === 'success') {
       showAlert("✅ YouTube Conectado!", "Sua conta do YouTube foi conectada com sucesso! Agora você pode sincronizar suas receitas do AdSense.", "success");
-      // Limpar query params da URL
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (youtubeStatus === 'error') {
       showAlert("❌ Erro ao Conectar", "Não foi possível conectar sua conta do YouTube. Por favor, tente novamente.", "error");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    if (hotmartStatus === 'success') {
+      showAlert("✅ Hotmart Conectado!", "Sua conta Hotmart foi conectada com sucesso! Agora você pode sincronizar suas vendas e comissões.", "success");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (hotmartStatus === 'error') {
+      showAlert("❌ Erro ao Conectar", "Não foi possível conectar sua conta Hotmart. Por favor, tente novamente.", "error");
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
@@ -136,7 +144,7 @@ const Integrations = () => {
       const isFree = userData?.plan === 'free';
       
       if (isFree) {
-          showAlert("Premium Feature", "Integrations are available for PRO users only. Upgrade to unlock!", "locked");
+          showAlert("Recurso Premium", "Integrações estão disponíveis apenas para usuários PRO. Faça upgrade para desbloquear!", "locked");
           return;
       }
 
@@ -149,13 +157,109 @@ const Integrations = () => {
               }
           } catch (error) {
               console.error('Error starting YouTube OAuth:', error);
-              showAlert("Error", "Failed to start YouTube authentication", "error");
+              showAlert("Erro", "Falha ao iniciar autenticação do YouTube", "error");
+          }
+          return;
+      }
+
+      // Hotmart usa OAuth - redirecionar para Hotmart
+      if (integration.id === 'hotmart') {
+          try {
+              const response = await api.get('/integrations/hotmart/auth');
+              if (response.data.authUrl) {
+                  window.location.href = response.data.authUrl;
+              }
+          } catch (error) {
+              console.error('Error starting Hotmart OAuth:', error);
+              showAlert("Erro", error.response?.data?.message || "Falha ao iniciar autenticação da Hotmart", "error");
+          }
+          return;
+      }
+
+      // Open Finance (Pluggy) - abre widget de conexão
+      if (integration.id === 'pluggy') {
+          // Verificar se o script Pluggy está carregado
+          if (!window.PluggyConnect) {
+              console.warn('[Pluggy] Widget não disponível. Usando modo simulado.');
+              showAlert(
+                  "🧪 Modo Sandbox", 
+                  "Open Finance está em modo de desenvolvimento (sandbox). Configure as credenciais Pluggy para usar bancos reais.\n\nPor enquanto, você pode clicar em 'Sincronizar Agora' para ver dados simulados!", 
+                  "info"
+              );
+              
+              // Simular conexão bem-sucedida em modo sandbox
+              try {
+                  await api.post('/integrations/openfinance/save-connection', {
+                      itemId: 'sandbox-item-' + Date.now(),
+                      accountId: 'sandbox-account-' + Date.now()
+                  });
+                  fetchIntegrations();
+              } catch (err) {
+                  console.error('[Pluggy Sandbox] Erro:', err);
+              }
+              return;
+          }
+
+          try {
+              // Gerar connect token
+              const response = await api.get('/integrations/openfinance/connect-token');
+              if (response.data.connectToken) {
+                  openPluggyConnect(response.data.connectToken);
+              }
+          } catch (error) {
+              console.error('Error starting Open Finance:', error);
+              showAlert("Erro", "Falha ao iniciar conexão Open Finance. Verifique sua conexão e tente novamente.", "error");
           }
           return;
       }
 
       setSelectedIntegration(integration);
       setIsModalOpen(true);
+  };
+
+  // Pluggy Connect Widget
+  const openPluggyConnect = (connectToken) => {
+    if (!window.PluggyConnect) {
+      console.error('[Pluggy] Widget não disponível');
+      showAlert("Erro", "Widget do Pluggy não carregou. Verifique sua conexão com a internet.", "error");
+      return;
+    }
+
+    try {
+      const pluggyConnect = window.PluggyConnect.init({
+        connectToken: connectToken,
+        includeSandbox: process.env.REACT_APP_OPEN_FINANCE_USE_SANDBOX !== 'false',
+        onSuccess: async (itemData) => {
+          console.log('[Pluggy] Conexão bem-sucedida:', itemData);
+          
+          try {
+            // Salvar conexão no backend
+            await api.post('/integrations/openfinance/save-connection', {
+              itemId: itemData.item.id,
+              accountId: itemData.accounts?.[0]?.id || null
+            });
+            
+            showAlert("✅ Banco Conectado!", "Sua conta bancária foi conectada com sucesso! Agora você pode sincronizar suas transações.", "success");
+            fetchIntegrations(); // Atualizar lista de integrações
+          } catch (error) {
+            console.error('[Pluggy] Erro ao salvar conexão:', error);
+            showAlert("Erro", "Falha ao salvar conexão bancária", "error");
+          }
+        },
+        onError: (error) => {
+          console.error('[Pluggy] Erro:', error);
+          showAlert("Erro", "Não foi possível conectar ao banco. Tente novamente.", "error");
+        },
+        onClose: () => {
+          console.log('[Pluggy] Widget fechado');
+        }
+      });
+
+      pluggyConnect.open();
+    } catch (error) {
+      console.error('[Pluggy] Erro ao inicializar widget:', error);
+      showAlert("Erro", "Erro ao abrir widget do Pluggy. Tente novamente mais tarde.", "error");
+    }
   };
 
   const handleConnectSuccess = async (apiKey) => {
@@ -211,17 +315,38 @@ const Integrations = () => {
     setLoading(prev => ({ ...prev, [integrationName]: true }));
     
     try {
-      console.log(`📤 [Frontend] Enviando requisição POST para /integrations/sync`);
-      console.log(`📤 [Frontend] Payload:`, { provider: integrationName });
+      let endpoint = '/integrations/sync';
+      let payload = { provider: integrationName };
+
+      // Rotas específicas para cada integração
+      if (integrationName === 'Hotmart') {
+        endpoint = '/integrations/hotmart/sync';
+        payload = {};
+      } else if (integrationName === 'Open Finance') {
+        endpoint = '/integrations/openfinance/sync';
+        payload = {};
+      }
+
+      console.log(`📤 [Frontend] Enviando requisição POST para ${endpoint}`);
+      console.log(`📤 [Frontend] Payload:`, payload);
       
-      const response = await api.post('/integrations/sync', { provider: integrationName });
+      const response = await api.post(endpoint, payload);
       
       console.log(`✅ [Frontend] RESPOSTA RECEBIDA:`, response.data);
       
       // Show success with redirect option
+      let successMessage = response.data.message;
+      
+      // Adicionar info de saldo se Open Finance
+      if (integrationName === 'Open Finance' && response.data.balance) {
+        successMessage += `\n\n💰 Saldo Atual: ${response.data.balance.balance?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (${response.data.balance.bankName})`;
+      }
+      
+      successMessage += "\n\n💡 Acesse 'Transações' para ver as novas movimentações importadas!";
+      
       showAlert(
         "✅ Sincronização Concluída!", 
-        `${response.data.message}\n\n💡 Acesse "Transações" para ver as novas movimentações importadas!`, 
+        successMessage, 
         "success"
       );
       

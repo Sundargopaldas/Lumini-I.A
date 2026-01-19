@@ -8,6 +8,7 @@ const BankingService = require('../services/BankingService');
 const YouTubeService = require('../services/YouTubeService');
 const HotmartService = require('../services/HotmartService');
 const PluggyService = require('../services/PluggyService');
+const OpenFinanceService = require('../services/OpenFinanceService');
 const { google } = require('googleapis');
 // const StripeService = require('../services/StripeService'); // Removido: Stripe apenas para pagamentos, não integrações
 
@@ -104,12 +105,12 @@ router.get('/youtube/callback', async (req, res) => {
     }
 
     // Redirecionar de volta para a página de integrações
-    const frontendUrl = process.env.FRONTEND_URL || 'https://lumini-i-a.fly.dev';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://www.luminiiadigital.com.br';
     res.redirect(`${frontendUrl}/integrations?youtube=success`);
 
   } catch (error) {
     console.error('[YouTube OAuth] Erro no callback:', error);
-    const frontendUrl = process.env.FRONTEND_URL || 'https://lumini-i-a.fly.dev';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://www.luminiiadigital.com.br';
     res.redirect(`${frontendUrl}/integrations?youtube=error`);
   }
 });
@@ -261,6 +262,319 @@ router.post('/sync', auth, async (req, res) => {
         message: 'Server Error during sync',
         error: err.message 
     });
+  }
+});
+
+// ============================================================================
+// HOTMART - OAuth & Sincronização
+// ============================================================================
+
+// Hotmart OAuth - Iniciar fluxo de autenticação
+router.get('/hotmart/auth', auth, async (req, res) => {
+  try {
+    const authUrl = HotmartService.getAuthUrl(req.user.id);
+    console.log('[Hotmart OAuth] URL de autenticação gerada para usuário:', req.user.id);
+    res.json({ authUrl });
+  } catch (error) {
+    console.error('[Hotmart OAuth] Erro ao gerar URL:', error);
+    res.status(500).json({ message: error.message || 'Erro ao iniciar autenticação Hotmart' });
+  }
+});
+
+// Hotmart OAuth - Callback
+router.get('/hotmart/callback', async (req, res) => {
+  const { code, state } = req.query;
+
+  if (!code || !state) {
+    return res.status(400).send('Código ou estado ausente');
+  }
+
+  try {
+    const userId = parseInt(state);
+    
+    // Trocar código por tokens
+    const tokens = await HotmartService.exchangeCodeForTokens(code);
+    
+    console.log('[Hotmart OAuth] Tokens obtidos para usuário:', userId);
+
+    // Verificar se já existe integração
+    let integration = await Integration.findOne({
+      where: { userId, provider: 'Hotmart' }
+    });
+
+    if (integration) {
+      // Atualizar tokens
+      integration.oauthAccessToken = tokens.access_token;
+      integration.oauthRefreshToken = tokens.refresh_token;
+      integration.oauthTokenExpiry = new Date(tokens.expiry_date);
+      integration.status = 'active';
+      await integration.save();
+      console.log('[Hotmart OAuth] Integração atualizada');
+    } else {
+      // Criar nova integração
+      integration = await Integration.create({
+        userId,
+        provider: 'Hotmart',
+        oauthAccessToken: tokens.access_token,
+        oauthRefreshToken: tokens.refresh_token,
+        oauthTokenExpiry: new Date(tokens.expiry_date),
+        status: 'active'
+      });
+      console.log('[Hotmart OAuth] Nova integração criada');
+    }
+
+    // Redirecionar de volta para a página de integrações
+    const frontendUrl = process.env.FRONTEND_URL || 'https://www.luminiiadigital.com.br';
+    res.redirect(`${frontendUrl}/integrations?hotmart=success`);
+
+  } catch (error) {
+    console.error('[Hotmart OAuth] Erro no callback:', error);
+    const frontendUrl = process.env.FRONTEND_URL || 'https://www.luminiiadigital.com.br';
+    res.redirect(`${frontendUrl}/integrations?hotmart=error`);
+  }
+});
+
+// Hotmart - Sincronizar vendas e comissões
+router.post('/hotmart/sync', auth, async (req, res) => {
+  try {
+    const integration = await Integration.findOne({
+      where: { userId: req.user.id, provider: 'Hotmart' }
+    });
+
+    if (!integration) {
+      return res.status(400).json({ message: 'Hotmart não conectado' });
+    }
+
+    console.log('[Hotmart Sync] Iniciando sincronização para usuário:', req.user.id);
+
+    // Preparar tokens OAuth
+    const tokens = {
+      access_token: integration.oauthAccessToken,
+      refresh_token: integration.oauthRefreshToken,
+      expiry_date: integration.oauthTokenExpiry ? new Date(integration.oauthTokenExpiry).getTime() : null
+    };
+
+    // Buscar vendas
+    const sales = await HotmartService.fetchSales(tokens);
+    
+    // Buscar comissões de afiliado (apenas em modo real)
+    let commissions = [];
+    if (process.env.HOTMART_USE_SANDBOX !== 'true' && tokens.access_token) {
+      try {
+        commissions = await HotmartService.fetchAffiliateCommissions(tokens);
+      } catch (err) {
+        console.log('[Hotmart Sync] Erro ao buscar comissões (continuando):', err.message);
+      }
+    }
+
+    const allTransactions = [...sales, ...commissions];
+
+    console.log(`[Hotmart Sync] Encontradas ${allTransactions.length} transações (${sales.length} vendas + ${commissions.length} comissões)`);
+
+    // Inserir no banco de dados
+    const createdTransactions = await Promise.all(
+      allTransactions.map(t => {
+        const { method, category, provider, ...transactionData } = t;
+        return Transaction.create({
+          ...transactionData,
+          userId: req.user.id
+        });
+      })
+    );
+
+    res.json({
+      message: `${createdTransactions.length} transações sincronizadas do Hotmart`,
+      transactions: createdTransactions
+    });
+
+  } catch (error) {
+    console.error('[Hotmart Sync] Erro:', error);
+    res.status(500).json({ 
+      message: 'Erro ao sincronizar Hotmart',
+      error: error.message 
+    });
+  }
+});
+
+// ============================================================================
+// OPEN FINANCE - Integração com Bancos
+// ============================================================================
+
+// Open Finance - Gerar token de conexão
+router.get('/openfinance/connect-token', auth, async (req, res) => {
+  try {
+    const connectToken = await OpenFinanceService.generateConnectToken();
+    res.json({ connectToken });
+  } catch (error) {
+    console.error('[Open Finance] Erro ao gerar token:', error);
+    res.status(500).json({ message: 'Erro ao gerar token de conexão' });
+  }
+});
+
+// Open Finance - Listar bancos disponíveis
+router.get('/openfinance/banks', auth, async (req, res) => {
+  try {
+    const banks = await OpenFinanceService.getAvailableConnectors();
+    res.json({ banks });
+  } catch (error) {
+    console.error('[Open Finance] Erro ao listar bancos:', error);
+    res.status(500).json({ message: 'Erro ao listar bancos' });
+  }
+});
+
+// Open Finance - Salvar conexão bem-sucedida
+router.post('/openfinance/save-connection', auth, async (req, res) => {
+  const { itemId, accountId } = req.body;
+
+  if (!itemId || !accountId) {
+    return res.status(400).json({ message: 'itemId e accountId são obrigatórios' });
+  }
+
+  try {
+    // Verificar se já existe integração
+    let integration = await Integration.findOne({
+      where: { userId: req.user.id, provider: 'Open Finance' }
+    });
+
+    if (integration) {
+      // Atualizar com novos IDs
+      integration.apiKey = JSON.stringify({ itemId, accountId });
+      integration.status = 'active';
+      await integration.save();
+    } else {
+      // Criar nova integração
+      integration = await Integration.create({
+        userId: req.user.id,
+        provider: 'Open Finance',
+        apiKey: JSON.stringify({ itemId, accountId }),
+        status: 'active'
+      });
+    }
+
+    console.log('[Open Finance] Conexão salva para usuário:', req.user.id);
+    res.json({ message: 'Conexão estabelecida com sucesso', integration });
+
+  } catch (error) {
+    console.error('[Open Finance] Erro ao salvar conexão:', error);
+    res.status(500).json({ message: 'Erro ao salvar conexão' });
+  }
+});
+
+// Open Finance - Sincronizar transações bancárias
+router.post('/openfinance/sync', auth, async (req, res) => {
+  try {
+    const integration = await Integration.findOne({
+      where: { userId: req.user.id, provider: 'Open Finance' }
+    });
+
+    if (!integration) {
+      return res.status(400).json({ message: 'Open Finance não conectado' });
+    }
+
+    console.log('[Open Finance Sync] Iniciando sincronização para usuário:', req.user.id);
+
+    // Extrair itemId e accountId
+    const { itemId, accountId } = JSON.parse(integration.apiKey || '{}');
+    
+    if (!accountId) {
+      return res.status(400).json({ message: 'Conta bancária não configurada' });
+    }
+
+    // Gerar API key para requisições
+    const apiKey = await OpenFinanceService.generateConnectToken();
+
+    // Buscar transações
+    const transactions = await OpenFinanceService.fetchTransactions(accountId, apiKey);
+
+    console.log(`[Open Finance Sync] Encontradas ${transactions.length} transações`);
+
+    // Inserir no banco de dados
+    const createdTransactions = await Promise.all(
+      transactions.map(t => {
+        const { method, category, provider, ...transactionData } = t;
+        return Transaction.create({
+          ...transactionData,
+          userId: req.user.id
+        });
+      })
+    );
+
+    // Buscar saldo atualizado
+    let balanceInfo = null;
+    try {
+      balanceInfo = await OpenFinanceService.getBalance(accountId, apiKey);
+    } catch (err) {
+      console.log('[Open Finance Sync] Erro ao buscar saldo (continuando):', err.message);
+    }
+
+    res.json({
+      message: `${createdTransactions.length} transações sincronizadas do Open Finance`,
+      transactions: createdTransactions,
+      balance: balanceInfo
+    });
+
+  } catch (error) {
+    console.error('[Open Finance Sync] Erro:', error);
+    res.status(500).json({ 
+      message: 'Erro ao sincronizar Open Finance',
+      error: error.message 
+    });
+  }
+});
+
+// Open Finance - Buscar saldo das contas
+router.get('/openfinance/balance', auth, async (req, res) => {
+  try {
+    const integration = await Integration.findOne({
+      where: { userId: req.user.id, provider: 'Open Finance' }
+    });
+
+    if (!integration) {
+      return res.status(404).json({ message: 'Open Finance não conectado' });
+    }
+
+    const { accountId } = JSON.parse(integration.apiKey || '{}');
+    
+    if (!accountId) {
+      return res.status(400).json({ message: 'Conta não configurada' });
+    }
+
+    const apiKey = await OpenFinanceService.generateConnectToken();
+    const balance = await OpenFinanceService.getBalance(accountId, apiKey);
+
+    res.json({ balance });
+
+  } catch (error) {
+    console.error('[Open Finance] Erro ao buscar saldo:', error);
+    res.status(500).json({ message: 'Erro ao buscar saldo' });
+  }
+});
+
+// Open Finance - Buscar investimentos
+router.get('/openfinance/investments', auth, async (req, res) => {
+  try {
+    const integration = await Integration.findOne({
+      where: { userId: req.user.id, provider: 'Open Finance' }
+    });
+
+    if (!integration) {
+      return res.status(404).json({ message: 'Open Finance não conectado' });
+    }
+
+    const { itemId } = JSON.parse(integration.apiKey || '{}');
+    
+    if (!itemId) {
+      return res.status(400).json({ message: 'Conexão não configurada' });
+    }
+
+    const apiKey = await OpenFinanceService.generateConnectToken();
+    const investments = await OpenFinanceService.getInvestments(itemId, apiKey);
+
+    res.json({ investments });
+
+  } catch (error) {
+    console.error('[Open Finance] Erro ao buscar investimentos:', error);
+    res.status(500).json({ message: 'Erro ao buscar investimentos' });
   }
 });
 

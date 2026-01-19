@@ -136,9 +136,9 @@ const Plans = () => {
 
   return (
     <div className="space-y-12 pb-12">
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white transition-colors">{t('plans.title')}</h1>
-        <p className="text-slate-500 dark:text-gray-400 max-w-2xl mx-auto px-4 transition-colors">
+      <div className="text-center space-y-4 px-4 sm:px-0">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white transition-colors">{t('plans.title')}</h1>
+        <p className="text-sm sm:text-base text-slate-500 dark:text-gray-400 max-w-2xl mx-auto transition-colors">
           {t('plans.subtitle')}
         </p>
         <Link to="/terms" className="text-purple-600 hover:text-purple-700 underline text-sm">
@@ -146,7 +146,7 @@ const Plans = () => {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 px-4 sm:px-0">
         {plans.map((plan) => {
             const isCurrent = currentPlan === plan.name.toLowerCase();
             return (
@@ -164,18 +164,18 @@ const Plans = () => {
               </div>
             )}
             
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 transition-colors">{plan.displayName}</h3>
+            <div className="mb-4 sm:mb-6">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2 transition-colors">{plan.displayName}</h3>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-slate-900 dark:text-white transition-colors">{plan.price}</span>
-                <span className="text-slate-500 dark:text-gray-400 text-sm transition-colors">{plan.period}</span>
+                <span className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white transition-colors">{plan.price}</span>
+                <span className="text-slate-500 dark:text-gray-400 text-xs sm:text-sm transition-colors">{plan.period}</span>
               </div>
-              <p className="text-slate-500 dark:text-gray-400 text-sm mt-3 min-h-[40px] transition-colors">{plan.description}</p>
+              <p className="text-slate-500 dark:text-gray-400 text-xs sm:text-sm mt-2 sm:mt-3 min-h-[40px] transition-colors">{plan.description}</p>
             </div>
 
-            <ul className="space-y-3 mb-8 flex-1">
+            <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8 flex-1">
               {plan.features.map((feature, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-slate-600 dark:text-gray-300 transition-colors">
+                <li key={i} className="flex items-start gap-2 text-xs sm:text-sm text-slate-600 dark:text-gray-300 transition-colors">
                   <svg className="w-5 h-5 text-green-500 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
@@ -188,7 +188,7 @@ const Plans = () => {
                 <button 
                     onClick={() => !isCurrent && handleUpgrade(plan)}
                     disabled={isCurrent || loading}
-                    className={`w-full py-3 rounded-lg font-bold transition-all ${
+                    className={`w-full py-2 sm:py-3 rounded-lg font-bold text-sm sm:text-base transition-all ${
                         isCurrent 
                         ? 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 cursor-default border border-green-200 dark:border-green-500/50' 
                         : (plan.name.toLowerCase() === 'free' ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20' : plan.buttonStyle)

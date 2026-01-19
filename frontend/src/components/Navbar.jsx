@@ -97,33 +97,33 @@ const Navbar = () => {
           </div>
 
           {/* Links de Navegação - Centro */}
-          <div className="hidden xl:flex flex-1 justify-center">
-            <div className="flex space-x-6">
-            <Link to="/dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+          <div className="hidden md:flex flex-1 justify-center">
+            <div className="flex space-x-2 md:space-x-3 lg:space-x-6">
+            <Link to="/dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-xs md:text-sm lg:text-base">
               {t('sidebar.dashboard')}
             </Link>
-            <Link to="/transactions" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+            <Link to="/transactions" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-xs md:text-sm lg:text-base">
               {t('sidebar.transactions')}
             </Link>
-            <Link to="/reports" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+            <Link to="/reports" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-xs md:text-sm lg:text-base">
               {t('sidebar.reports')}
             </Link>
-            <Link to="/marketplace" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+            <Link to="/marketplace" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-xs md:text-sm lg:text-base">
               {t('sidebar.marketplace')}
             </Link>
             {user.isAccountant && (
-              <Link to="/accountant-dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+              <Link to="/accountant-dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-xs md:text-sm lg:text-base">
                 {t('sidebar.accountant_area')}
               </Link>
             )}
-            <Link to="/invoices" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+            <Link to="/invoices" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-xs md:text-sm lg:text-base">
               {t('sidebar.invoices')}
             </Link>
-            <Link to="/integrations" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap">
+            <Link to="/integrations" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-xs md:text-sm lg:text-base">
               {t('sidebar.integrations')}
             </Link>
             {user.isAdmin && (
-              <Link to="/admin" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap font-medium">
+              <Link to="/admin" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap font-medium text-xs md:text-sm lg:text-base">
                 {t('sidebar.admin')}
               </Link>
             )}
@@ -131,10 +131,10 @@ const Navbar = () => {
           </div>
           
           {/* User Info & Actions - Direita */}
-          <div className="hidden xl:flex items-center gap-4 flex-shrink-0">
+          <div className="hidden md:flex items-center gap-2 md:gap-3 lg:gap-4 flex-shrink-0">
             {/* Plan Badge removed to reduce clutter as requested */}
             
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+            <span className="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
               {user.username}
             </span>
 
@@ -151,14 +151,14 @@ const Navbar = () => {
 
             <button 
               onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+              className="bg-red-500 hover:bg-red-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors shadow-sm"
             >
               Logout
             </button>
           </div>
 
           {/* Mobile menu button */}
-          <div className="flex items-center xl:hidden">
+          <div className="flex items-center md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500 transition-colors"
@@ -180,7 +180,7 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="xl:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 absolute w-full transition-colors shadow-lg">
+        <div className="md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 absolute w-full transition-colors shadow-lg">
           <div className="px-2 pt-2 pb-3 space-y-1">
             <Link 
               to="/dashboard" 

@@ -42,6 +42,20 @@
     
     <!-- Umami Analytics (Privacy-friendly, LGPD compliant) -->
     <script defer src="https://cloud.umami.is/script.js" data-website-id="d64a4af0-20e3-4615-bff9-1837d735fe28"></script>
+    
+    <!-- Pluggy Connect Widget (Open Finance / Open Banking) - Load async and handle errors gracefully -->
+    <script>
+      // Load Pluggy widget asynchronously and handle failures gracefully
+      (function() {
+        var script = document.createElement('script');
+        script.src = 'https://cdn.pluggy.ai/connect/v3/pluggy-connect.js';
+        script.async = true;
+        script.onerror = function() {
+          console.warn('[Pluggy] Widget script failed to load. Open Finance will work in sandbox mode.');
+        };
+        document.head.appendChild(script);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

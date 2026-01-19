@@ -74,7 +74,7 @@ const Login = () => {
             </h2>
           </div>
           <p className="mt-2 text-center text-sm text-slate-600 dark:text-gray-300 transition-colors">
-            Financial clarity for creators.
+            Clareza financeira para empreendedores.
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -118,7 +118,7 @@ const Login = () => {
                 className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-600 dark:text-gray-300 transition-colors">
-                Remember me
+                Lembrar-me
               </label>
             </div>
 
@@ -150,7 +150,7 @@ const Login = () => {
                     </svg>
                 )}
               </span>
-              {loading ? 'Entrando...' : 'Sign in'}
+              {loading ? 'Entrando...' : 'Entrar'}
             </button>
           </div>
         </form>

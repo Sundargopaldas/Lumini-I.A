@@ -22,11 +22,11 @@ const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
-// Force rebuild - Deploy v36 TRANSLATE AUTH PAGES - 2026-01-14-20:30
-const CACHEBUST = '2026-01-14-20:30:00'; // Force Docker cache invalidation
+// Force rebuild - Hotmart + Open Finance + CSP Fix - 2026-01-19
+const CACHEBUST = '2026-01-19-13:30:00'; // Force Docker cache invalidation
 const PORT = process.env.PORT || 8080;
 
-// Middleware - CSP configurado para permitir GA4 COMPLETO
+// Middleware - CSP configurado para permitir integrações (Stripe, Umami, Pluggy/Open Finance)
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -38,20 +38,23 @@ app.use(helmet({
         "'self'", 
         "'unsafe-inline'", 
         "https://js.stripe.com", 
-        "https://cloud.umami.is"
+        "https://cloud.umami.is",
+        "https://cdn.pluggy.ai"
       ],
       scriptSrcElem: [
         "'self'", 
         "'unsafe-inline'", 
         "https://js.stripe.com", 
-        "https://cloud.umami.is"
+        "https://cloud.umami.is",
+        "https://cdn.pluggy.ai"
       ],
-      frameSrc: ["'self'", "https://js.stripe.com"],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://cdn.pluggy.ai"],
       connectSrc: [
         "'self'", 
         "https://api.stripe.com", 
         "https://cloud.umami.is",
-        "https://api-gateway.umami.dev"
+        "https://api-gateway.umami.dev",
+        "https://api.pluggy.ai"
       ],
     },
   },

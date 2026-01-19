@@ -82,7 +82,7 @@ const Register = () => {
             </h2>
           </div>
           <p className="mt-2 text-center text-sm text-slate-600 dark:text-gray-300 transition-colors">
-            Financial clarity for creators.
+            Clareza financeira para empreendedores.
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -148,7 +148,7 @@ const Register = () => {
               type="submit"
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 transform hover:scale-[1.02] shadow-lg shadow-purple-200 dark:shadow-none"
             >
-              Sign up
+              Criar Conta
             </button>
           </div>
         </form>

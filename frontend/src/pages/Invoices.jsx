@@ -112,7 +112,7 @@ const Invoices = () => {
 
   // Calculate totals dynamically
   const totalCount = invoices.length;
-  const totalAmount = invoices.reduce((acc, inv) => acc + inv.amount, 0);
+  const totalAmount = invoices.reduce((acc, inv) => acc + (parseFloat(inv.amount) || 0), 0);
   const franchiseLimit = 200;
   const franchiseUsedPercent = Math.min((totalCount / franchiseLimit) * 100, 100);
 
@@ -500,45 +500,49 @@ const Invoices = () => {
         onIssue={handleIssueInvoice}
       />
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
         <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('invoices.title')}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{t('invoices.title')}</h1>
             <p className="text-gray-600 dark:text-gray-400 text-sm">{t('invoices.subtitle')}</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3">
             <button 
                 onClick={() => setIsIssueModalOpen(true)}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shadow-lg shadow-purple-500/20"
+                className="bg-purple-600 hover:bg-purple-700 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center gap-1 sm:gap-2 shadow-lg shadow-purple-500/20 whitespace-nowrap"
             >
-                <span className="text-lg">+</span> {t('invoices.issue_invoice')}
+                <span className="text-lg">+</span> 
+                <span className="hidden sm:inline">{t('invoices.issue_invoice')}</span>
+                <span className="sm:hidden">Emitir</span>
             </button>
             <button 
                 onClick={() => setIsCertModalOpen(true)}
-                className={`px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${
+                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors flex items-center gap-1 sm:gap-2 whitespace-nowrap ${
                     certificate ? 'bg-green-600/20 text-green-600 dark:text-green-400 border border-green-600/50' : 'bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 dark:text-white'
                 }`}
             >
-                {certificate ? `✅ ${t('invoices.certificate_active')}` : `⚙️ ${t('invoices.configure_certificate')}`}
+                <span>{certificate ? '✅' : '⚙️'}</span>
+                <span className="hidden md:inline">{certificate ? t('invoices.certificate_active') : t('invoices.configure_certificate')}</span>
+                <span className="md:hidden">{certificate ? 'Ativo' : 'Config'}</span>
             </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-6 rounded-xl shadow-sm dark:shadow-none">
-            <h3 className="text-gray-500 dark:text-gray-400 text-sm mb-1">{t('invoices.issued_month')}</h3>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-4 md:p-6 rounded-xl shadow-sm dark:shadow-none">
+            <h3 className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-1">{t('invoices.issued_month')}</h3>
+            <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
         </div>
-        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-6 rounded-xl shadow-sm dark:shadow-none">
-            <h3 className="text-gray-500 dark:text-gray-400 text-sm mb-1">{t('invoices.total_amount')}</h3>
-            <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                {totalAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-4 md:p-6 rounded-xl shadow-sm dark:shadow-none">
+            <h3 className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-1">{t('invoices.total_amount')}</h3>
+            <p className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400 break-all">
+                {(totalAmount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </p>
         </div>
-        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-6 rounded-xl shadow-sm dark:shadow-none">
-            <h3 className="text-gray-500 dark:text-gray-400 text-sm mb-1">{t('invoices.plan_franchise')}</h3>
+        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-4 md:p-6 rounded-xl shadow-sm dark:shadow-none sm:col-span-2 lg:col-span-1">
+            <h3 className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-1">{t('invoices.plan_franchise')}</h3>
             <div className="flex items-end gap-2 mb-2">
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
-                <p className="text-gray-500 dark:text-gray-400 mb-1">/ {franchiseLimit} {t('invoices.table.number')}</p>
+                <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
+                <p className="text-gray-500 dark:text-gray-400 mb-1 text-sm">/ {franchiseLimit}</p>
             </div>
             <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
                 <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${franchiseUsedPercent}%` }}></div>
@@ -547,11 +551,13 @@ const Invoices = () => {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
-        <div className="p-6 border-b border-gray-200 dark:border-white/10">
-            <h2 className="font-semibold text-gray-900 dark:text-white">{t('invoices.history')}</h2>
+      <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm dark:shadow-none overflow-hidden max-w-full">
+        <div className="p-4 md:p-6 border-b border-gray-200 dark:border-white/10">
+            <h2 className="font-semibold text-gray-900 dark:text-white text-base md:text-lg">{t('invoices.history')}</h2>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Layout DESKTOP - Tabela (apenas em monitores grandes ≥1536px) */}
+        <div className="hidden 2xl:block overflow-x-auto">
             <table className="w-full text-left">
                 <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 text-sm">
                     <tr>
@@ -560,7 +566,7 @@ const Invoices = () => {
                         <th className="p-4">{t('invoices.table.client')}</th>
                         <th className="p-4">{t('invoices.table.value')}</th>
                         <th className="p-4">{t('invoices.table.status')}</th>
-                        <th className="p-4">{t('invoices.table.actions')}</th>
+                        <th className="p-4 text-right">{t('invoices.table.actions')}</th>
                     </tr>
                 </thead>
                 <tbody className="text-gray-600 dark:text-gray-300 text-sm">
@@ -573,11 +579,11 @@ const Invoices = () => {
                                 </div>
                             </td>
                             <td className="p-4">{new Date(inv.date).toLocaleDateString('pt-BR')}</td>
-                            <td className="p-4 align-middle text-sm text-gray-800 dark:text-gray-300 max-w-[200px] truncate">{inv.client}</td>
-                            <td className="p-4 align-middle text-sm text-gray-800 dark:text-gray-300 font-mono">
-                                {inv.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            <td className="p-4 max-w-[200px] truncate">{inv.client}</td>
+                            <td className="p-4 font-mono">
+                                {(inv.amount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                             </td>
-                            <td className="p-4 align-middle text-sm">
+                            <td className="p-4">
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                     inv.status === 'issued' 
                                     ? 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/20' 
@@ -586,10 +592,10 @@ const Invoices = () => {
                                     {inv.status === 'issued' ? t('invoices.status.issued') : t('invoices.status.pending')}
                                 </span>
                             </td>
-                            <td className="p-4 align-middle text-right space-x-2">
+                            <td className="p-4 text-right space-x-2">
                                 <button 
                                     onClick={() => navigate(`/invoices/${inv.originalId}`)}
-                                    className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                                    className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors inline-flex"
                                     title="Ver Nota Fiscal (DANFE Profissional)"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -599,7 +605,7 @@ const Invoices = () => {
                                 </button>
                                 <button 
                                     onClick={() => handleDeleteInvoice(inv.id, inv.originalId)}
-                                    className="p-2 text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                                    className="p-2 text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors inline-flex"
                                     title="Excluir"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -611,6 +617,103 @@ const Invoices = () => {
                     ))}
                 </tbody>
             </table>
+        </div>
+
+        {/* Layout MOBILE e TABLET - Cards (até 1536px - todos iPads) */}
+        <div className="2xl:hidden">
+            {invoices.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 px-4 min-h-[400px]">
+                    <div className="bg-purple-100 dark:bg-purple-900/20 p-6 rounded-full mb-6">
+                        <svg className="w-16 h-16 md:w-20 md:h-20 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                        Nenhuma Nota Fiscal Emitida
+                    </h3>
+                    <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-6 max-w-md text-center">
+                        Comece a emitir suas notas fiscais eletrônicas (NFS-e) e gerencie seus documentos fiscais de forma profissional.
+                    </p>
+                    <button 
+                        onClick={() => setIsIssueModalOpen(true)}
+                        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-8 py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-2"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Emitir Primeira Nota
+                    </button>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 p-3 md:p-4 max-w-full">
+                    {invoices.map((inv) => (
+                        <div key={inv.id} className="border border-gray-200 dark:border-white/10 rounded-lg p-3 md:p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-all hover:shadow-md dark:hover:shadow-lg min-w-0">
+                            {/* Cabeçalho do Card: Número, Tipo e Status */}
+                            <div className="flex items-start justify-between gap-2 mb-3">
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                        <span className="font-mono text-base md:text-lg font-bold text-purple-600 dark:text-purple-400">
+                                            {inv.id}
+                                        </span>
+                                        <span className="text-[10px] md:text-xs uppercase px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-semibold whitespace-nowrap">
+                                            {inv.type === 'receipt' ? 'Recibo' : 'NFS-e'}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                                        📅 {new Date(inv.date).toLocaleDateString('pt-BR')}
+                                    </p>
+                                </div>
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] md:text-xs font-medium whitespace-nowrap shrink-0 ${
+                                    inv.status === 'issued' 
+                                    ? 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/20' 
+                                    : 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/20'
+                                }`}>
+                                    {inv.status === 'issued' ? '✓ Emitida' : '⏳ Pendente'}
+                                </span>
+                            </div>
+
+                            {/* Cliente */}
+                            <div className="mb-3 pb-3 border-b border-gray-100 dark:border-white/5">
+                                <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium">👤 Cliente</p>
+                                <p className="text-sm md:text-base font-medium text-gray-900 dark:text-white break-words line-clamp-2" title={inv.client}>
+                                    {inv.client}
+                                </p>
+                            </div>
+
+                            {/* Rodapé: Valor e Ações */}
+                            <div className="flex items-end justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium">💰 Valor</p>
+                                    <p className="text-lg md:text-xl font-bold text-green-600 dark:text-green-400 truncate">
+                                        {(inv.amount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    <button 
+                                        onClick={() => navigate(`/invoices/${inv.originalId}`)}
+                                        className="p-2 md:p-2.5 text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded-lg transition-colors"
+                                        title="Ver Nota Fiscal"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeleteInvoice(inv.id, inv.originalId)}
+                                        className="p-2 md:p-2.5 text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-colors"
+                                        title="Excluir"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
       </div>
     </div>

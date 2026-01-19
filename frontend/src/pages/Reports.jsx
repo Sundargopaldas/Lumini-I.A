@@ -318,10 +318,10 @@ const Reports = () => {
         isOpen={isPlanningModalOpen}
         onClose={() => setIsPlanningModalOpen(false)}
       />
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 px-2 sm:px-0">
         <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 transition-colors">{t('reports.title')}</h1>
-            <p className="text-slate-500 dark:text-gray-400">{t('reports.subtitle')}</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2 transition-colors">{t('reports.title')}</h1>
+            <p className="text-sm sm:text-base text-slate-500 dark:text-gray-400">{t('reports.subtitle')}</p>
         </div>
         
         {/* Filtros de Mês/Ano */}
@@ -329,7 +329,7 @@ const Reports = () => {
             <select 
                 value={selectedMonth} 
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full sm:w-auto bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
+                className="w-full sm:w-auto bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-2 sm:px-3 py-2 text-sm sm:text-base border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
             >
                 <option value="all">{t('reports.all_months')}</option>
                 {Array.from({ length: 12 }, (_, i) => (
@@ -341,7 +341,7 @@ const Reports = () => {
             <select 
                 value={selectedYear} 
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="w-full sm:w-auto bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
+                className="w-full sm:w-auto bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-2 sm:px-3 py-2 text-sm sm:text-base border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
             >
                 {Array.from({ length: 5 }, (_, i) => {
                     const year = new Date().getFullYear() - 2 + i;
@@ -360,19 +360,19 @@ const Reports = () => {
                         showAlert(t('reports.feature_locked'), t('reports.planning_locked_msg'), 'locked');
                     }
                 }}
-                className={`w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${isPremium ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`w-full px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base ${isPremium ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
                 <span>📈</span> <span className="truncate">{t('reports.planning_btn')} {!isPremium && '🔒'}</span>
             </button>
             <button 
                 onClick={exportCSV}
-                className={`w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${isPro ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`w-full px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base ${isPro ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
                 <span>📊</span> <span className="truncate">{t('reports.export_csv')} {!isPro && '🔒'}</span>
             </button>
             <button 
                 onClick={exportPDF}
-                className={`w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${isPro ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`w-full px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base ${isPro ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
                 <span>📄</span> <span className="truncate">{t('reports.export_pdf')} {!isPro && '🔒'}</span>
             </button>
@@ -380,36 +380,36 @@ const Reports = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl transition-colors">
-            <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">{t('reports.total_income')}</h3>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">R$ {summary.income.toFixed(2)}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 px-2 sm:px-0">
+        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl transition-colors">
+            <h3 className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium mb-1">{t('reports.total_income')}</h3>
+            <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 break-all">R$ {summary.income.toFixed(2)}</p>
         </div>
-        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl transition-colors">
-            <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">{t('reports.total_expenses')}</h3>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">R$ {summary.expense.toFixed(2)}</p>
+        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl transition-colors">
+            <h3 className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium mb-1">{t('reports.total_expenses')}</h3>
+            <p className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 break-all">R$ {summary.expense.toFixed(2)}</p>
         </div>
-        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl transition-colors">
-            <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">{t('reports.net_balance')}</h3>
-            <p className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
+        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl transition-colors sm:col-span-2 md:col-span-1">
+            <h3 className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium mb-1">{t('reports.net_balance')}</h3>
+            <p className={`text-xl sm:text-2xl font-bold break-all ${summary.balance >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
                 R$ {summary.balance.toFixed(2)}
             </p>
         </div>
       </div>
       
       {/* Monthly Overview */}
-      <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden transition-colors">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 transition-colors">{t('reports.monthly_overview')}</h2>
-        <div className="h-64 relative">
+      <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden transition-colors mx-2 sm:mx-0">
+        <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-4 sm:mb-6 transition-colors">{t('reports.monthly_overview')}</h2>
+        <div className="h-48 sm:h-64 relative">
           <Bar options={chartOptions} data={monthlyData} />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 px-2 sm:px-0">
         {/* Income Breakdown */}
-        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden transition-colors">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 transition-colors">{t('reports.income_sources')}</h2>
-          <div className="h-64 flex justify-center relative">
+        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden transition-colors">
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-4 sm:mb-6 transition-colors">{t('reports.income_sources')}</h2>
+          <div className="h-48 sm:h-64 flex justify-center relative">
              {incomeData.labels.length > 0 ? (
                 <Doughnut options={doughnutOptions} data={incomeData} />
              ) : (
@@ -419,9 +419,9 @@ const Reports = () => {
         </div>
 
         {/* Expense Breakdown */}
-        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden transition-colors">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 transition-colors">{t('reports.expense_breakdown')}</h2>
-          <div className="h-64 flex justify-center relative">
+        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden transition-colors">
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-4 sm:mb-6 transition-colors">{t('reports.expense_breakdown')}</h2>
+          <div className="h-48 sm:h-64 flex justify-center relative">
             {expenseData.labels.length > 0 ? (
                 <Doughnut options={doughnutOptions} data={expenseData} />
              ) : (
