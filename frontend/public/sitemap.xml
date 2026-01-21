@@ -1,36 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  
-  <!-- Página de Login (Principal) -->
+  <!-- Página Principal -->
   <url>
-    <loc>https://luminiiadigital.com.br/login</loc>
-    <lastmod>2026-01-13</lastmod>
+    <loc>https://www.luminiiadigital.com.br/</loc>
+    <lastmod>2026-01-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   
-  <!-- Página de Cadastro -->
+  <!-- Seção de Features -->
   <url>
-    <loc>https://luminiiadigital.com.br/register</loc>
-    <lastmod>2026-01-13</lastmod>
+    <loc>https://www.luminiiadigital.com.br/#features</loc>
+    <lastmod>2026-01-21</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.8</priority>
   </url>
   
-  <!-- Página de Recuperação de Senha -->
+  <!-- Seção de Preços -->
   <url>
-    <loc>https://luminiiadigital.com.br/forgot-password</loc>
-    <lastmod>2026-01-13</lastmod>
+    <loc>https://www.luminiiadigital.com.br/#pricing</loc>
+    <lastmod>2026-01-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Seção de Contato -->
+  <url>
+    <loc>https://www.luminiiadigital.com.br/#contact</loc>
+    <lastmod>2026-01-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   
-  <!-- Termos de Uso -->
+  <!-- Página de Login -->
   <url>
-    <loc>https://luminiiadigital.com.br/terms</loc>
-    <lastmod>2026-01-13</lastmod>
+    <loc>https://www.luminiiadigital.com.br/login</loc>
+    <lastmod>2026-01-21</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.6</priority>
   </url>
   
+  <!-- Página de Registro -->
+  <url>
+    <loc>https://www.luminiiadigital.com.br/register</loc>
+    <lastmod>2026-01-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
 </urlset>

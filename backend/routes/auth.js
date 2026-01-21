@@ -287,43 +287,52 @@ const { sendPasswordResetEmail } = require('../services/EmailService');
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
+    console.log(`\n🔐 [FORGOT-PASSWORD] Solicitação para: ${email}`);
+    
     const user = await User.findOne({ where: { email } });
     
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      console.log(`❌ [FORGOT-PASSWORD] Usuário não encontrado: ${email}`);
+      return res.status(404).json({ message: 'Usuário não encontrado' });
     }
+
+    console.log(`✅ [FORGOT-PASSWORD] Usuário encontrado: ${user.name} (${user.email})`);
 
     // Generate a temporary reset token
     if (!process.env.JWT_SECRET) {
-      console.error('[AUTH] FATAL: JWT_SECRET not configured');
-      return res.status(500).json({ message: 'Server configuration error' });
+      console.error('❌ [FORGOT-PASSWORD] FATAL: JWT_SECRET não configurado!');
+      return res.status(500).json({ message: 'Erro de configuração do servidor' });
     }
     const resetToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://www.luminiiadigital.com.br';
     const resetLink = `${frontendUrl}/reset-password/${resetToken}`;
-    console.log(`[LOG] Reset Link for ${email}: ${resetLink}`);
+    console.log(`🔗 [FORGOT-PASSWORD] Link gerado: ${resetLink}`);
 
     // Configuração de envio de email
+    console.log(`📧 [FORGOT-PASSWORD] Tentando enviar email...`);
     try {
         // Tenta enviar o email. O EmailService vai verificar se há config no Banco ou .env
         await sendPasswordResetEmail(user, resetLink);
-        console.log(`[SUCCESS] Email enviado para ${email}`);
+        console.log(`✅ [FORGOT-PASSWORD] Email enviado com sucesso para ${email}`);
         return res.json({ message: 'Um email com as instruções foi enviado para você.' });
 
     } catch (emailError) {
-        console.error('Erro ao tentar enviar email de reset:', emailError);
+        console.error('❌ [FORGOT-PASSWORD] Erro ao enviar email:', emailError);
+        console.error('❌ [FORGOT-PASSWORD] Código do erro:', emailError.code);
+        console.error('❌ [FORGOT-PASSWORD] Mensagem:', emailError.message);
+        console.error('❌ [FORGOT-PASSWORD] Stack:', emailError.stack);
         
-        // Se falhou (sem config ou erro de SMTP), verifica se estamos em DEV para dar uma colher de chá
-        if (process.env.NODE_ENV === 'development') {
-             return res.status(500).json({ message: 'Erro ao enviar email (Dev): ' + emailError.message, devLink: resetLink });
-        }
-        
-        return res.status(500).json({ message: 'Erro ao processar envio de email. Verifique as configurações.' });
+        // Retornar erro detalhado sempre (não só em DEV)
+        return res.status(500).json({ 
+          message: `Erro ao enviar email: ${emailError.message}`,
+          code: emailError.code || 'UNKNOWN',
+          details: 'Verifique as configurações de SMTP no painel Admin > Configurações do Sistema'
+        });
     }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('❌ [FORGOT-PASSWORD] Erro geral:', error);
+    res.status(500).json({ message: 'Erro no servidor: ' + error.message });
   }
 });
 
@@ -332,23 +341,27 @@ router.post('/reset-password', async (req, res) => {
   try {
     const { token, newPassword } = req.body;
     
-    // Validate new password strength
-    const passwordValidation = validatePassword(newPassword);
-    if (!passwordValidation.isValid) {
-      return res.status(400).json({ message: passwordValidation.message });
-    }
+    console.log('🔐 [RESET-PASSWORD] Iniciando reset de senha...');
     
-    // Check for common weak passwords
-    if (isCommonPassword(newPassword)) {
-      return res.status(400).json({ message: 'Senha muito comum. Escolha uma senha mais segura.' });
+    // Validate new password strength
+    const passwordValidation = validatePasswordStrength(newPassword);
+    if (!passwordValidation.valid) {
+      console.log('❌ [RESET-PASSWORD] Senha fraca:', passwordValidation.errors);
+      return res.status(400).json({ 
+        message: 'Senha não atende aos requisitos de segurança',
+        errors: passwordValidation.errors
+      });
     }
     
     // Verify token
     if (!process.env.JWT_SECRET) {
-      console.error('[AUTH] FATAL: JWT_SECRET not configured');
+      console.error('[RESET-PASSWORD] FATAL: JWT_SECRET not configured');
       return res.status(500).json({ message: 'Server configuration error' });
     }
+    
+    console.log('🔍 [RESET-PASSWORD] Verificando token...');
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log(`✅ [RESET-PASSWORD] Token válido para user ID: ${decoded.id}`);
     
     // Hash new password
     const salt = await bcrypt.genSalt(10);
@@ -356,10 +369,17 @@ router.post('/reset-password', async (req, res) => {
 
     // Update user password
     await User.update({ password: hashedPassword }, { where: { id: decoded.id } });
+    console.log(`✅ [RESET-PASSWORD] Senha atualizada com sucesso para user ID: ${decoded.id}`);
 
     res.json({ message: 'Password updated successfully' });
   } catch (error) {
-    console.error('Reset Password Error:', error);
+    console.error('❌ [RESET-PASSWORD] Erro:', error.message);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(400).json({ message: 'Token inválido' });
+    }
+    if (error.name === 'TokenExpiredError') {
+      return res.status(400).json({ message: 'Token expirado. Solicite um novo link de recuperação.' });
+    }
     res.status(400).json({ message: 'Invalid or expired token' });
   }
 });

@@ -25,6 +25,7 @@ import CookieConsent from './components/CookieConsent';
 
 import AccountantDashboard from './pages/AccountantDashboard';
 import InvoiceTemplate from './components/InvoiceTemplate';
+import Help from './pages/Help';
 
 const PrivateRoute = ({ children }) => {
   try {
@@ -71,8 +72,8 @@ const AccountantRoute = ({ children }) => {
     }
 
     const user = JSON.parse(userStr);
-    // Check isAccountant flag (from backend) or fallback to logic if needed
-    return user && user.isAccountant ? children : <Navigate to="/dashboard" replace />;
+    // Check isAccountant flag OR isAdmin (admins can access accountant area)
+    return user && (user.isAccountant || user.isAdmin) ? children : <Navigate to="/dashboard" replace />;
   } catch (error) {
     return <Navigate to="/login" replace />;
   }
@@ -133,6 +134,7 @@ function App() {
                       } />
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/terms" element={<Terms />} />
+                      <Route path="/help" element={<Help />} />
                     </Routes>
                 </div>
                 <Footer />

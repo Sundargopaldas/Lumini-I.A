@@ -12,8 +12,8 @@ const { cacheMiddleware } = require('../utils/cache');
 
 // GET /api/ai/insights
 // Generates AI-powered insights for the user using Google Gemini
-// Cache por 1 hora (3600s) para economizar API calls
-router.get('/insights', authMiddleware, cacheMiddleware(3600), async (req, res) => {
+// ✅ CACHE REMOVIDO: Precisa verificar dados em tempo real
+router.get('/insights', authMiddleware, async (req, res) => {
   console.log(`[AI] Generating insights for user ${req.user.id}...`);
   try {
     const userId = req.user.id;
@@ -57,6 +57,12 @@ router.get('/insights', authMiddleware, cacheMiddleware(3600), async (req, res) 
     });
     console.log(`[AI] Found ${invoices.length} invoices.`);
 
+    // ✅ CORREÇÃO: Só gera insights se houver dados suficientes
+    if (transactions.length === 0 && goals.length === 0 && invoices.length === 0) {
+      console.log('[AI] Sem dados suficientes. Retornando array vazio.');
+      return res.json([]);
+    }
+
     // Generate Insights using Gemini Service
     console.log('[AI] Calling Gemini Service...');
     const aiResponse = await generateFinancialInsights(user, transactions, goals, invoices);
@@ -68,7 +74,7 @@ router.get('/insights', authMiddleware, cacheMiddleware(3600), async (req, res) 
     
     const insights = [{
         type: 'ai_consultant',
-        title: 'Consultor Lumini IA',
+        title: '💡 Análise da I.A',
         message: aiResponse, // Markdown string
         isMarkdown: true // Flag for frontend to render MD
     }];

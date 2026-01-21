@@ -140,7 +140,7 @@ const registerLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 100, // limit each IP to 100 requests per minute (increased for testing)
+  max: 300, // limit each IP to 300 requests per minute (increased for testing)
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Muitas requisições. Tente novamente em 1 minuto.'
@@ -148,7 +148,7 @@ const apiLimiter = rateLimit({
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per 15 min
+  max: 2000, // limit each IP to 2000 requests per 15 min (increased for accountant testing)
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -181,6 +181,7 @@ const paymentRoutes = require('./routes/payments');
 const aiRoutes = require('./routes/ai');
 const webhookRoutes = require('./routes/webhooks');
 const setupRoutes = require('./routes/setup');
+const notificationRoutes = require('./routes/notifications');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
@@ -196,6 +197,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/setup', setupRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Serve static files from React app
 if (process.env.NODE_ENV === 'production') {

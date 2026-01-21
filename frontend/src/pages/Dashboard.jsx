@@ -19,7 +19,7 @@ const Dashboard = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // 1. Load initial user from LocalStorage
+    // Load user from LocalStorage only
     const loadUser = () => {
         try {
             const storedUser = localStorage.getItem('user');
@@ -32,22 +32,6 @@ const Dashboard = () => {
     };
     
     loadUser();
-
-    // 2. Fetch fresh user data from API to ensure plan is up-to-date
-    const refreshUserData = async () => {
-        try {
-            const response = await api.get('/auth/me');
-            if (response.data) {
-                console.log('Refreshing user data from API:', response.data);
-                setUser(response.data);
-                localStorage.setItem('user', JSON.stringify(response.data));
-            }
-        } catch (error) {
-            console.error('Error refreshing user data:', error);
-        }
-    };
-
-    refreshUserData();
 
     // Listen for storage changes
     window.addEventListener('storage', loadUser);

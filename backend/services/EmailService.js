@@ -27,70 +27,61 @@ const getLogoPath = () => {
 
 /**
  * Get Transporter - Dynamically loads SMTP config from DB or Env
+ * PRIORITY: ENV vars ALWAYS take priority over DB (to prevent old configs)
  */
 const getTransporter = async () => {
     try {
-        // Try to get from DB first
-        const configs = await SystemConfig.findAll({
-            where: {
-                key: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_SECURE']
-            }
-        });
+        // ALWAYS prioritize ENV vars over DB to prevent old configs
+        const host = process.env.EMAIL_HOST;
         
-        const configMap = {};
-        configs.forEach(c => configMap[c.key] = c.value);
-
-        // Determine effective config (DB overrides Env)
-        const host = configMap['SMTP_HOST'] || process.env.EMAIL_HOST;
-        
-        // If no host configured anywhere, return null
-        if (!host) return null;
-
-        const port = configMap['SMTP_PORT'] || process.env.EMAIL_PORT || 587;
-        const secure = (configMap['SMTP_SECURE'] === 'true') || (process.env.EMAIL_SECURE === 'true') || false;
-        const user = configMap['SMTP_USER'] || process.env.EMAIL_USER;
-        
-        // Descriptografar senha se estiver criptografada (formato: iv:encrypted)
-        let pass = configMap['SMTP_PASS'] || process.env.EMAIL_PASS;
-        if (pass && pass.includes(':')) {
-            const decrypted = decrypt(pass);
-            if (decrypted) pass = decrypted;
+        // If no host configured, return null
+        if (!host) {
+            console.warn('⚠️ EMAIL_HOST not configured');
+            return null;
         }
 
-        return nodemailer.createTransport({
+        const port = process.env.EMAIL_PORT || 587;
+        const secure = process.env.EMAIL_SECURE === 'true';
+        const user = process.env.EMAIL_USER;
+        const pass = process.env.EMAIL_PASS;
+
+        console.log(`📧 [EmailService] Creating transporter with config:`);
+        console.log(`   Host: ${host}`);
+        console.log(`   Port: ${port}`);
+        console.log(`   Secure: ${secure}`);
+        console.log(`   User: ${user}`);
+        console.log(`   Pass: ${pass ? '✅ Configured' : '❌ Missing'}`);
+
+        const transporter = nodemailer.createTransport({
             host,
             port: parseInt(port),
             secure,
-            auth: { user, pass }
+            auth: { user, pass },
+            debug: true, // Enable detailed SMTP logs
+            logger: true
         });
 
+        // VERIFY CONNECTION BEFORE RETURNING
+        console.log('🔍 [EmailService] Verifying SMTP connection...');
+        await transporter.verify();
+        console.log('✅ [EmailService] SMTP connection verified successfully!');
+
+        return transporter;
+
     } catch (error) {
-        console.error('Error loading SMTP config, falling back to env:', error);
-        // Fallback to Env if DB fails
-        if (!process.env.EMAIL_HOST) return null;
-        
-        return nodemailer.createTransport({
-            host: process.env.EMAIL_HOST,
-            port: parseInt(process.env.EMAIL_PORT || '587'),
-            secure: process.env.EMAIL_SECURE === 'true',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
+        console.error('❌ [EmailService] ERROR creating/verifying transporter:', error);
+        console.error('   Error code:', error.code);
+        console.error('   Error message:', error.message);
+        console.error('   Error command:', error.command);
+        return null;
     }
 };
 
 /**
- * Get From Address
+ * Get From Address - ALWAYS use ENV
  */
 const getFromAddress = async () => {
-    try {
-        const config = await SystemConfig.findOne({ where: { key: 'SMTP_FROM' } });
-        return config?.value || process.env.EMAIL_FROM || `"Equipe Lumini I.A" <contato@luminiiadigital.com.br>`;
-    } catch (e) {
-        return process.env.EMAIL_FROM || `"Equipe Lumini I.A" <contato@luminiiadigital.com.br>`;
-    }
+    return process.env.EMAIL_FROM || `"Equipe Lumini I.A" <contato@luminiiadigital.com.br>`;
 };
 
 /**
@@ -248,11 +239,26 @@ const sendWelcomeEmail = async (user, planName) => {
  * @param {String} resetLink - The reset password link
  */
 const sendPasswordResetEmail = async (user, resetLink) => {
-    if (!user.email) return;
+    console.log('\n🚀 ===== PASSWORD RESET EMAIL START =====');
+    console.log(`📧 Target: ${user.email}`);
+    console.log(`🔗 Reset Link: ${resetLink}`);
+    
+    if (!user.email) {
+        console.warn('⚠️ No email provided, aborting');
+        return;
+    }
 
+    console.log('📞 Calling getTransporter()...');
     const transporter = await getTransporter();
-    if (!transporter) return;
+    
+    if (!transporter) {
+        console.error('❌ TRANSPORTER IS NULL! Email cannot be sent.');
+        throw new Error('SMTP não configurado ou falha na verificação da conexão');
+    }
+    
+    console.log('✅ Transporter OK, getting FROM address...');
     const fromAddress = await getFromAddress();
+    console.log(`📤 From: ${fromAddress}`);
 
     // Tentar múltiplos caminhos para a logo (dev e produção)
     const possibleLogoPaths = [
@@ -288,7 +294,7 @@ const sendPasswordResetEmail = async (user, resetLink) => {
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
               <div style="background: linear-gradient(135deg, #6d28d9 0%, #4f46e5 100%); padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0;">
-                  <img src="cid:logo" alt="Lumini I.A" style="width: 60px; height: 60px; margin-bottom: 10px; display: inline-block;">
+                  <img src="https://www.luminiiadigital.com.br/logo.png" alt="Lumini I.A" style="width: 60px; height: 60px; margin-bottom: 10px; display: inline-block;">
                   <h2 style="color: white; margin: 0;">Redefinição de Senha</h2>
               </div>
               <div style="padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; background-color: white;">
@@ -304,15 +310,33 @@ const sendPasswordResetEmail = async (user, resetLink) => {
                   <p>Se você não solicitou isso, pode ignorar este e-mail.</p>
               </div>
             </div>
-        `,
-        attachments: attachments
+        `
     };
 
     try {
-        await transporter.sendMail(mailOptions);
-        console.log(`Password reset email sent to ${user.email}`);
+        console.log('📨 Sending email with nodemailer...');
+        console.log('🔧 Transporter options:', JSON.stringify(transporter.options, null, 2));
+        console.log('📤 Mail options (from):', mailOptions.from);
+        console.log('📤 Mail options (to):', mailOptions.to);
+        console.log('📤 Mail options (subject):', mailOptions.subject);
+        
+        const info = await transporter.sendMail(mailOptions);
+        
+        console.log('✅ ===== EMAIL SENT SUCCESSFULLY =====');
+        console.log(`📧 Message ID: ${info.messageId}`);
+        console.log(`📬 Response: ${info.response}`);
+        console.log(`📧 Email sent to: ${user.email}`);
+        console.log(`📮 Accepted: ${JSON.stringify(info.accepted)}`);
+        console.log(`❌ Rejected: ${JSON.stringify(info.rejected)}`);
+        console.log(`📊 Envelope: ${JSON.stringify(info.envelope)}`);
+        console.log('===================================\n');
     } catch (error) {
-        console.error('Error sending password reset email:', error);
+        console.error('❌ ===== EMAIL SEND FAILED =====');
+        console.error('Error:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        console.error('Error command:', error.command);
+        console.error('================================\n');
         throw error; // Propagate error so controller knows
     }
 };
@@ -551,11 +575,119 @@ const sendNewClientNotification = async (client, accountantEmail) => {
     }
 };
 
+/**
+ * Get SMTP Status for diagnostics
+ */
+const getSmtpStatus = async () => {
+    try {
+        const dbConfigs = await SystemConfig.findAll({
+            where: { key: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_SECURE', 'SMTP_FROM'] }
+        });
+        
+        const host = dbConfigs.find(c => c.key === 'SMTP_HOST')?.value || process.env.EMAIL_HOST;
+        const isConfigured = !!host;
+        
+        return {
+            isConfigured,
+            message: isConfigured ? 'SMTP configurado' : 'SMTP não configurado',
+            env: {
+                EMAIL_HOST: process.env.EMAIL_HOST || 'N/A',
+                EMAIL_PORT: process.env.EMAIL_PORT || 'N/A',
+                EMAIL_USER: process.env.EMAIL_USER || 'N/A',
+                EMAIL_PASS: process.env.EMAIL_PASS ? '********' : 'N/A',
+                EMAIL_SECURE: process.env.EMAIL_SECURE || 'N/A',
+                EMAIL_FROM: process.env.EMAIL_FROM || 'N/A'
+            },
+            dbConfigs: dbConfigs.map(c => ({ key: c.key, value: c.key === 'SMTP_PASS' ? '********' : c.value })),
+            activeConfig: {
+                host: dbConfigs.find(c => c.key === 'SMTP_HOST')?.value || process.env.EMAIL_HOST,
+                port: dbConfigs.find(c => c.key === 'SMTP_PORT')?.value || process.env.EMAIL_PORT,
+                secure: dbConfigs.find(c => c.key === 'SMTP_SECURE')?.value || process.env.EMAIL_SECURE,
+                from: dbConfigs.find(c => c.key === 'SMTP_FROM')?.value || process.env.EMAIL_FROM,
+                auth: {
+                    user: dbConfigs.find(c => c.key === 'SMTP_USER')?.value || process.env.EMAIL_USER
+                }
+            }
+        };
+    } catch (error) {
+        return {
+            isConfigured: false,
+            message: 'Erro ao verificar configuração',
+            error: error.message
+        };
+    }
+};
+
+/**
+ * Send Notification Email (Generic)
+ */
+const sendNotificationEmail = async (email, title, message) => {
+    if (!email) return;
+
+    const transporter = await getTransporter();
+    if (!transporter) {
+        console.warn('Email not sent: SMTP not configured');
+        return;
+    }
+
+    const fromAddress = await getFromAddress();
+    const logoPath = getLogoPath();
+    const attachments = [];
+    if (logoPath) {
+        attachments.push({
+            filename: 'logo.png',
+            path: logoPath,
+            cid: 'logo'
+        });
+    }
+
+    const mailOptions = {
+        from: fromAddress,
+        to: email,
+        subject: title,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                <div style="background-color: #6d28d9; padding: 30px; text-align: center;">
+                    ${logoPath ? '<img src="cid:logo" alt="Lumini I.A" style="width: 50px; height: auto; margin-bottom: 10px;">' : ''}
+                    <h1 style="color: white; margin: 10px 0 0 0; font-size: 24px;">${title}</h1>
+                </div>
+                
+                <div style="padding: 30px; background-color: white;">
+                    <p style="font-size: 16px; color: #4a5568; line-height: 1.6;">${message}</p>
+                    
+                    <div style="text-align: center; margin: 35px 0;">
+                        <a href="${process.env.FRONTEND_URL || 'https://www.luminiiadigital.com.br'}" 
+                           style="background-color: #6d28d9; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(109, 40, 217, 0.25);">
+                            Acessar Lumini I.A
+                        </a>
+                    </div>
+                </div>
+                
+                <div style="background-color: #f8fafc; padding: 20px; text-center; border-top: 1px solid #e2e8f0;">
+                    <p style="margin: 0; color: #94a3b8; font-size: 12px;">© ${new Date().getFullYear()} Lumini I.A. Todos os direitos reservados.</p>
+                </div>
+            </div>
+        `,
+        attachments: attachments
+    };
+
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`✅ Notification email sent to ${email}`);
+        return info;
+    } catch (error) {
+        console.error('❌ Error sending notification email:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     sendCancellationEmail,
     sendInvoiceEmail,
     sendWelcomeEmail,
     sendPasswordResetEmail,
     sendInviteEmail,
-    sendNewClientNotification
+    sendNewClientNotification,
+    sendNotificationEmail,
+    getSmtpStatus
 };

@@ -12,45 +12,31 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
   
-  // Fetch latest user data on mount and route change to ensure plan is up to date
+  // Listen to localStorage changes to update user state
   useEffect(() => {
-    // Proteção: verificar se location e pathname existem antes de usar
-    if (!location || !location.pathname) {
-      console.warn('Navbar: location ou pathname undefined, pulando fetchUser');
-      return;
-    }
-    
-    const fetchUser = async () => {
-        try {
-            const response = await api.get('/auth/me');
-            const freshUser = response.data;
-            
-            // Check for plan changes or accountant status updates
-            const planChanged = freshUser.plan !== user.plan;
-            const accountantStatusChanged = freshUser.isAccountant !== user.isAccountant;
-
-            if (planChanged || accountantStatusChanged) {
-                // PROTECTION: Don't downgrade UI if local says Premium/Pro but server says Free (likely server lag/error)
-                const localIsPaid = ['pro', 'premium', 'agency'].includes(user.plan?.toLowerCase());
-                const serverIsFree = freshUser.plan === 'free';
-
-                if (planChanged && localIsPaid && serverIsFree) {
-                    console.warn('Backend returned Free but Local is Paid. Ignoring backend to preserve UX.');
-                    return; 
-                }
-
-                console.log('Syncing user data:', { plan: freshUser.plan, isAccountant: freshUser.isAccountant });
-                setUser(prev => ({ ...prev, ...freshUser }));
-                
-                const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-                localStorage.setItem('user', JSON.stringify({ ...currentUser, ...freshUser }));
+    const handleStorageChange = () => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (error) {
+                console.error('Error parsing user from storage:', error);
             }
-        } catch (error) {
-            console.error('Failed to sync user data:', error);
         }
     };
-    fetchUser();
-  }, [location?.pathname]); // Run on mount and route change (com optional chaining)
+    
+    // Listen for storage events (triggered by other tabs or components)
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom events from same tab
+    window.addEventListener('userUpdated', handleStorageChange);
+    
+    return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('userUpdated', handleStorageChange);
+    };
+  }, []); // Run only once on mount
+  
   const userPlan = user.plan?.toLowerCase() || 'free';
   const isPro = ['pro', 'premium', 'agency'].includes(userPlan);
   const isPremium = ['premium', 'agency'].includes(userPlan);
@@ -98,32 +84,32 @@ const Navbar = () => {
 
           {/* Links de Navegação - Centro */}
           <div className="hidden md:flex flex-1 justify-center">
-            <div className="flex space-x-2 md:space-x-3 lg:space-x-6">
-            <Link to="/dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-xs md:text-sm lg:text-base">
+            <div className="flex space-x-6">
+            <Link to="/dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
               {t('sidebar.dashboard')}
             </Link>
-            <Link to="/transactions" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-xs md:text-sm lg:text-base">
+            <Link to="/transactions" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
               {t('sidebar.transactions')}
             </Link>
-            <Link to="/reports" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-xs md:text-sm lg:text-base">
+            <Link to="/reports" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
               {t('sidebar.reports')}
             </Link>
-            <Link to="/marketplace" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-xs md:text-sm lg:text-base">
+            <Link to="/marketplace" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
               {t('sidebar.marketplace')}
             </Link>
-            {user.isAccountant && (
-              <Link to="/accountant-dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-xs md:text-sm lg:text-base">
+            {(user.isAccountant || user.isAdmin) && (
+              <Link to="/accountant-dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
                 {t('sidebar.accountant_area')}
               </Link>
             )}
-            <Link to="/invoices" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-xs md:text-sm lg:text-base">
+            <Link to="/invoices" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
               {t('sidebar.invoices')}
             </Link>
-            <Link to="/integrations" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-xs md:text-sm lg:text-base">
+            <Link to="/integrations" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
               {t('sidebar.integrations')}
             </Link>
             {user.isAdmin && (
-              <Link to="/admin" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap font-medium text-xs md:text-sm lg:text-base">
+              <Link to="/admin" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap font-semibold text-base">
                 {t('sidebar.admin')}
               </Link>
             )}
@@ -131,19 +117,17 @@ const Navbar = () => {
           </div>
           
           {/* User Info & Actions - Direita */}
-          <div className="hidden md:flex items-center gap-2 md:gap-3 lg:gap-4 flex-shrink-0">
-            {/* Plan Badge removed to reduce clutter as requested */}
-            
-            <span className="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+          <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
               {user.username}
             </span>
 
             <Link 
                 to="/settings" 
                 className="p-2 text-slate-400 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 transition-colors"
-                title={t('settings.title') || 'Configurações'}
+                title="Configurações"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -151,9 +135,9 @@ const Navbar = () => {
 
             <button 
               onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors shadow-sm"
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
             >
-              Logout
+              Sair
             </button>
           </div>
 

@@ -317,6 +317,7 @@ const Reports = () => {
       <FinancialPlanningModal
         isOpen={isPlanningModalOpen}
         onClose={() => setIsPlanningModalOpen(false)}
+        transactions={transactions}
       />
       <div className="flex flex-col gap-4 px-2 sm:px-0">
         <div>

@@ -114,6 +114,114 @@ router.post('/invite', authMiddleware, async (req, res) => {
     }
 });
 
+// GET /api/accountants/dashboard/stats - Dashboard agregado do contador
+router.get('/dashboard/stats', authMiddleware, async (req, res) => {
+  try {
+    // Verificar se é contador
+    const accountantProfile = await Accountant.findOne({ where: { userId: req.user.id } });
+    if (!accountantProfile) {
+      return res.status(403).json({ message: 'Perfil de contador não encontrado.' });
+    }
+
+    // Buscar todos os clientes
+    const clients = await User.findAll({
+      where: { accountantId: accountantProfile.id },
+      attributes: ['id', 'name', 'email', 'plan', 'createdAt']
+    });
+
+    const clientIds = clients.map(c => c.id);
+
+    // Buscar todas as transações dos clientes (últimos 30 dias)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const transactions = await Transaction.findAll({
+      where: {
+        userId: { [Op.in]: clientIds },
+        date: { [Op.gte]: thirtyDaysAgo }
+      }
+    });
+
+    // Buscar notas fiscais pendentes
+    const Invoice = require('../models/Invoice');
+    const pendingInvoices = await Invoice.findAll({
+      where: {
+        userId: { [Op.in]: clientIds },
+        status: 'processing'
+      },
+      include: [{
+        model: User,
+        attributes: ['name', 'email']
+      }]
+    });
+
+    // Calcular estatísticas
+    const totalRevenue = transactions
+      .filter(t => t.type === 'income')
+      .reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
+
+    const totalExpenses = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
+
+    // Clientes por plano
+    const clientsByPlan = clients.reduce((acc, c) => {
+      acc[c.plan] = (acc[c.plan] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Atividade recente (últimos 7 dias)
+    const last7Days = {};
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toISOString().split('T')[0];
+      last7Days[dateKey] = { income: 0, expense: 0, count: 0 };
+    }
+
+    transactions.forEach(t => {
+      const dateKey = t.date.substring(0, 10);
+      if (last7Days[dateKey]) {
+        const amount = parseFloat(t.amount || 0);
+        if (t.type === 'income') {
+          last7Days[dateKey].income += amount;
+        } else {
+          last7Days[dateKey].expense += amount;
+        }
+        last7Days[dateKey].count += 1;
+      }
+    });
+
+    // Alertas/Pendências
+    const alerts = pendingInvoices.map(inv => ({
+      type: 'invoice_pending',
+      message: `Nota fiscal #${inv.id} aguardando processamento`,
+      clientName: inv.User?.name || 'Cliente',
+      clientId: inv.userId,
+      priority: 'medium',
+      date: inv.createdAt
+    }));
+
+    res.json({
+      overview: {
+        totalClients: clients.length,
+        activeClients: clients.filter(c => c.plan !== 'free').length,
+        totalRevenue: totalRevenue.toFixed(2),
+        totalExpenses: totalExpenses.toFixed(2),
+        netIncome: (totalRevenue - totalExpenses).toFixed(2)
+      },
+      clientsByPlan,
+      recentActivity: last7Days,
+      alerts,
+      topClients: clients.slice(0, 5) // Top 5 clientes mais recentes
+    });
+
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+    res.status(500).json({ message: 'Erro ao carregar estatísticas' });
+  }
+});
+
 // GET /api/accountants/me/clients - List clients for the logged-in accountant
 router.get('/me/clients', authMiddleware, async (req, res) => {
   try {

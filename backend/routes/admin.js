@@ -260,4 +260,243 @@ router.post('/promote-to-premium-temp', async (req, res) => {
     }
 });
 
+// GET /api/admin/email-status - Verificar status das configurações de email
+router.get('/email-status', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        console.log('\n🔍 [EMAIL-STATUS] Verificando configurações de email...');
+        
+        const status = {
+            env: {
+                EMAIL_HOST: process.env.EMAIL_HOST || '❌ NÃO CONFIGURADO',
+                EMAIL_PORT: process.env.EMAIL_PORT || '❌ NÃO CONFIGURADO',
+                EMAIL_USER: process.env.EMAIL_USER || '❌ NÃO CONFIGURADO',
+                EMAIL_PASS: process.env.EMAIL_PASS ? '✅ CONFIGURADO (oculto)' : '❌ NÃO CONFIGURADO',
+                EMAIL_FROM: process.env.EMAIL_FROM || '❌ NÃO CONFIGURADO',
+                EMAIL_SECURE: process.env.EMAIL_SECURE || 'false'
+            },
+            db: {},
+            ready: false,
+            errors: []
+        };
+
+        // Verificar configurações no banco
+        try {
+            const dbConfigs = await SystemConfig.findAll({
+                where: {
+                    key: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_SECURE', 'SMTP_FROM']
+                }
+            });
+            
+            dbConfigs.forEach(config => {
+                if (config.key === 'SMTP_PASS') {
+                    status.db[config.key] = config.value ? '✅ CONFIGURADO (oculto)' : '❌ NÃO CONFIGURADO';
+                } else {
+                    status.db[config.key] = config.value || '❌ NÃO CONFIGURADO';
+                }
+            });
+        } catch (dbError) {
+            status.errors.push('Erro ao ler banco de dados: ' + dbError.message);
+        }
+
+        // Verificar se está pronto
+        const hasEnvConfig = process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS;
+        const hasDbConfig = status.db.SMTP_HOST && status.db.SMTP_USER && status.db.SMTP_PASS;
+        
+        status.ready = hasEnvConfig || hasDbConfig;
+        status.source = hasDbConfig ? 'database' : hasEnvConfig ? 'environment' : 'none';
+
+        if (!status.ready) {
+            status.errors.push('⚠️ Nenhuma configuração de email encontrada! Configure em Admin > Configurações do Sistema');
+        }
+
+        console.log('✅ [EMAIL-STATUS] Status:', JSON.stringify(status, null, 2));
+        
+        return res.json(status);
+    } catch (error) {
+        console.error('❌ [EMAIL-STATUS] Erro:', error);
+        return res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /api/admin/email-raw-check - Verificação DIRETA das ENV vars (SEM AUTH - TEMPORÁRIO)
+router.get('/email-raw-check', async (req, res) => {
+    console.log('🔍 [RAW CHECK] Verificação DIRETA das variáveis de ambiente:');
+    
+    // TEST NODEMAILER IMPORT
+    let nodemailerTest = {};
+    try {
+        const nodemailer = require('nodemailer');
+        nodemailerTest = {
+            imported: true,
+            type: typeof nodemailer,
+            hasCreateTransporter: typeof nodemailer.createTransporter === 'function',
+            keys: Object.keys(nodemailer).join(', '),
+            version: nodemailer.createTransport ? 'old API (createTransport)' : nodemailer.createTransporter ? 'new API (createTransporter)' : 'unknown'
+        };
+    } catch (e) {
+        nodemailerTest = {
+            imported: false,
+            error: e.message
+        };
+    }
+    
+    const rawCheck = {
+        EMAIL_HOST: process.env.EMAIL_HOST || '❌ VAZIO',
+        EMAIL_PORT: process.env.EMAIL_PORT || '❌ VAZIO',
+        EMAIL_USER: process.env.EMAIL_USER || '❌ VAZIO',
+        EMAIL_PASS: process.env.EMAIL_PASS ? '✅ ********' : '❌ VAZIO',
+        EMAIL_FROM: process.env.EMAIL_FROM || '❌ VAZIO',
+        EMAIL_SECURE: process.env.EMAIL_SECURE || '❌ VAZIO',
+        NODE_ENV: process.env.NODE_ENV || '❌ VAZIO',
+        timestamp: new Date().toISOString(),
+        flyRegion: process.env.FLY_REGION || 'local',
+        flyAppName: process.env.FLY_APP_NAME || 'local'
+    };
+    
+    console.log('📧 Variáveis RAW:', JSON.stringify(rawCheck, null, 2));
+    console.log('📦 Nodemailer Test:', JSON.stringify(nodemailerTest, null, 2));
+    
+    res.json({
+        message: '🔍 Verificação DIRETA das variáveis de ambiente (RAW CHECK)',
+        variables: rawCheck,
+        nodemailer: nodemailerTest,
+        isComplete: !!(process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS),
+        warning: '⚠️ Este endpoint é TEMPORÁRIO e será removido após diagnóstico'
+    });
+});
+
+// POST /api/admin/test-email - Testar envio de email (diagnóstico)
+router.post('/test-email', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { testEmail } = req.body;
+        
+        if (!testEmail) {
+            return res.status(400).json({ message: 'Email de teste não fornecido' });
+        }
+
+        console.log(`\n🧪 === TESTE DE EMAIL INICIADO ===`);
+        console.log(`📧 Destinatário: ${testEmail}`);
+        
+        // Verificar variáveis de ambiente
+        const emailConfig = {
+            host: process.env.EMAIL_HOST,
+            port: process.env.EMAIL_PORT,
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS ? '****** (configurado)' : null,
+            from: process.env.EMAIL_FROM,
+            secure: process.env.EMAIL_SECURE
+        };
+        
+        console.log('📋 Config:', JSON.stringify(emailConfig, null, 2));
+
+        if (!emailConfig.host || !emailConfig.user || !emailConfig.pass) {
+            console.error('❌ Configuração incompleta!');
+            return res.status(500).json({ 
+                message: 'Configuração de email incompleta', 
+                config: emailConfig 
+            });
+        }
+
+        // Criar transporter
+        const transporter = nodemailer.createTransport({
+            host: process.env.EMAIL_HOST,
+            port: parseInt(process.env.EMAIL_PORT || '587'),
+            secure: process.env.EMAIL_SECURE === 'true',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+        });
+
+        console.log('🔧 Transporter criado');
+
+        // Verificar conexão
+        console.log('🔍 Verificando conexão SMTP...');
+        await transporter.verify();
+        console.log('✅ Conexão SMTP OK!');
+
+        // Enviar email
+        console.log('📬 Enviando email...');
+        const info = await transporter.sendMail({
+            from: process.env.EMAIL_FROM || `"Lumini I.A" <${process.env.EMAIL_USER}>`,
+            to: testEmail,
+            subject: '✅ Teste de Email - Lumini I.A',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <h2 style="color: #8b5cf6;">✅ Sistema de Email Funcionando!</h2>
+                    <p>Este é um email de teste do sistema Lumini I.A.</p>
+                    <p><strong>Se você recebeu este email, o sistema está funcionando corretamente!</strong></p>
+                    <hr style="border: 1px solid #e5e7eb; margin: 20px 0;">
+                    <p style="color: #6b7280; font-size: 14px;">
+                        Data: ${new Date().toLocaleString('pt-BR')}<br>
+                        Servidor: ${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT}<br>
+                        De: ${process.env.EMAIL_FROM || process.env.EMAIL_USER}
+                    </p>
+                </div>
+            `
+        });
+
+        console.log('✅ Email enviado!');
+        console.log('📨 Message ID:', info.messageId);
+
+        return res.json({ 
+            success: true,
+            message: 'Email enviado com sucesso! Verifique sua caixa de entrada e SPAM.',
+            messageId: info.messageId,
+            config: {
+                host: process.env.EMAIL_HOST,
+                port: process.env.EMAIL_PORT,
+                from: process.env.EMAIL_FROM || process.env.EMAIL_USER
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ ERRO:', error);
+        return res.status(500).json({ 
+            success: false,
+            message: 'Erro ao enviar email: ' + error.message,
+            error: error.toString(),
+            code: error.code
+        });
+    }
+});
+
+// POST /api/admin/clear-smtp-db - Limpar configurações SMTP do banco (usar apenas ENV)
+router.post('/clear-smtp-db', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        console.log('🧹 Limpando configurações SMTP antigas do banco...');
+        
+        const deleted = await SystemConfig.destroy({
+            where: {
+                key: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_SECURE', 'SMTP_FROM']
+            }
+        });
+
+        console.log(`✅ ${deleted} configurações SMTP removidas do banco`);
+        console.log('🎯 Agora o sistema vai usar APENAS as variáveis de ambiente!');
+        
+        res.json({ 
+            success: true,
+            message: `${deleted} configurações SMTP removidas do banco. Agora o sistema usará apenas as variáveis de ambiente do Fly.io.`,
+            deletedCount: deleted,
+            activeConfig: {
+                EMAIL_HOST: process.env.EMAIL_HOST || 'N/A',
+                EMAIL_PORT: process.env.EMAIL_PORT || 'N/A',
+                EMAIL_USER: process.env.EMAIL_USER || 'N/A',
+                EMAIL_FROM: process.env.EMAIL_FROM || 'N/A'
+            }
+        });
+    } catch (error) {
+        console.error('❌ Erro ao limpar configs SMTP:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Erro ao limpar configurações SMTP',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;

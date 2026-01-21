@@ -24,35 +24,79 @@ ChartJS.register(
   Filler
 );
 
-const FinancialPlanningModal = ({ isOpen, onClose }) => {
+const FinancialPlanningModal = ({ isOpen, onClose, transactions = [] }) => {
   const { t } = useTranslation();
   const [revenueGoal, setRevenueGoal] = useState('50000');
   const [expenseLimit, setExpenseLimit] = useState('20000');
 
   if (!isOpen) return null;
 
-  // Mock Projection Data
-  const data = {
-    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
-    datasets: [
-      {
-        fill: true,
-        label: t('planning.projection_revenue'),
-        data: [12000, 19000, 25000, 32000, 42000, 55000],
-        borderColor: 'rgb(147, 51, 234)', // Purple-600
-        backgroundColor: 'rgba(147, 51, 234, 0.2)',
-        tension: 0.4
-      },
-      {
-        fill: true,
-        label: t('planning.projection_costs'),
-        data: [5000, 7000, 8500, 9000, 11000, 14000],
-        borderColor: 'rgb(239, 68, 68)', // Red-500
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-        tension: 0.4
-      },
-    ],
+  // ✅ CORREÇÃO: Verificar se há dados suficientes
+  const hasData = transactions && transactions.length >= 3;
+
+  // ✅ Calcular média de receitas/despesas dos últimos meses (se houver dados)
+  const calculateProjection = () => {
+    if (!hasData) {
+      return {
+        labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+        datasets: [{
+          fill: true,
+          label: t('planning.projection_revenue'),
+          data: [0, 0, 0, 0, 0, 0],
+          borderColor: 'rgb(147, 51, 234)',
+          backgroundColor: 'rgba(147, 51, 234, 0.2)',
+          tension: 0.4
+        }]
+      };
+    }
+
+    // Calcular média mensal real
+    const monthlyRevenue = {};
+    const monthlyExpense = {};
+    
+    transactions.forEach(t => {
+      const date = new Date(t.date);
+      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+      const amount = parseFloat(t.amount);
+      
+      if (t.type === 'income') {
+        monthlyRevenue[monthKey] = (monthlyRevenue[monthKey] || 0) + amount;
+      } else {
+        monthlyExpense[monthKey] = (monthlyExpense[monthKey] || 0) + amount;
+      }
+    });
+
+    const avgRevenue = Object.values(monthlyRevenue).reduce((a, b) => a + b, 0) / Object.keys(monthlyRevenue).length || 0;
+    const avgExpense = Object.values(monthlyExpense).reduce((a, b) => a + b, 0) / Object.keys(monthlyExpense).length || 0;
+    
+    // Projeção com crescimento de 15% ao mês (baseado em dados reais)
+    const projectedRevenue = Array.from({ length: 6 }, (_, i) => avgRevenue * Math.pow(1.15, i));
+    const projectedExpense = Array.from({ length: 6 }, (_, i) => avgExpense * Math.pow(1.05, i));
+
+    return {
+      labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+      datasets: [
+        {
+          fill: true,
+          label: t('planning.projection_revenue'),
+          data: projectedRevenue,
+          borderColor: 'rgb(147, 51, 234)',
+          backgroundColor: 'rgba(147, 51, 234, 0.2)',
+          tension: 0.4
+        },
+        {
+          fill: true,
+          label: t('planning.projection_costs'),
+          data: projectedExpense,
+          borderColor: 'rgb(239, 68, 68)',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          tension: 0.4
+        },
+      ],
+    };
   };
+
+  const data = calculateProjection();
 
   const options = {
     responsive: true,
@@ -135,7 +179,15 @@ const FinancialPlanningModal = ({ isOpen, onClose }) => {
           {/* Analysis */}
           <div className="mt-6 bg-purple-500/10 border border-purple-500/20 p-4 rounded-xl">
             <h3 className="text-purple-300 font-bold mb-2">💡 {t('planning.ia_analysis')}</h3>
-            <p className="text-gray-300 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: t('planning.analysis_text', { goal: `R$ ${parseInt(revenueGoal).toLocaleString()}`, limit: `R$ ${parseInt(expenseLimit).toLocaleString()}` }) }} />
+            {hasData ? (
+              <p className="text-gray-300 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: t('planning.analysis_text', { goal: `R$ ${parseInt(revenueGoal).toLocaleString()}`, limit: `R$ ${parseInt(expenseLimit).toLocaleString()}` }) }} />
+            ) : (
+              <p className="text-gray-300 text-sm leading-relaxed">
+                📊 <strong>Adicione transações para visualizar projeções personalizadas!</strong><br/><br/>
+                O planejamento financeiro será gerado automaticamente com base no seu histórico real de receitas e despesas.
+                Recomendamos pelo menos 3 meses de dados para projeções mais precisas.
+              </p>
+            )}
           </div>
 
         </div>
