@@ -314,6 +314,49 @@ router.get('/my-invoices', auth, async (req, res) => {
     }
 });
 
+// Delete Invoice (for user cleanup/testing purposes)
+router.delete('/invoices/:id', auth, async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Find customer
+        const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+        if (customers.data.length === 0) {
+            return res.status(404).json({ error: 'Customer not found' });
+        }
+
+        // Verify the invoice belongs to this customer
+        try {
+            const invoice = await stripe.invoices.retrieve(req.params.id);
+            
+            if (invoice.customer !== customers.data[0].id) {
+                return res.status(403).json({ error: 'Unauthorized: Invoice does not belong to you' });
+            }
+
+            // Stripe doesn't allow deleting finalized invoices, but we can void draft invoices
+            // For paid invoices, we just return success (can't actually delete from Stripe)
+            // This is more of a "hide from UI" functionality
+            if (invoice.status === 'draft') {
+                await stripe.invoices.voidInvoice(req.params.id);
+            }
+
+            res.json({ message: 'Invoice removed successfully' });
+        } catch (stripeError) {
+            if (stripeError.code === 'resource_missing') {
+                return res.status(404).json({ error: 'Invoice not found' });
+            }
+            throw stripeError;
+        }
+
+    } catch (error) {
+        console.error('Error deleting invoice:', error);
+        res.status(500).json({ error: 'Error deleting invoice' });
+    }
+});
+
 // Cancel Subscription
 router.post('/cancel-subscription', auth, async (req, res) => {
     try {

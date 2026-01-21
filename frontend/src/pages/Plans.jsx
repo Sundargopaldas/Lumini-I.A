@@ -12,6 +12,7 @@ const Plans = () => {
   const [loading, setLoading] = useState(false);
   const [invoices, setInvoices] = useState([]);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [deletingInvoiceId, setDeletingInvoiceId] = useState(null);
   const [alertConfig, setAlertConfig] = useState({
     isOpen: false,
     title: '',
@@ -76,6 +77,36 @@ const Plans = () => {
       } finally {
           setLoading(false);
       }
+  };
+
+  const handleDeleteInvoice = (invoiceId) => {
+      showAlert(
+          t('plans.delete_invoice_title') || 'Excluir Fatura',
+          t('plans.delete_invoice_confirm') || 'Tem certeza que deseja excluir esta fatura? Esta ação não pode ser desfeita.',
+          'confirm',
+          async () => {
+              setDeletingInvoiceId(invoiceId);
+              try {
+                  await api.delete(`/payments/invoices/${invoiceId}`);
+                  // Remove from local state
+                  setInvoices(prev => prev.filter(inv => inv.id !== invoiceId));
+                  showAlert(
+                      t('plans.delete_invoice_success_title') || 'Sucesso',
+                      t('plans.delete_invoice_success_msg') || 'Fatura excluída com sucesso!',
+                      'success'
+                  );
+              } catch (error) {
+                  console.error('Erro ao deletar fatura:', error);
+                  showAlert(
+                      t('plans.delete_invoice_error_title') || 'Erro',
+                      error.response?.data?.error || t('plans.delete_invoice_error_msg') || 'Erro ao excluir fatura. Tente novamente.',
+                      'error'
+                  );
+              } finally {
+                  setDeletingInvoiceId(null);
+              }
+          }
+      );
   };
 
   const plans = [
@@ -226,6 +257,7 @@ const Plans = () => {
                                   <th className="px-6 py-4 font-semibold">{t('plans.amount')}</th>
                                   <th className="px-6 py-4 font-semibold">{t('plans.status')}</th>
                                   <th className="px-6 py-4 font-semibold text-right">{t('plans.invoice')}</th>
+                                  <th className="px-6 py-4 font-semibold text-right">{t('plans.actions') || 'Ações'}</th>
                               </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-200 dark:divide-white/10 transition-colors">
@@ -249,6 +281,25 @@ const Plans = () => {
                                           >
                                               {t('plans.download_pdf')}
                                           </a>
+                                      </td>
+                                      <td className="px-6 py-4 text-right">
+                                          <button
+                                              onClick={() => handleDeleteInvoice(inv.id)}
+                                              disabled={deletingInvoiceId === inv.id}
+                                              className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 p-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                              title={t('plans.delete_invoice') || 'Excluir fatura'}
+                                          >
+                                              {deletingInvoiceId === inv.id ? (
+                                                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                  </svg>
+                                              ) : (
+                                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                  </svg>
+                                              )}
+                                          </button>
                                       </td>
                                   </tr>
                               ))}
