@@ -315,26 +315,6 @@ const Admin = () => {
                         </ul>
                       </div>
                     )}
-
-                    <details className="mt-4">
-                      <summary className="cursor-pointer font-medium text-sm text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400">
-                        🔍 Ver Detalhes Técnicos
-                      </summary>
-                      <div className="mt-3 space-y-3 text-xs">
-                        <div>
-                          <p className="font-bold text-slate-700 dark:text-slate-300 mb-1">Variáveis de Ambiente:</p>
-                          <pre className="bg-slate-100 dark:bg-slate-900 p-2 rounded overflow-x-auto text-slate-800 dark:text-slate-200">
-                            {JSON.stringify(emailStatus.env, null, 2)}
-                          </pre>
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-700 dark:text-slate-300 mb-1">Banco de Dados:</p>
-                          <pre className="bg-slate-100 dark:bg-slate-900 p-2 rounded overflow-x-auto text-slate-800 dark:text-slate-200">
-                            {JSON.stringify(emailStatus.db, null, 2)}
-                          </pre>
-                        </div>
-                      </div>
-                    </details>
                   </div>
                 </div>
               </div>
