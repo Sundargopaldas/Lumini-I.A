@@ -18,7 +18,6 @@ const Admin = () => {
   });
   const [emailStatus, setEmailStatus] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [testing, setTesting] = useState(false);
   const [alert, setAlert] = useState({ 
     show: false, 
     message: '', 
@@ -119,136 +118,6 @@ const Admin = () => {
     } catch (error) {
         console.error(error);
         showAlert('Erro ao salvar configurações', 'error');
-    }
-  };
-
-  const handleTestConfig = async () => {
-    try {
-      setTesting(true);
-      const res = await api.post('/admin/config/smtp/test', smtpConfig);
-      showAlert(res.data.message, 'success');
-    } catch (error) {
-      console.error('Error testing SMTP config:', error);
-      const msg = error.response?.data?.message || 'Falha ao testar conexão SMTP';
-      showAlert(msg, 'error');
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  const handleClearSmtpDb = async () => {
-    console.log('🧹 Iniciando limpeza de SMTP do banco...');
-    
-    const confirmMsg = '🧹 Limpar configurações SMTP do banco?\n\n' +
-                      'Isso vai remover todas as configs SMTP salvas no banco de dados.\n\n' +
-                      'O sistema passará a usar APENAS as variáveis de ambiente (Hostinger).\n\n' +
-                      'Continuar?';
-    
-    if (!confirm(confirmMsg)) {
-      console.log('⚠️ Usuário cancelou a limpeza');
-      return;
-    }
-
-    try {
-      setTesting(true);
-      console.log('📤 Enviando requisição para /admin/clear-smtp-db...');
-      
-      const res = await api.post('/admin/clear-smtp-db');
-      
-      console.log('✅ Resposta recebida:', res.data);
-      
-      const successMsg = `✅ SMTP Limpo com Sucesso!\n\n` +
-                        `Configurações removidas: ${res.data.deletedCount}\n\n` +
-                        `🎯 Config ativa agora:\n` +
-                        `Host: ${res.data.activeConfig.EMAIL_HOST}\n` +
-                        `Port: ${res.data.activeConfig.EMAIL_PORT}\n` +
-                        `User: ${res.data.activeConfig.EMAIL_USER}\n\n` +
-                        `Agora teste o email de recuperação de senha!`;
-      
-      showAlert(successMsg, 'success', '✅ SMTP Limpo');
-      alert(successMsg);
-      
-      // Recarregar status do email
-      fetchSmtpConfig();
-      
-    } catch (error) {
-      console.error('❌ ERRO ao limpar SMTP:', error);
-      
-      const errorMsg = error.response?.data?.message || error.message || 'Erro desconhecido';
-      const fullErrorMsg = `❌ ERRO AO LIMPAR SMTP\n\n` +
-                          `Mensagem: ${errorMsg}\n\n` +
-                          `Status HTTP: ${error.response?.status || 'N/A'}`;
-      
-      showAlert(fullErrorMsg, 'error', '❌ Erro');
-      alert(fullErrorMsg);
-      
-    } finally {
-      setTesting(false);
-      console.log('🏁 Limpeza finalizada');
-    }
-  };
-
-  const handleQuickEmailTest = async () => {
-    console.log('🚀 Botão de teste clicado!');
-    
-    let testEmail;
-    try {
-      const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
-      const defaultEmail = user?.email || '';
-      console.log('📧 Email padrão:', defaultEmail);
-      
-      testEmail = prompt('Digite o email para receber o teste:', defaultEmail);
-      console.log('📧 Email digitado:', testEmail);
-    } catch (err) {
-      console.error('❌ Erro ao obter email do usuário:', err);
-      testEmail = prompt('Digite o email para receber o teste:');
-    }
-    
-    if (!testEmail) {
-      console.log('⚠️ Usuário cancelou ou não digitou email');
-      alert('⚠️ Email não fornecido. Teste cancelado.');
-      return;
-    }
-
-    console.log('🔄 Iniciando teste de email...');
-    
-    try {
-      setTesting(true);
-      console.log('📤 Enviando requisição para /admin/test-email...');
-      
-      const res = await api.post('/admin/test-email', { testEmail });
-      
-      console.log('✅ Resposta recebida:', res.data);
-      
-      const successMsg = `✅ Email enviado com sucesso!\n\n` +
-                        `Para: ${testEmail}\n\n` +
-                        `⚠️ IMPORTANTE: Verifique sua caixa de entrada E a pasta SPAM!\n\n` +
-                        `Message ID: ${res.data.messageId || 'N/A'}`;
-      
-      showAlert(successMsg, 'success', '✅ Email Enviado');
-      alert(successMsg); // Alert adicional para garantir que veja
-      
-    } catch (error) {
-      console.error('❌ ERRO COMPLETO:', error);
-      console.error('❌ Response:', error.response);
-      console.error('❌ Response Data:', error.response?.data);
-      
-      const errorMsg = error.response?.data?.message || error.message || 'Erro desconhecido ao enviar email';
-      const errorCode = error.response?.data?.code || 'N/A';
-      const errorDetails = error.response?.data?.error || 'Sem detalhes adicionais';
-      
-      const fullErrorMsg = `❌ ERRO AO ENVIAR EMAIL\n\n` +
-                          `Mensagem: ${errorMsg}\n\n` +
-                          `Código: ${errorCode}\n\n` +
-                          `Detalhes: ${errorDetails}\n\n` +
-                          `Status HTTP: ${error.response?.status || 'N/A'}`;
-      
-      showAlert(fullErrorMsg, 'error', '❌ Erro no Envio');
-      alert(fullErrorMsg); // Alert adicional para garantir que veja
-      
-    } finally {
-      setTesting(false);
-      console.log('🏁 Teste finalizado');
     }
   };
 
@@ -560,67 +429,7 @@ const Admin = () => {
                     </div>
                 </div>
 
-                <div className="pt-6 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-end gap-3">
-                    <button 
-                        type="button"
-                        onClick={handleClearSmtpDb}
-                        disabled={testing}
-                        className={`w-full sm:w-auto px-6 py-2.5 border-2 border-orange-500 dark:border-orange-400 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2 ${testing ? 'opacity-70 cursor-not-allowed' : ''}`}
-                    >
-                        {testing ? (
-                            <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 dark:border-orange-300"></div>
-                                Limpando...
-                            </>
-                        ) : (
-                            <>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                🧹 Limpar SMTP do Banco
-                            </>
-                        )}
-                    </button>
-                    <button 
-                        type="button"
-                        onClick={handleQuickEmailTest}
-                        disabled={testing}
-                        className={`w-full sm:w-auto px-6 py-2.5 border-2 border-purple-500 dark:border-purple-400 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2 ${testing ? 'opacity-70 cursor-not-allowed' : ''}`}
-                    >
-                        {testing ? (
-                            <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 dark:border-purple-300"></div>
-                                Enviando...
-                            </>
-                        ) : (
-                            <>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                                🚀 Teste Rápido de Email
-                            </>
-                        )}
-                    </button>
-                    <button 
-                        type="button"
-                        onClick={handleTestConfig}
-                        disabled={testing}
-                        className={`w-full sm:w-auto px-6 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2 ${testing ? 'opacity-70 cursor-not-allowed' : ''}`}
-                    >
-                        {testing ? (
-                            <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-600 dark:border-slate-300"></div>
-                                Testando...
-                            </>
-                        ) : (
-                            <>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
-                                Testar Conexão
-                            </>
-                        )}
-                    </button>
+                <div className="pt-6 border-t border-slate-200 dark:border-slate-700 flex justify-end">
                     <button 
                         type="submit" 
                         className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow flex items-center justify-center gap-2"
