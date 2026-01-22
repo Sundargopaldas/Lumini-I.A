@@ -182,51 +182,160 @@ const Reports = () => {
         showAlert(t('reports.feature_locked'), t('reports.pdf_locked_msg'), 'locked');
         return;
     }
-    const doc = new jsPDF();
     
-    // Header
-    doc.setFontSize(20);
-    doc.setTextColor(128, 90, 213); // Purple
-    doc.text('Lumini I.A - ' + t('reports.title'), 14, 22);
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    
+    // === HEADER COM DESIGN PROFISSIONAL ===
+    // Background roxo no topo
+    doc.setFillColor(139, 92, 246); // Purple-500
+    doc.rect(0, 0, pageWidth, 35, 'F');
+    
+    // Logo e título (branco sobre roxo)
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('✨ Lumini I.A', 14, 15);
     
     doc.setFontSize(12);
-    doc.setTextColor(100);
-    doc.text(`${t('reports.monthly_overview')}: ${new Date().toLocaleDateString(i18n.language)}`, 14, 32);
-    doc.text(`${t('common.date') || 'Date'}: ${selectedMonth === 'all' ? t('reports.all_months') : new Date(0, selectedMonth).toLocaleString(i18n.language, { month: 'long' })} ${selectedYear}`, 14, 38);
-
-    // Summary Section
-    autoTable(doc, {
-        startY: 45,
-        head: [[t('reports.total_income'), t('reports.total_expenses'), t('reports.net_balance')]],
-        body: [[
-            `R$ ${summary.income.toFixed(2)}`,
-            `R$ ${summary.expense.toFixed(2)}`,
-            `R$ ${summary.balance.toFixed(2)}`
-        ]],
-        theme: 'grid',
-        headStyles: { fillColor: [128, 90, 213] }
-    });
-
-    // Transactions Table
-    doc.text(t('transactions.title'), 14, doc.lastAutoTable.finalY + 15);
+    doc.setFont('helvetica', 'normal');
+    doc.text(t('reports.title'), 14, 23);
+    doc.text(`${new Date().toLocaleDateString(i18n.language, { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })}`, pageWidth - 14, 15, { align: 'right' });
     
-    const tableData = filteredTransactions.map(t => [
+    // Linha decorativa
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.5);
+    doc.line(14, 28, pageWidth - 14, 28);
+    
+    // === PERÍODO DO RELATÓRIO ===
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    const monthName = selectedMonth === 'all' ? t('reports.all_months') : new Date(0, selectedMonth).toLocaleString(i18n.language, { month: 'long' });
+    doc.text(`📊 Período: ${monthName} ${selectedYear}`, 14, 45);
+    
+    // === CARDS DE RESUMO (3 colunas) ===
+    const cardY = 52;
+    const cardHeight = 22;
+    const cardWidth = (pageWidth - 42) / 3;
+    
+    // Card 1 - Receitas (Verde)
+    doc.setFillColor(34, 197, 94); // Green-500
+    doc.roundedRect(14, cardY, cardWidth, cardHeight, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('💰 ' + t('reports.total_income'), 18, cardY + 8);
+    doc.setFontSize(14);
+    doc.text(`R$ ${summary.income.toFixed(2)}`, 18, cardY + 17);
+    
+    // Card 2 - Despesas (Vermelho)
+    const card2X = 14 + cardWidth + 7;
+    doc.setFillColor(239, 68, 68); // Red-500
+    doc.roundedRect(card2X, cardY, cardWidth, cardHeight, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(9);
+    doc.text('💸 ' + t('reports.total_expenses'), card2X + 4, cardY + 8);
+    doc.setFontSize(14);
+    doc.text(`R$ ${summary.expense.toFixed(2)}`, card2X + 4, cardY + 17);
+    
+    // Card 3 - Saldo (Azul ou Vermelho dependendo)
+    const card3X = 14 + (cardWidth * 2) + 14;
+    const balanceColor = summary.balance >= 0 ? [59, 130, 246] : [239, 68, 68]; // Blue-500 or Red-500
+    doc.setFillColor(...balanceColor);
+    doc.roundedRect(card3X, cardY, cardWidth, cardHeight, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(9);
+    doc.text('📈 ' + t('reports.net_balance'), card3X + 4, cardY + 8);
+    doc.setFontSize(14);
+    doc.text(`R$ ${summary.balance.toFixed(2)}`, card3X + 4, cardY + 17);
+    
+    // === TABELA DE TRANSAÇÕES ===
+    const tableStartY = cardY + cardHeight + 15;
+    
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('📋 ' + t('transactions.title'), 14, tableStartY);
+    
+    const tableData = filteredTransactions.map(t => {
+      const isIncome = t.type === 'income';
+      return [
         new Date(t.date).toLocaleDateString(i18n.language),
         t.description,
         t.source || '-',
-        t.type === 'income' ? `+ R$ ${parseFloat(t.amount).toFixed(2)}` : `- R$ ${Math.abs(parseFloat(t.amount)).toFixed(2)}`
-    ]);
-
-    autoTable(doc, {
-        startY: doc.lastAutoTable.finalY + 20,
-        head: [[t('common.date'), t('common.description'), t('reports.income_sources') + '/' + t('reports.expense_breakdown'), t('reports.net_balance')]], 
-        body: tableData,
-        theme: 'striped',
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [75, 85, 99] }
+        {
+          content: isIncome ? `+ R$ ${parseFloat(t.amount).toFixed(2)}` : `- R$ ${Math.abs(parseFloat(t.amount)).toFixed(2)}`,
+          styles: { 
+            textColor: isIncome ? [34, 197, 94] : [239, 68, 68],
+            fontStyle: 'bold'
+          }
+        }
+      ];
     });
 
-    doc.save('lumini-report.pdf');
+    autoTable(doc, {
+        startY: tableStartY + 5,
+        head: [[
+          t('common.date'), 
+          t('common.description'), 
+          t('reports.income_sources') + '/' + t('reports.expense_breakdown'), 
+          t('plans.amount')
+        ]], 
+        body: tableData,
+        theme: 'grid',
+        styles: { 
+          fontSize: 9,
+          cellPadding: 4,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1
+        },
+        headStyles: { 
+          fillColor: [99, 102, 241], // Indigo-500
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          halign: 'center'
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251] // Gray-50
+        },
+        columnStyles: {
+          0: { cellWidth: 25, halign: 'center' },
+          1: { cellWidth: 70 },
+          2: { cellWidth: 45 },
+          3: { cellWidth: 35, halign: 'right' }
+        },
+        margin: { left: 14, right: 14 }
+    });
+    
+    // === FOOTER PROFISSIONAL ===
+    const finalY = doc.lastAutoTable.finalY;
+    
+    // Linha separadora
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.line(14, pageHeight - 20, pageWidth - 14, pageHeight - 20);
+    
+    // Texto do footer
+    doc.setTextColor(120, 120, 120);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Lumini I.A - Gestão Financeira Inteligente', pageWidth / 2, pageHeight - 14, { align: 'center' });
+    doc.text('www.luminiiadigital.com.br', pageWidth / 2, pageHeight - 10, { align: 'center' });
+    
+    // Selo de segurança
+    doc.setTextColor(139, 92, 246);
+    doc.setFontSize(7);
+    doc.text(`🔒 Documento gerado em ${new Date().toLocaleString(i18n.language)}`, pageWidth / 2, pageHeight - 6, { align: 'center' });
+
+    // Salvar PDF
+    const fileName = `Lumini_Relatorio_${monthName}_${selectedYear}.pdf`;
+    doc.save(fileName);
   };
 
   const chartOptions = {
