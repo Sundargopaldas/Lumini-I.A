@@ -9,10 +9,28 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/www\.luminiiadigital\.com\.br\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'lumini-cache-v234',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 // 24 horas
+              }
+            }
+          }
+        ]
+      },
       includeAssets: ['logo.svg', 'logo.png', 'icon-192.svg', 'icon-512.svg'],
       manifest: {
         name: 'Lumini I.A - Gestão Financeira Inteligente',
         short_name: 'Lumini',
+        version: '2.3.4',
         description: 'Gestão financeira inteligente com IA. Controle suas finanças, integre bancos e emita notas fiscais.',
         theme_color: '#8b5cf6',
         background_color: '#1e1b4b',
