@@ -3,6 +3,28 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import CustomAlert from './CustomAlert';
 
+// Função helper para normalizar caracteres especiais para PDF
+const normalizeForPDF = (text) => {
+  if (!text) return '';
+  return String(text)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/[àáâãäå]/g, 'a')
+    .replace(/[èéêë]/g, 'e')
+    .replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõö]/g, 'o')
+    .replace(/[ùúûü]/g, 'u')
+    .replace(/[ç]/g, 'c')
+    .replace(/[ñ]/g, 'n')
+    .replace(/[ÀÁÂÃÄÅ]/g, 'A')
+    .replace(/[ÈÉÊË]/g, 'E')
+    .replace(/[ÌÍÎÏ]/g, 'I')
+    .replace(/[ÒÓÔÕÖ]/g, 'O')
+    .replace(/[ÙÚÛÜ]/g, 'U')
+    .replace(/[Ç]/g, 'C')
+    .replace(/[Ñ]/g, 'N');
+};
+
 const TaxSimulatorModal = ({ isOpen, onClose }) => {
   const [revenue, setRevenue] = useState({ service: 0, commerce: 0 });
   const [irpfData, setIrpfData] = useState({ grossIncome: 0, dependents: 0, otherDeductions: 0 });
@@ -173,14 +195,14 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
     
     doc.setFontSize(14);
     doc.setTextColor(100);
-    doc.text(mode === 'irpf' ? 'Simulação de Imposto de Renda (IRPF)' : 'Relatório de Simulação Fiscal', 14, 30);
+    doc.text(normalizeForPDF(mode === 'irpf' ? 'Simulacao de Imposto de Renda (IRPF)' : 'Relatorio de Simulacao Fiscal'), 14, 30);
 
     // Company Info
     doc.setFontSize(10);
     doc.setTextColor(80);
-    doc.text(`Empresa/Usuário: ${companyName}`, 14, 38);
+    doc.text(normalizeForPDF(`Empresa/Usuario: ${companyName}`), 14, 38);
     doc.text(`CPF/CNPJ: ${documentId}`, 14, 43);
-    doc.text(`Gerado em: ${new Date().toLocaleDateString()} às ${new Date().toLocaleTimeString()}`, 14, 48);
+    doc.text(normalizeForPDF(`Gerado em: ${new Date().toLocaleDateString()} as ${new Date().toLocaleTimeString()}`), 14, 48);
 
     if (mode === 'irpf') {
         const result = calculateIRPF();
@@ -255,17 +277,17 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
     doc.setFontSize(9);
     doc.setTextColor(80);
     doc.text(
-        'Este documento foi gerado pela plataforma Lumini I.A para fins de planejamento e estimativa fiscal.',
+        normalizeForPDF('Este documento foi gerado pela plataforma Lumini I.A para fins de planejamento e estimativa fiscal.'),
         14,
         finalY + 10
     );
     doc.text(
-        'Os valores são calculados com base nas tabelas vigentes, mas podem sofrer variações conforme legislação específica.',
+        normalizeForPDF('Os valores sao calculados com base nas tabelas vigentes, mas podem sofrer variacoes conforme legislacao especifica.'),
         14,
         finalY + 15
     );
     doc.text(
-        'Recomendamos que este relatório seja validado pelo seu contador antes da emissão de guias oficiais.',
+        normalizeForPDF('Recomendamos que este relatorio seja validado pelo seu contador antes da emissao de guias oficiais.'),
         14,
         finalY + 20
     );
@@ -275,10 +297,10 @@ const TaxSimulatorModal = ({ isOpen, onClose }) => {
     doc.line(14, finalY + 45, 100, finalY + 45); // Signature line
     doc.setFontSize(10);
     doc.setTextColor(0);
-    doc.text('Validação do Contador Responsável', 14, finalY + 52);
+    doc.text(normalizeForPDF('Validacao do Contador Responsavel'), 14, finalY + 52);
     doc.setFontSize(8);
     doc.setTextColor(150);
-    doc.text('Carimbo / Assinatura', 14, finalY + 57);
+    doc.text(normalizeForPDF('Carimbo / Assinatura'), 14, finalY + 57);
 
     doc.save(`lumini-relatorio-fiscal-${mode}.pdf`);
     showAlert('Sucesso', 'Relatório profissional gerado com sucesso!', 'success');

@@ -7,6 +7,28 @@ import IssueInvoiceModal from '../components/IssueInvoiceModal';
 import CustomAlert from '../components/CustomAlert';
 import api from '../services/api';
 
+// Função helper para normalizar caracteres especiais para PDF
+const normalizeForPDF = (text) => {
+  if (!text) return '';
+  return String(text)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/[àáâãäå]/g, 'a')
+    .replace(/[èéêë]/g, 'e')
+    .replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõö]/g, 'o')
+    .replace(/[ùúûü]/g, 'u')
+    .replace(/[ç]/g, 'c')
+    .replace(/[ñ]/g, 'n')
+    .replace(/[ÀÁÂÃÄÅ]/g, 'A')
+    .replace(/[ÈÉÊË]/g, 'E')
+    .replace(/[ÌÍÎÏ]/g, 'I')
+    .replace(/[ÒÓÔÕÖ]/g, 'O')
+    .replace(/[ÙÚÛÜ]/g, 'U')
+    .replace(/[Ç]/g, 'C')
+    .replace(/[Ñ]/g, 'N');
+};
+
 const Invoices = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -195,7 +217,7 @@ const Invoices = () => {
     doc.setFontSize(16); // Larger
     doc.setFont('helvetica', 'bold');
     
-    const title = invoice.type === 'receipt' ? 'RECIBO DE PAGAMENTO' : t('invoices.pdf.nfse_title').toUpperCase();
+    const title = invoice.type === 'receipt' ? 'RECIBO DE PAGAMENTO' : normalizeForPDF(t('invoices.pdf.nfse_title').toUpperCase());
     doc.text(title, 105, 22, { align: 'center' });
     
     doc.setFontSize(9);
@@ -203,12 +225,12 @@ const Invoices = () => {
     
     let subTitle = '';
     if (invoice.type === 'receipt') {
-        subTitle = `Documento Auxiliar de Venda - Não possui valor fiscal`;
+        subTitle = normalizeForPDF(`Documento Auxiliar de Venda - Nao possui valor fiscal`);
     } else {
-        subTitle = t('invoices.pdf.rps_text', { 
+        subTitle = normalizeForPDF(t('invoices.pdf.rps_text', { 
             number: invoice.id.toString().padStart(6, '0'), 
             date: new Date(invoice.date || new Date()).toLocaleDateString(i18n.language) 
-        });
+        }));
     }
     doc.text(subTitle, 105, 32, { align: 'center' });
     
@@ -298,14 +320,14 @@ const Invoices = () => {
     const leftMargin = logoAdded ? 40 : 15;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text(user.name || t('invoices.pdf.provider_name_fallback'), leftMargin, y+11);
+    doc.text(normalizeForPDF(user.name || t('invoices.pdf.provider_name_fallback')), leftMargin, y+11);
     
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     const cpfCnpj = user.cpfCnpj || '00.000.000/0001-00';
     doc.text(`CPF/CNPJ: ${cpfCnpj}`, leftMargin, y+16);
     doc.text(`Email: ${user.email}`, leftMargin, y+21);
-    doc.text(`Endereço: ${user.address || t('invoices.pdf.not_informed')}`, leftMargin, y+26);
+    doc.text(normalizeForPDF(`Endereco: ${user.address || t('invoices.pdf.not_informed')}`), leftMargin, y+26);
 
 
     // --- TOMADOR ---
@@ -320,13 +342,13 @@ const Invoices = () => {
     doc.setTextColor(60, 60, 60);
 
     doc.setFontSize(9);
-    doc.text(invoice.client || t('invoices.pdf.client_not_identified'), 15, y+11);
+    doc.text(normalizeForPDF(invoice.client || t('invoices.pdf.client_not_identified')), 15, y+11);
     
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.text(`CPF/CNPJ: ${invoice.clientDocument || t('invoices.pdf.not_informed')}`, 15, y+16);
     doc.text(`Email: ${invoice.clientEmail || t('invoices.pdf.not_informed')}`, 15, y+21);
-    doc.text(`Endereço: ${invoice.clientAddress || t('invoices.pdf.not_informed')}`, 15, y+26);
+    doc.text(normalizeForPDF(`Endereco: ${invoice.clientAddress || t('invoices.pdf.not_informed')}`), 15, y+26);
 
     // --- DISCRIMINAÇÃO ---
     y += 32;
@@ -343,7 +365,7 @@ const Invoices = () => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     // Split text to fit width
-    const splitText = doc.splitTextToSize(invoice.service || '', 180);
+    const splitText = doc.splitTextToSize(normalizeForPDF(invoice.service || ''), 180);
     doc.text(splitText, 15, y+12);
 
     // --- VALORES E IMPOSTOS (SIMULADO) ---
@@ -379,7 +401,7 @@ const Invoices = () => {
         y += 15;
         doc.setFontSize(7);
         doc.setFont('helvetica', 'italic');
-        doc.text('Este recibo não substitui a Nota Fiscal de Serviços (NFS-e).', 105, y, { align: 'center' });
+        doc.text(normalizeForPDF('Este recibo nao substitui a Nota Fiscal de Servicos (NFS-e).'), 105, y, { align: 'center' });
         
     } else {
         // --- OFFICIAL INVOICE LAYOUT ---
@@ -426,8 +448,8 @@ const Invoices = () => {
         y += 25;
         doc.setFontSize(7);
         doc.setFont('helvetica', 'italic');
-        doc.text('Documento emitido por ME ou EPP optante pelo Simples Nacional.', 105, y, { align: 'center' });
-        doc.text('Não gera direito a crédito fiscal de IPI.', 105, y+4, { align: 'center' });
+        doc.text(normalizeForPDF('Documento emitido por ME ou EPP optante pelo Simples Nacional.'), 105, y, { align: 'center' });
+        doc.text(normalizeForPDF('Nao gera direito a credito fiscal de IPI.'), 105, y+4, { align: 'center' });
         
         // --- BARCODE ---
         y += 8;
