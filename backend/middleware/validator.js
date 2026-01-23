@@ -24,18 +24,30 @@ const validate = (schema, property = 'body') => {
     if (error) {
       const errors = error.details.map(detail => ({
         field: detail.path.join('.'),
-        message: detail.message
+        message: detail.message.replace(/"/g, '') // Remove aspas das mensagens
       }));
 
+      // Criar mensagem principal mais descritiva
+      const mainMessage = errors.length === 1 
+        ? errors[0].message 
+        : `Erro de validação: ${errors.length} campo(s) inválido(s)`;
+
       console.error('❌ [VALIDATOR] Validation failed:', JSON.stringify({
+        method: req.method,
+        path: req.path,
         property,
         data: req[property],
         errors
       }, null, 2));
 
       return res.status(400).json({
-        message: 'Erro de validação',
-        errors
+        message: mainMessage,
+        errors: errors,
+        // Adicionar detalhes adicionais para facilitar debug
+        ...(process.env.NODE_ENV === 'development' && {
+          received: req[property],
+          expected: 'Verifique os campos: ' + errors.map(e => e.field).join(', ')
+        })
       });
     }
 
@@ -81,16 +93,40 @@ const registerSchema = Joi.object({
 });
 
 const loginSchema = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string().email().required()
+    .messages({
+      'string.email': 'Email inválido',
+      'any.required': 'Email é obrigatório',
+      'string.empty': 'Email não pode estar vazio'
+    }),
   password: Joi.string().required()
+    .messages({
+      'any.required': 'Senha é obrigatória',
+      'string.empty': 'Senha não pode estar vazia'
+    })
 });
 
 const updateProfileSchema = Joi.object({
-  name: Joi.string().max(100).optional(),
-  address: Joi.string().max(200).optional(),
-  cpfCnpj: Joi.string().max(20).optional(),
-  municipalRegistration: Joi.string().max(50).optional(),
-  taxRegime: Joi.string().valid('mei', 'simples', 'presumido', 'real').optional()
+  name: Joi.string().max(100).allow('', null).optional()
+    .messages({
+      'string.max': 'Nome não pode exceder 100 caracteres'
+    }),
+  address: Joi.string().max(200).allow('', null).optional()
+    .messages({
+      'string.max': 'Endereço não pode exceder 200 caracteres'
+    }),
+  cpfCnpj: Joi.string().max(20).allow('', null).optional()
+    .messages({
+      'string.max': 'CPF/CNPJ não pode exceder 20 caracteres'
+    }),
+  municipalRegistration: Joi.string().max(50).allow('', null).optional()
+    .messages({
+      'string.max': 'Inscrição Municipal não pode exceder 50 caracteres'
+    }),
+  taxRegime: Joi.string().valid('mei', 'simples', 'presumido', 'real').allow('', null).optional()
+    .messages({
+      'any.only': 'Regime tributário inválido. Valores aceitos: mei, simples, presumido, real'
+    })
 });
 
 // Transactions

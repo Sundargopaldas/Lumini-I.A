@@ -287,14 +287,20 @@ const sendPasswordResetEmail = async (user, resetLink) => {
         console.warn('⚠️ Logo não encontrada em nenhum caminho esperado');
     }
 
+    // Usar cid:logo se o attachment estiver disponível, senão usar URL externa
+    const logoImg = logoPath 
+        ? '<img src="cid:logo" alt="Lumini I.A" style="width: 60px; height: 60px; margin-bottom: 10px; display: inline-block; background-color: white; padding: 8px; border-radius: 8px;">'
+        : '<img src="https://www.luminiiadigital.com.br/logo.png" alt="Lumini I.A" style="width: 60px; height: 60px; margin-bottom: 10px; display: inline-block; background-color: white; padding: 8px; border-radius: 8px;">';
+
     const mailOptions = {
         from: fromAddress,
         to: user.email,
         subject: 'Redefinição de Senha - Lumini I.A',
+        attachments: attachments.length > 0 ? attachments : undefined,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
               <div style="background: linear-gradient(135deg, #6d28d9 0%, #4f46e5 100%); padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0;">
-                  <img src="https://www.luminiiadigital.com.br/logo.png" alt="Lumini I.A" style="width: 60px; height: 60px; margin-bottom: 10px; display: inline-block;">
+                  ${logoImg}
                   <h2 style="color: white; margin: 0;">Redefinição de Senha</h2>
               </div>
               <div style="padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; background-color: white;">

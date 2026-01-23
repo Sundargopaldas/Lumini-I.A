@@ -58,16 +58,16 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit para alta qualidade
   fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png|webp/;
+    const filetypes = /jpeg|jpg|png|webp|svg/;
     const mimetype = filetypes.test(file.mimetype);
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
 
     if (mimetype && extname) {
       return cb(null, true);
     }
-    cb(new Error('Apenas imagens (jpeg, jpg, png, webp) são permitidas!'));
+    cb(new Error('Apenas imagens (jpeg, jpg, png, webp, svg) são permitidas!'));
   }
 });
 
@@ -226,7 +226,9 @@ router.post('/login', validate(schemas.loginSchema), async (req, res) => {
             plan: user.plan,
             name: user.name,
             isAdmin: user.isAdmin,
-            logo: user.logo // Include logo in login response
+            logo: user.logo, // Include logo in login response
+            cpfCnpj: user.cpfCnpj, // Include CPF/CNPJ for PDF reports
+            address: user.address // Include address for PDF reports
         } 
     });
   } catch (error) {
@@ -264,15 +266,16 @@ router.get('/me', auth, async (req, res) => {
     // Check if user is an accountant
     const accountant = await Accountant.findOne({ where: { userId: req.user.id } });
     
-    console.log('DEBUG /me: User ID:', req.user.id);
-    console.log('DEBUG /me: Accountant found:', !!accountant);
+    console.log('🔍 [/ME] User ID:', req.user.id);
+    console.log('🔍 [/ME] User Logo (raw):', user.logo);
+    console.log('🔍 [/ME] Accountant found:', !!accountant);
 
     const userData = user.toJSON();
     userData.isAccountant = !!accountant;
     userData.isAdmin = !!user.isAdmin; // Ensure boolean
     userData.accountantProfileId = accountant ? accountant.id : null;
     
-    console.log('DEBUG /me: Response:', userData);
+    console.log('✅ [/ME] Response Logo:', userData.logo);
 
     res.json(userData);
   } catch (error) {

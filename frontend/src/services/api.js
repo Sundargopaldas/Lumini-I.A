@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getToken, clearAuth } from '../utils/storage';
 
 // ⚠️ FORÇANDO LOCALHOST PARA DESENVOLVIMENTO - TIMESTAMP: 2026-01-11-15:30
 const IS_DEV = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -21,7 +22,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -40,13 +41,22 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Log detalhado de erros 400 para debug
+    if (error.response && error.response.status === 400) {
+      console.error('❌ [API] Erro 400 - Bad Request:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        data: error.response.data,
+        requestData: error.config?.data
+      });
+    }
+
     // Don't redirect if it's a login attempt failure
     const isLoginRequest = error.config && error.config.url && error.config.url.includes('/auth/login');
 
     // Only logout on 401 (Unauthorized), not 403 (Forbidden/Premium Locked)
     if (error.response && error.response.status === 401 && !isLoginRequest) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      clearAuth();
       window.location.href = '/login';
     }
     return Promise.reject(error);

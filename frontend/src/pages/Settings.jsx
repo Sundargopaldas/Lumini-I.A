@@ -3,13 +3,22 @@ import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import CustomAlert from '../components/CustomAlert';
 import { useTheme } from '../contexts/ThemeContext';
+import { extractErrorMessage } from '../utils/errorHandler';
 
 const Settings = () => {
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'fiscal' | 'preferences'
 
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
+  // Limpar cache antigo da logo (fix temporário)
+  const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  if (cachedUser.logo && typeof cachedUser.logo === 'string' && cachedUser.logo.includes('luminiiadigital.com.br')) {
+    console.log('🔧 [FIX] Limpando URL antiga da logo do cache');
+    // Extrair apenas o filename
+    cachedUser.logo = cachedUser.logo.split('/').pop();
+    localStorage.setItem('user', JSON.stringify(cachedUser));
+  }
+  const [user, setUser] = useState(cachedUser);
   const [loading, setLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState(null);
   const [alertState, setAlertState] = useState({ isOpen: false, title: '', message: '', type: 'info' });
@@ -28,7 +37,7 @@ const Settings = () => {
     cpfCnpj: '',
     address: '',
     municipalRegistration: '',
-    taxRegime: 'Simples Nacional'
+    taxRegime: 'simples' // Valores válidos: 'mei', 'simples', 'presumido', 'real'
   });
 
   // Load user data on mount
@@ -36,18 +45,38 @@ const Settings = () => {
     const fetchUser = async () => {
         try {
             const res = await api.get('/auth/me');
+            console.log('📥 [SETTINGS] User data carregado:', res.data);
+            console.log('🖼️ [SETTINGS] Logo do user:', res.data.logo);
+            
             setUser(res.data);
+            // Atualizar localStorage com dados mais recentes
+            localStorage.setItem('user', JSON.stringify(res.data));
+            
+            // Mapear taxRegime do backend para valores válidos do schema
+            const taxRegimeMap = {
+                'MEI': 'mei',
+                'Simples Nacional': 'simples',
+                'Lucro Presumido': 'presumido',
+                'Lucro Real': 'real'
+            };
+            const backendTaxRegime = res.data.taxRegime || 'Simples Nacional';
+            const mappedTaxRegime = taxRegimeMap[backendTaxRegime] || 'simples';
+            
             setFormData({
                 name: res.data.name || '',
                 cpfCnpj: res.data.cpfCnpj || '',
                 address: res.data.address || '',
                 municipalRegistration: res.data.municipalRegistration || '',
-                taxRegime: res.data.taxRegime || 'Simples Nacional'
+                taxRegime: mappedTaxRegime
             });
+            
             if (res.data.logo) {
-                const API_URL = import.meta.env.VITE_API_URL;
-                const BASE_URL = API_URL ? API_URL.replace('/api', '') : '';
-                setLogoPreview(`${BASE_URL}/uploads/logos/${res.data.logo}`);
+                // Usar a URL atual do navegador para construir o caminho da logo
+                const logoUrl = `${window.location.origin}/uploads/logos/${res.data.logo}`;
+                setLogoPreview(logoUrl);
+                console.log('✅ [SETTINGS] Logo preview definida:', logoUrl);
+            } else {
+                console.log('⚠️ [SETTINGS] Nenhuma logo encontrada no perfil');
             }
 
             // Fetch Certificate Status
@@ -69,7 +98,7 @@ const Settings = () => {
     setFormData({
         ...formData,
         municipalRegistration: '12345678 (TESTE)',
-        taxRegime: 'MEI'
+        taxRegime: 'mei' // Valor válido do schema
     });
     setAlertState({
         isOpen: true,
@@ -163,10 +192,21 @@ const Settings = () => {
     e.preventDefault();
     setLoading(true);
     try {
-        const res = await api.put('/auth/profile', formData);
+        // Validar taxRegime antes de enviar
+        const validTaxRegimes = ['mei', 'simples', 'presumido', 'real'];
+        const taxRegimeToSend = validTaxRegimes.includes(formData.taxRegime) 
+          ? formData.taxRegime 
+          : 'simples'; // Fallback para valor válido
+        
+        const dataToSend = {
+          ...formData,
+          taxRegime: taxRegimeToSend
+        };
+        
+        const res = await api.put('/auth/profile', dataToSend);
         
         // Update local user state
-        const updatedUser = { ...user, ...formData };
+        const updatedUser = { ...user, ...res.data.user || formData };
         setUser(updatedUser);
         localStorage.setItem('user', JSON.stringify(updatedUser));
 
@@ -178,10 +218,11 @@ const Settings = () => {
         });
     } catch (error) {
         console.error('Update error:', error);
+        const { title, message } = extractErrorMessage(error);
         setAlertState({
             isOpen: true,
-            title: t('common.error'),
-            message: error.response?.data?.message || t('settings.update_error') || 'Falha ao atualizar perfil.',
+            title: title || t('common.error'),
+            message: message || t('settings.update_error') || 'Falha ao atualizar perfil.',
             type: 'error'
         });
     } finally {
@@ -193,24 +234,25 @@ const Settings = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate File Size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate File Size (10MB para alta qualidade)
+    if (file.size > 10 * 1024 * 1024) {
         setAlertState({
             isOpen: true,
             title: t('common.error'),
-            message: 'O arquivo é muito grande. O tamanho máximo permitido é 5MB.',
+            message: 'O arquivo é muito grande. O tamanho máximo permitido é 10MB.',
             type: 'error'
         });
         e.target.value = ''; // Reset input
         return;
     }
-    
-    // Validate File Type
-    if (!file.type.startsWith('image/')) {
+
+    // Validate File Type (incluindo SVG para logos vetoriais)
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
+    if (!validTypes.includes(file.type)) {
         setAlertState({
              isOpen: true,
              title: t('common.error'),
-             message: 'Formato inválido. Apenas imagens são permitidas.',
+             message: 'Formato inválido. Apenas imagens (JPG, PNG, WEBP, SVG) são permitidas.',
              type: 'error'
         });
         e.target.value = ''; // Reset input
@@ -236,15 +278,20 @@ const Settings = () => {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         
-        // Update local user state
+        // Construir URL completa da logo usando origem atual
+        const fullLogoUrl = `${window.location.origin}/uploads/logos/${res.data.logo}`;
+        
+        // Update local user state com a logo salva
         const updatedUser = { ...user, logo: res.data.logo };
         setUser(updatedUser);
         localStorage.setItem('user', JSON.stringify(updatedUser));
         
-        // Update preview with server URL to be sure
-        const API_URL = import.meta.env.VITE_API_URL;
-        const BASE_URL = API_URL ? API_URL.replace('/api', '') : '';
-        setLogoPreview(`${BASE_URL}/uploads/logos/${res.data.logo}`);
+        // Update preview
+        setLogoPreview(fullLogoUrl);
+        
+        console.log('✅ [LOGO UPLOAD] Logo salva:', res.data.logo);
+        console.log('✅ [LOGO UPLOAD] URL completa:', fullLogoUrl);
+        console.log('✅ [LOGO UPLOAD] User atualizado no localStorage');
 
         setAlertState({
             isOpen: true,
@@ -454,7 +501,7 @@ const Settings = () => {
                                     <input 
                                         type="file" 
                                         className="hidden" 
-                                        accept="image/*"
+                                        accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml"
                                         onChange={handleLogoChange}
                                         disabled={loading}
                                     />
@@ -470,7 +517,8 @@ const Settings = () => {
                                 <img 
                                     src={logoPreview} 
                                     alt="Logo Preview" 
-                                    className="max-h-32 object-contain" 
+                                    className="max-h-48 max-w-full object-contain" 
+                                    style={{ imageRendering: 'auto', maxWidth: '300px' }}
                                     onError={(e) => {e.target.src = 'https://via.placeholder.com/150?text=Erro+Imagem'}}
                                 />
                                 {isPremium && (
@@ -596,16 +644,16 @@ const Settings = () => {
                                 onChange={handleInputChange}
                                 className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 transition-all"
                             >
-                                <option value="MEI">MEI (Microempreendedor Individual)</option>
-                                <option value="Simples Nacional">Simples Nacional</option>
-                                <option value="Lucro Presumido">Lucro Presumido</option>
-                                <option value="Lucro Real">Lucro Real</option>
+                                <option value="mei">MEI (Microempreendedor Individual)</option>
+                                <option value="simples">Simples Nacional</option>
+                                <option value="presumido">Lucro Presumido</option>
+                                <option value="real">Lucro Real</option>
                             </select>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                {formData.taxRegime === 'MEI' ? 'Inscrição Municipal (CCM)' : 'Inscrição Municipal'} <span className="text-xs text-gray-500 font-normal">(Opcional para testes)</span>
+                                {formData.taxRegime === 'mei' ? 'Inscrição Municipal (CCM)' : 'Inscrição Municipal'} <span className="text-xs text-gray-500 font-normal">(Opcional para testes)</span>
                             </label>
                             <input
                                 type="text"
@@ -613,12 +661,12 @@ const Settings = () => {
                                 value={formData.municipalRegistration}
                                 onChange={handleInputChange}
                                 className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 transition-all"
-                                placeholder={formData.taxRegime === 'MEI' ? "Ex: 12345 (CCM)" : "Ex: 12345678"}
+                                placeholder={formData.taxRegime === 'mei' ? "Ex: 12345 (CCM)" : "Ex: 12345678"}
                             />
                         </div>
                     </div>
 
-                    {formData.taxRegime === 'MEI' && (
+                    {formData.taxRegime === 'mei' && (
                          <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800 text-sm text-yellow-800 dark:text-yellow-200">
                              <p><strong>💡 Dica para MEI:</strong></p>
                              <ul className="list-disc ml-5 mt-1 space-y-1">

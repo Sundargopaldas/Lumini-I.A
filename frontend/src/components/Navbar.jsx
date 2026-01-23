@@ -4,24 +4,23 @@ import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import Logo from './Logo';
 import CustomAlert from './CustomAlert';
+import { getUser, removeToken, removeUser, clearAuth } from '../utils/storage';
 
 const Navbar = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
+  const [user, setUser] = useState(getUser() || {});
   
-  // Listen to localStorage changes to update user state
+  // Listen to storage changes to update user state
   useEffect(() => {
     const handleStorageChange = () => {
-        const storedUser = localStorage.getItem('user');
+        const storedUser = getUser();
         if (storedUser) {
-            try {
-                setUser(JSON.parse(storedUser));
-            } catch (error) {
-                console.error('Error parsing user from storage:', error);
-            }
+            setUser(storedUser);
+        } else {
+            setUser({});
         }
     };
     
@@ -58,8 +57,7 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    clearAuth();
     navigate('/login');
   };
 

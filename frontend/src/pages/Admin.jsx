@@ -208,16 +208,39 @@ const Admin = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {accountants.map((acc) => (
+                  {accountants.map((acc) => {
+                    // Construir URL correta para imagem do contador
+                    const getAccountantImageUrl = () => {
+                      if (!acc.image) return null;
+                      if (acc.image.startsWith('http')) return acc.image;
+                      
+                      // Usar a mesma lógica de outras partes do sistema
+                      const API_URL = import.meta.env.VITE_API_URL;
+                      const BASE_URL = API_URL ? API_URL.replace('/api', '') : '';
+                      return `${BASE_URL}/uploads/accountants/${acc.image}`;
+                    };
+                    
+                    const imageUrl = getAccountantImageUrl();
+                    
+                    return (
                     <tr key={acc.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {acc.image && (
+                          {imageUrl ? (
                             <img 
-                                src={acc.image.startsWith('http') ? acc.image : `http://localhost:5000${acc.image}`} 
-                                alt="" 
+                                src={imageUrl} 
+                                alt={acc.name || 'Contador'} 
                                 className="w-8 h-8 rounded-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
                             />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                              <span className="text-purple-600 dark:text-purple-400 text-xs font-semibold">
+                                {(acc.name || '?').charAt(0).toUpperCase()}
+                              </span>
+                            </div>
                           )}
                           <span className="font-medium text-slate-800 dark:text-white">{acc.name}</span>
                         </div>
@@ -260,7 +283,8 @@ const Admin = () => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  );
+                  })}
                   {accountants.length === 0 && (
                     <tr>
                       <td colSpan="5" className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">

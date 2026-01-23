@@ -20,23 +20,48 @@ import FinancialPlanningModal from '../components/FinancialPlanningModal';
 // Função helper para normalizar caracteres especiais para PDF
 const normalizeForPDF = (text) => {
   if (!text) return '';
-  return String(text)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-    .replace(/[àáâãäå]/g, 'a')
-    .replace(/[èéêë]/g, 'e')
-    .replace(/[ìíîï]/g, 'i')
-    .replace(/[òóôõö]/g, 'o')
-    .replace(/[ùúûü]/g, 'u')
-    .replace(/[ç]/g, 'c')
-    .replace(/[ñ]/g, 'n')
-    .replace(/[ÀÁÂÃÄÅ]/g, 'A')
-    .replace(/[ÈÉÊË]/g, 'E')
-    .replace(/[ÌÍÎÏ]/g, 'I')
-    .replace(/[ÒÓÔÕÖ]/g, 'O')
-    .replace(/[ÙÚÛÜ]/g, 'U')
-    .replace(/[Ç]/g, 'C')
-    .replace(/[Ñ]/g, 'N');
+  
+  // PRIMEIRO: Remover TODOS os emojis e símbolos especiais
+  let normalized = String(text)
+    // Remove emojis (todos os ranges Unicode de emojis)
+    .replace(/[\u{1F300}-\u{1F9FF}]/gu, '') // Emojis diversos
+    .replace(/[\u{2600}-\u{26FF}]/gu, '')   // Símbolos diversos
+    .replace(/[\u{2700}-\u{27BF}]/gu, '')   // Dingbats
+    .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // Emoticons
+    .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') // Transporte e mapas
+    .replace(/[\u{1F900}-\u{1F9FF}]/gu, '') // Símbolos suplementares
+    .replace(/[\u{FE00}-\u{FE0F}]/gu, '')   // Variação de seletor
+    .replace(/[\u{200D}]/gu, '')            // Zero width joiner
+    .replace(/[\u{E0020}-\u{E007F}]/gu, '') // Tags
+    .trim();
+  
+  // SEGUNDO: Mapa de acentos para seus equivalentes
+  const map = {
+    'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'ä': 'a', 'å': 'a',
+    'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
+    'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
+    'ó': 'o', 'ò': 'o', 'õ': 'o', 'ô': 'o', 'ö': 'o',
+    'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u',
+    'ç': 'c', 'ñ': 'n',
+    'Á': 'A', 'À': 'A', 'Ã': 'A', 'Â': 'A', 'Ä': 'A', 'Å': 'A',
+    'É': 'E', 'È': 'E', 'Ê': 'E', 'Ë': 'E',
+    'Í': 'I', 'Ì': 'I', 'Î': 'I', 'Ï': 'I',
+    'Ó': 'O', 'Ò': 'O', 'Õ': 'O', 'Ô': 'O', 'Ö': 'O',
+    'Ú': 'U', 'Ù': 'U', 'Û': 'U', 'Ü': 'U',
+    'Ç': 'C', 'Ñ': 'N'
+  };
+  
+  return normalized.split('').map(char => map[char] || char).join('');
+};
+
+// Função para formatar valores em Real brasileiro
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value);
 };
 
 // Register ChartJS components
@@ -51,12 +76,15 @@ ChartJS.register(
 );
 
 const Reports = () => {
+  console.log('🚀🚀🚀 VERSÃO NOVA CARREGADA - 23/01/2026 19:45 🚀🚀🚀');
+  
   const { t, i18n } = useTranslation();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isPlanningModalOpen, setIsPlanningModalOpen] = useState(false);
+  const [accountantProfile, setAccountantProfile] = useState(null);
 
   // Custom Alert State
   const [alertState, setAlertState] = useState({
@@ -80,18 +108,49 @@ const Reports = () => {
   const isPremium = ['premium', 'agency'].includes(user.plan);
 
   useEffect(() => {
-    const fetchTransactions = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get('/transactions');
-        setTransactions(response.data);
+        // Buscar transações
+        const transactionsResponse = await api.get('/transactions');
+        setTransactions(transactionsResponse.data);
+
+        // Buscar dados do usuário atual
+        const currentUserResponse = await api.get('/auth/me');
+        const currentUser = currentUserResponse.data;
+        console.log('👤 [REPORTS-INIT] Usuário atual:', currentUser.email, 'isAccountant:', currentUser.isAccountant);
+
+        // Se usuário É contador, buscar próprio perfil
+        if (currentUser.isAccountant) {
+          console.log('🔍 [REPORTS-INIT] Usuário é contador! Buscando próprio perfil...');
+          try {
+            const response = await api.get('/accountants/dashboard/stats');
+            setAccountantProfile(response.data.accountantProfile);
+            console.log('✅ [REPORTS-INIT] Perfil do contador salvo no estado:', response.data.accountantProfile?.businessName);
+            console.log('🖼️ [REPORTS-INIT] Logo do contador:', response.data.accountantProfile?.logo);
+          } catch (error) {
+            console.warn('⚠️ [REPORTS-INIT] Erro ao buscar perfil do contador:', error);
+          }
+        } else {
+          // Se é cliente, buscar contador vinculado
+          console.log('🔍 [REPORTS-INIT] Usuário é cliente! Buscando contador vinculado...');
+          try {
+            const response = await api.get('/accountants/my-accountant');
+            setAccountantProfile(response.data);
+            console.log('✅ [REPORTS-INIT] Perfil do contador vinculado salvo:', response.data?.businessName);
+            console.log('🖼️ [REPORTS-INIT] Logo do contador vinculado:', response.data?.logo);
+          } catch (error) {
+            console.warn('⚠️ [REPORTS-INIT] Cliente sem contador vinculado:', error);
+            setAccountantProfile(null);
+          }
+        }
       } catch (error) {
-        console.error('Error fetching transactions:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTransactions();
+    fetchData();
   }, []);
 
   // Process data for charts
@@ -199,56 +258,682 @@ const Reports = () => {
     };
   }, [transactions, selectedMonth, selectedYear, i18n.language, t]);
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (!isPro) {
         showAlert(t('reports.feature_locked'), t('reports.pdf_locked_msg'), 'locked');
         return;
     }
-    const doc = new jsPDF();
     
-    // Header
-    doc.setFontSize(20);
-    doc.setTextColor(128, 90, 213); // Purple
-    doc.text(normalizeForPDF('Lumini I.A - ' + t('reports.title')), 14, 22);
-    
-    doc.setFontSize(12);
-    doc.setTextColor(100);
-    doc.text(normalizeForPDF(`${t('reports.monthly_overview')}: ${new Date().toLocaleDateString(i18n.language)}`), 14, 32);
-    doc.text(normalizeForPDF(`${t('common.date') || 'Date'}: ${selectedMonth === 'all' ? t('reports.all_months') : new Date(0, selectedMonth).toLocaleString(i18n.language, { month: 'long' })} ${selectedYear}`), 14, 38);
-
-    // Summary Section
-    autoTable(doc, {
-        startY: 45,
-        head: [[normalizeForPDF(t('reports.total_income')), normalizeForPDF(t('reports.total_expenses')), normalizeForPDF(t('reports.net_balance'))]],
-        body: [[
-            `R$ ${summary.income.toFixed(2)}`,
-            `R$ ${summary.expense.toFixed(2)}`,
-            `R$ ${summary.balance.toFixed(2)}`
-        ]],
-        theme: 'grid',
-        headStyles: { fillColor: [128, 90, 213] }
-    });
-
-    // Transactions Table
-    doc.text(normalizeForPDF(t('transactions.title')), 14, doc.lastAutoTable.finalY + 15);
-    
-    const tableData = filteredTransactions.map(t => [
-        new Date(t.date).toLocaleDateString(i18n.language),
-        normalizeForPDF(t.description),
-        normalizeForPDF(t.source || '-'),
-        t.type === 'income' ? `+ R$ ${parseFloat(t.amount).toFixed(2)}` : `- R$ ${Math.abs(parseFloat(t.amount)).toFixed(2)}`
-    ]);
-
-    autoTable(doc, {
-        startY: doc.lastAutoTable.finalY + 20,
-        head: [[normalizeForPDF(t('common.date')), normalizeForPDF(t('common.description')), normalizeForPDF(t('reports.income_sources') + '/' + t('reports.expense_breakdown')), normalizeForPDF(t('reports.net_balance'))]], 
-        body: tableData,
-        theme: 'striped',
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [75, 85, 99] }
-    });
-
-    doc.save('lumini-report.pdf');
+    try {
+      // Validar dados necessários
+      console.log('📋 Iniciando geração de PDF...');
+      console.log('📊 Resumo:', summary);
+      console.log('📝 Transações filtradas:', filteredTransactions?.length || 0);
+      console.log('📝 Primeiras 3 transações:', filteredTransactions?.slice(0, 3));
+      
+      if (!summary || typeof summary.income !== 'number' || typeof summary.expense !== 'number') {
+        throw new Error('Dados de resumo financeiro inválidos');
+      }
+      
+      if (!Array.isArray(filteredTransactions)) {
+        throw new Error('Lista de transações inválida');
+      }
+      
+      // Se não há transações, avisar mas continuar
+      if (filteredTransactions.length === 0) {
+        console.warn('⚠️ Nenhuma transação encontrada para o período selecionado');
+      }
+      
+      // Buscar dados atualizados do usuário antes de gerar o PDF
+      let currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      try {
+        const userResponse = await api.get('/auth/me');
+        currentUser = userResponse.data;
+        // Atualizar localStorage com dados completos
+        localStorage.setItem('user', JSON.stringify(currentUser));
+      } catch (error) {
+        console.warn('Não foi possível buscar dados atualizados do usuário, usando dados do localStorage:', error);
+        // Continua com dados do localStorage se a API falhar
+      }
+      
+      // 🎯 USAR accountantProfile que JÁ está no estado (carregado no useEffect)
+      console.log('📦 [PDF-EXPORT] Usando accountantProfile do estado:', accountantProfile?.businessName);
+      console.log('🖼️ [PDF-EXPORT] Logo disponível:', accountantProfile?.logo);
+      
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let yPosition = 20;
+      
+      // 🎯 LOGO DO CONTADOR - COPIADO EXATAMENTE DO AccountantDashboard.jsx (FUNCIONA!)
+      let logoAdded = false;
+      
+      if (accountantProfile?.logo) {
+        console.log('✅ [LOGO] Carregando logo:', accountantProfile.logo);
+        try {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          
+          // Construir URL completa
+          let logoUrl = accountantProfile.logo;
+          if (!logoUrl.startsWith('http')) {
+            // Se começa com /, é caminho absoluto
+            logoUrl = logoUrl.startsWith('/') 
+              ? `${window.location.origin}${logoUrl}`
+              : `${window.location.origin}/${logoUrl}`;
+          }
+          
+          console.log('🌐 [LOGO] URL completa:', logoUrl);
+          
+          await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Timeout')), 3000);
+            img.onload = () => {
+              clearTimeout(timeout);
+              try {
+                const canvas = document.createElement('canvas');
+                // 🔥 ALTA QUALIDADE: Canvas grande para melhor resolução
+                const size = 512;
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d', { alpha: true });
+                
+                if (ctx && img.complete && img.naturalWidth > 0) {
+                  // 🎨 Melhorar qualidade da renderização
+                  ctx.imageSmoothingEnabled = true;
+                  ctx.imageSmoothingQuality = 'high';
+                  
+                  // Desenhar com proporção mantida
+                  const aspectRatio = img.naturalWidth / img.naturalHeight;
+                  let drawWidth = size;
+                  let drawHeight = size;
+                  let offsetX = 0;
+                  let offsetY = 0;
+                  
+                  if (aspectRatio > 1) {
+                    drawHeight = size / aspectRatio;
+                    offsetY = (size - drawHeight) / 2;
+                  } else {
+                    drawWidth = size * aspectRatio;
+                    offsetX = (size - drawWidth) / 2;
+                  }
+                  
+                  ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+                  
+                  // 📸 Exportar com MÁXIMA qualidade
+                  const logoData = canvas.toDataURL('image/png', 1.0);
+                  
+                  if (logoData && logoData.length > 100) {
+                    // Logo em ALTA RESOLUÇÃO (sem background)
+                    doc.addImage(logoData, 'PNG', 14, 8, 32, 32);
+                    logoAdded = true;
+                    console.log('✅ [LOGO] Logo HD adicionada ao PDF!');
+                    resolve(true);
+                  } else {
+                    resolve(false);
+                  }
+                } else {
+                  resolve(false);
+                }
+              } catch (e) {
+                console.warn('Erro ao processar logo do contador:', e);
+                resolve(false);
+              }
+            };
+            img.onerror = () => {
+              clearTimeout(timeout);
+              resolve(false);
+            };
+            img.src = logoUrl;
+          });
+        } catch (e) {
+          console.error('❌ [LOGO] Erro:', e);
+        }
+      } else {
+        console.log('⚠️ [LOGO] Campo logo está vazio ou null');
+      }
+      
+      // ===== HEADER ULTRA MODERNO COM GRADIENTE SUAVE =====
+      // Gradiente roxo para azul (3 camadas para efeito smooth)
+      doc.setFillColor(109, 40, 217); // Purple 700
+      doc.rect(0, 0, pageWidth, 55, 'F');
+      doc.setFillColor(124, 58, 237); // Purple 600
+      doc.rect(0, 0, pageWidth, 50, 'F');
+      doc.setFillColor(139, 92, 246); // Purple 500
+      doc.rect(0, 0, pageWidth, 45, 'F');
+      
+      // Elementos decorativos (círculos)
+      doc.setFillColor(255, 255, 255);
+      doc.setGState(doc.GState({opacity: 0.1}));
+      doc.circle(pageWidth - 20, 15, 25, 'F');
+      doc.circle(pageWidth - 40, 35, 15, 'F');
+      doc.setGState(doc.GState({opacity: 1}));
+      
+      // Title Section - Nome do Contador ou Lumini
+      const headerTitle = accountantProfile?.businessName || accountantProfile?.name || 'Lumini I.A';
+      console.log('📝 [PDF-HEADER] Título selecionado:', headerTitle);
+      console.log('   - businessName:', accountantProfile?.businessName);
+      console.log('   - name:', accountantProfile?.name);
+      doc.setFontSize(28);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 255, 255);
+      doc.text(normalizeForPDF(headerTitle), 50, 22);
+      
+      // Subtitle com ícone
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(255, 255, 255);
+      doc.setGState(doc.GState({opacity: 0.95}));
+      doc.text(normalizeForPDF('Analise Financeira Profissional'), 50, 31);
+      doc.setGState(doc.GState({opacity: 1}));
+      
+      // Data de geração no header
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      doc.setGState(doc.GState({opacity: 0.8}));
+      const headerDate = new Date().toLocaleDateString('pt-BR', { 
+        day: '2-digit', 
+        month: 'long', 
+        year: 'numeric' 
+      });
+      doc.text(normalizeForPDF(`Gerado em ${headerDate}`), 50, 35);
+      doc.setGState(doc.GState({opacity: 1}));
+      
+      // Linha decorativa com gradiente
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(2);
+      doc.setGState(doc.GState({opacity: 0.3}));
+      doc.line(14, 48, pageWidth - 14, 48);
+      doc.setGState(doc.GState({opacity: 1}));
+      
+      yPosition = 62;
+      
+      // ===== USER INFO CARD (DESIGN ULTRA MODERNO) =====
+      if (currentUser.name || currentUser.email) {
+        // Sombra do card (simulada)
+        doc.setFillColor(226, 232, 240);
+        doc.setGState(doc.GState({opacity: 0.3}));
+        doc.rect(15, yPosition - 4, pageWidth - 28, 38, 'F');
+        doc.setGState(doc.GState({opacity: 1}));
+        
+        // Card background com gradiente sutil
+        doc.setFillColor(255, 255, 255);
+        doc.rect(14, yPosition - 5, pageWidth - 28, 38, 'F');
+        
+        // Borda superior colorida (accent)
+        doc.setFillColor(139, 92, 246);
+        doc.rect(14, yPosition - 5, pageWidth - 28, 3, 'F');
+        
+        // Card border
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.5);
+        doc.rect(14, yPosition - 5, pageWidth - 28, 38);
+        
+        // Ícone do usuário
+        doc.setFillColor(139, 92, 246);
+        doc.setGState(doc.GState({opacity: 0.15}));
+        doc.circle(22, yPosition + 8, 6, 'F');
+        doc.setGState(doc.GState({opacity: 1}));
+        doc.setTextColor(139, 92, 246);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('U', 20, yPosition + 10);
+        
+        // Title
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text(normalizeForPDF('Dados do Cliente'), 30, yPosition + 2);
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(71, 85, 105);
+        
+        let infoX = 30;
+        let infoY = yPosition + 10;
+        const infoWidth = (pageWidth - 50) / 2;
+        
+        if (currentUser.name) {
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(30, 41, 59);
+          doc.text(normalizeForPDF(currentUser.name), infoX, infoY);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(71, 85, 105);
+        }
+        if (currentUser.email) {
+          doc.text(`${currentUser.email}`, infoX + infoWidth, infoY);
+        }
+        if (currentUser.cpfCnpj) {
+          infoY += 6;
+          doc.text(`CPF/CNPJ: ${currentUser.cpfCnpj}`, infoX, infoY);
+        }
+        if (currentUser.address) {
+          doc.text(normalizeForPDF(`Endereco: ${currentUser.address.substring(0, 38)}`), infoX + infoWidth, infoY);
+        }
+        
+        yPosition += 43;
+      }
+      
+      // ===== PERIOD INFO (BADGE MODERNO) =====
+      const periodText = selectedMonth === 'all' 
+        ? `${t('reports.all_months')} ${selectedYear}`
+        : `${new Date(selectedYear, parseInt(selectedMonth)).toLocaleString(i18n.language, { month: 'long', year: 'numeric' })}`;
+      const generatedDate = new Date().toLocaleDateString(i18n.language);
+      const generatedTime = new Date().toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
+      
+      // Period badge com sombra
+      doc.setFillColor(200, 200, 200);
+      doc.setGState(doc.GState({opacity: 0.2}));
+      doc.rect(15, yPosition - 3, 85, 11, 'F');
+      doc.setGState(doc.GState({opacity: 1}));
+      
+      doc.setFillColor(139, 92, 246);
+      doc.rect(14, yPosition - 4, 85, 11, 'F');
+      
+      // Badge de período (sem ícone)
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(normalizeForPDF(periodText), 24, yPosition + 2.5);
+      
+      // Status badge (Gerado)
+      doc.setFillColor(16, 185, 129); // Green
+      doc.rect(pageWidth - 90, yPosition - 4, 76, 11, 'F');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'normal');
+      const genText = `${generatedDate} ${generatedTime}`;
+      doc.text(normalizeForPDF(genText), pageWidth - 82, yPosition + 2.5);
+      
+      yPosition += 20;
+      
+      // ===== FINANCIAL SUMMARY CARDS (DESIGN PREMIUM) =====
+      // Section title
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text(normalizeForPDF('Resumo Financeiro'), 14, yPosition);
+      yPosition += 12;
+      
+      const cardWidth = (pageWidth - 40) / 3; // 3 cards
+      const cardHeight = 38;
+      const cardSpacing = 13;
+      
+      // Card 1: Receitas (Income) - Design Moderno
+      const card1X = 14;
+      // Sombra
+      doc.setFillColor(200, 200, 200);
+      doc.setGState(doc.GState({opacity: 0.15}));
+      doc.rect(card1X + 1, yPosition + 1, cardWidth, cardHeight, 'F');
+      doc.setGState(doc.GState({opacity: 1}));
+      
+      // Background com gradiente verde
+      doc.setFillColor(240, 253, 244); // Green 50
+      doc.rect(card1X, yPosition, cardWidth, cardHeight, 'F');
+      
+      // Borda esquerda colorida
+      doc.setFillColor(16, 185, 129);
+      doc.rect(card1X, yPosition, 3, cardHeight, 'F');
+      
+      // Ícone
+      doc.setFillColor(16, 185, 129);
+      doc.setGState(doc.GState({opacity: 0.2}));
+      doc.circle(card1X + 10, yPosition + 10, 5, 'F');
+      doc.setGState(doc.GState({opacity: 1}));
+      doc.setFontSize(10);
+      doc.setTextColor(16, 185, 129);
+      doc.text('↑', card1X + 8, yPosition + 12);
+      
+      // Label
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(107, 114, 128);
+      doc.text(normalizeForPDF(t('reports.total_income') || 'RECEITAS'), card1X + 18, yPosition + 10);
+      
+      // Valor
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(16, 185, 129);
+      const incomeText = formatCurrency(summary.income || 0);
+      doc.text(normalizeForPDF(incomeText), card1X + 8, yPosition + 26);
+      
+      // Card 2: Despesas (Expenses)
+      const card2X = card1X + cardWidth + cardSpacing;
+      // Sombra
+      doc.setFillColor(200, 200, 200);
+      doc.setGState(doc.GState({opacity: 0.15}));
+      doc.rect(card2X + 1, yPosition + 1, cardWidth, cardHeight, 'F');
+      doc.setGState(doc.GState({opacity: 1}));
+      
+      // Background
+      doc.setFillColor(254, 242, 242); // Red 50
+      doc.rect(card2X, yPosition, cardWidth, cardHeight, 'F');
+      
+      // Borda esquerda
+      doc.setFillColor(239, 68, 68);
+      doc.rect(card2X, yPosition, 3, cardHeight, 'F');
+      
+      // Ícone
+      doc.setFillColor(239, 68, 68);
+      doc.setGState(doc.GState({opacity: 0.2}));
+      doc.circle(card2X + 10, yPosition + 10, 5, 'F');
+      doc.setGState(doc.GState({opacity: 1}));
+      doc.setFontSize(10);
+      doc.setTextColor(239, 68, 68);
+      doc.text('↓', card2X + 8, yPosition + 12);
+      
+      // Label
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(107, 114, 128);
+      doc.text(normalizeForPDF(t('reports.total_expenses') || 'DESPESAS'), card2X + 18, yPosition + 10);
+      
+      // Valor
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(239, 68, 68);
+      const expenseText = formatCurrency(summary.expense || 0);
+      doc.text(normalizeForPDF(expenseText), card2X + 8, yPosition + 26);
+      
+      // Card 3: Saldo (Balance)
+      const card3X = card2X + cardWidth + cardSpacing;
+      const balanceColor = (summary.balance || 0) >= 0 ? [139, 92, 246] : [239, 68, 68];
+      const balanceBg = (summary.balance || 0) >= 0 ? [245, 243, 255] : [254, 242, 242];
+      
+      // Sombra
+      doc.setFillColor(200, 200, 200);
+      doc.setGState(doc.GState({opacity: 0.15}));
+      doc.rect(card3X + 1, yPosition + 1, cardWidth, cardHeight, 'F');
+      doc.setGState(doc.GState({opacity: 1}));
+      
+      // Background
+      doc.setFillColor(...balanceBg);
+      doc.rect(card3X, yPosition, cardWidth, cardHeight, 'F');
+      
+      // Borda esquerda
+      doc.setFillColor(...balanceColor);
+      doc.rect(card3X, yPosition, 3, cardHeight, 'F');
+      
+      // Ícone
+      doc.setFillColor(...balanceColor);
+      doc.setGState(doc.GState({opacity: 0.2}));
+      doc.circle(card3X + 10, yPosition + 10, 5, 'F');
+      doc.setGState(doc.GState({opacity: 1}));
+      doc.setFontSize(10);
+      doc.setTextColor(...balanceColor);
+      doc.text('=', card3X + 8, yPosition + 12);
+      
+      // Label
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(107, 114, 128);
+      doc.text(normalizeForPDF(t('reports.net_balance') || 'SALDO'), card3X + 18, yPosition + 10);
+      
+      // Valor
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...balanceColor);
+      const balanceText = formatCurrency(summary.balance || 0);
+      doc.text(normalizeForPDF(balanceText), card3X + 8, yPosition + 26);
+      
+      yPosition += cardHeight + 16;
+      
+      // ===== TRANSACTIONS SECTION (DESIGN PREMIUM) =====
+      if (filteredTransactions && filteredTransactions.length > 0) {
+        try {
+          // Section title com gradiente
+          doc.setFillColor(99, 102, 241); // Indigo 500
+          doc.rect(14, yPosition - 6, pageWidth - 28, 12, 'F');
+          doc.setFillColor(139, 92, 246); // Purple 500  
+          doc.rect(14, yPosition - 6, (pageWidth - 28) * 0.7, 12, 'F');
+          
+          // Título
+          doc.setFontSize(11);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(255, 255, 255);
+          doc.text(normalizeForPDF(t('transactions.title') || 'Detalhamento de Transacoes'), 18, yPosition);
+          
+          // Contador de transações
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          doc.setGState(doc.GState({opacity: 0.9}));
+          doc.text(`${filteredTransactions.length} registros`, pageWidth - 40, yPosition);
+          doc.setGState(doc.GState({opacity: 1}));
+          
+          yPosition += 11;
+          
+          // Format table data com validação MELHORADA
+          console.log('📊 Processando transações para PDF:', filteredTransactions.length);
+          const tableData = filteredTransactions.map((t, index) => {
+            try {
+              // Data
+              let date = '-';
+              if (t.date) {
+                try {
+                  const dateObj = new Date(t.date);
+                  if (!isNaN(dateObj.getTime())) {
+                    date = dateObj.toLocaleDateString(i18n.language || 'pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
+                    });
+                  } else {
+                    date = String(t.date).substring(0, 10);
+                  }
+                } catch (e) {
+                  date = String(t.date || '-').substring(0, 10);
+                }
+              }
+              
+              // Descrição
+              let description = String(t.description || t.name || '-');
+              if (!description || description === '-') {
+                description = t.type === 'income' ? 'Receita' : 'Despesa';
+              }
+              description = normalizeForPDF(description.substring(0, 50));
+              
+              // Fonte/Categoria
+              const uncategorizedLabel = 'Sem Categoria';
+              let source = String(t.source || t.category || uncategorizedLabel);
+              source = normalizeForPDF(source.substring(0, 30));
+              
+              // Valor
+              let amountValue = 0;
+              if (t.amount !== undefined && t.amount !== null) {
+                try {
+                  amountValue = parseFloat(t.amount);
+                  if (isNaN(amountValue)) {
+                    amountValue = 0;
+                  }
+                } catch (e) {
+                  console.warn(`Erro ao parsear valor da transação ${index}:`, e);
+                  amountValue = 0;
+                }
+              }
+              
+              const formattedAmount = formatCurrency(Math.abs(amountValue));
+              const amount = (t.type === 'income') 
+                ? `+ ${normalizeForPDF(formattedAmount)}` 
+                : `- ${normalizeForPDF(formattedAmount)}`;
+              
+              // Log para debug
+              if (index < 3) {
+                console.log(`Transação ${index}:`, { date, description, source, amount });
+              }
+              
+              return [date, description, source, amount];
+            } catch (rowError) {
+              console.error(`Erro ao processar linha ${index} da tabela:`, rowError, t);
+              return ['-', '-', '-', '-'];
+            }
+          });
+          
+          console.log('✅ Dados da tabela processados:', tableData.length, 'linhas');
+          
+          if (tableData.length > 0) {
+            autoTable(doc, {
+                startY: yPosition,
+                head: [[
+                    normalizeForPDF(t('common.date') || 'Data'), 
+                    normalizeForPDF(t('common.description') || 'Descricao'), 
+                    normalizeForPDF('Fonte/Categoria'), 
+                    normalizeForPDF('Valor')
+                ]], 
+                body: tableData,
+                theme: 'striped',
+                headStyles: { 
+                    fillColor: [71, 85, 105], // Slate 600
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    fontSize: 10,
+                    halign: 'left',
+                    valign: 'middle'
+                },
+                bodyStyles: { 
+                    fontSize: 9,
+                    textColor: [30, 41, 59], // Slate 800
+                    lineColor: [226, 232, 240], // Slate 200
+                    lineWidth: 0.1
+                },
+                alternateRowStyles: {
+                    fillColor: [248, 250, 252] // Slate 50
+                },
+                columnStyles: {
+                    0: { cellWidth: 30, halign: 'left' },
+                    1: { cellWidth: 75, halign: 'left' },
+                    2: { cellWidth: 50, halign: 'left' },
+                    3: { cellWidth: 35, halign: 'right', fontStyle: 'bold' }
+                },
+                margin: { left: 14, right: 14, top: 5 },
+                styles: { 
+                    overflow: 'linebreak',
+                    cellPadding: 4,
+                    lineColor: [226, 232, 240],
+                    lineWidth: 0.1
+                },
+                tableLineColor: [226, 232, 240],
+                tableLineWidth: 0.1
+            });
+          }
+        } catch (transactionsError) {
+          console.error('Erro ao criar tabela de transações:', transactionsError);
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'italic');
+          doc.setTextColor(148, 163, 184);
+          doc.text(normalizeForPDF('Erro ao processar transacoes.'), 14, yPosition);
+          yPosition += 10;
+        }
+      } else {
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(148, 163, 184); // Slate 400
+        doc.text(normalizeForPDF('Nenhuma transacao encontrada para o periodo selecionado.'), 14, yPosition);
+        yPosition += 10;
+      }
+      
+      // ===== FOOTER ULTRA ELEGANTE =====
+      try {
+        const totalPages = doc.internal.pages.length - 1;
+        for (let i = 1; i <= totalPages; i++) {
+          doc.setPage(i);
+          
+          // Footer com gradiente
+          doc.setFillColor(248, 250, 252); // Slate 50
+          doc.rect(0, pageHeight - 28, pageWidth, 28, 'F');
+          
+          // Linha superior gradiente (2 cores)
+          doc.setFillColor(139, 92, 246); // Purple
+          doc.rect(0, pageHeight - 28, pageWidth / 2, 2, 'F');
+          doc.setFillColor(99, 102, 241); // Indigo
+          doc.rect(pageWidth / 2, pageHeight - 28, pageWidth / 2, 2, 'F');
+          
+          // Elementos decorativos (pequenos círculos)
+          doc.setFillColor(139, 92, 246);
+          doc.setGState(doc.GState({opacity: 0.1}));
+          doc.circle(30, pageHeight - 14, 8, 'F');
+          doc.circle(pageWidth - 30, pageHeight - 14, 8, 'F');
+          doc.setGState(doc.GState({opacity: 1}));
+          
+          // Texto principal - Nome do Contador ou Lumini
+          const footerTitle = accountantProfile?.businessName || accountantProfile?.name || 'Lumini I.A';
+          const footerSubtitle = accountantProfile ? 'Contabilidade Profissional' : 'Gestao Financeira Inteligente';
+          
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(139, 92, 246);
+          doc.text(
+            normalizeForPDF(footerTitle),
+            14,
+            pageHeight - 16
+          );
+          
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7);
+          doc.setTextColor(107, 114, 128);
+          doc.text(
+            normalizeForPDF(footerSubtitle),
+            14,
+            pageHeight - 11
+          );
+          
+          // Paginação (centro) com estilo
+          doc.setFillColor(139, 92, 246);
+          doc.setGState(doc.GState({opacity: 0.1}));
+          doc.rect(pageWidth / 2 - 15, pageHeight - 19, 30, 8, 'F');
+          doc.setGState(doc.GState({opacity: 1}));
+          
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          doc.setTextColor(139, 92, 246);
+          doc.text(
+            `${i} / ${totalPages}`,
+            pageWidth / 2,
+            pageHeight - 14,
+            { align: 'center' }
+          );
+          
+          // Data e website (direita)
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7);
+          doc.setTextColor(107, 114, 128);
+          const footerDate = new Date().toLocaleDateString('pt-BR', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric' 
+          });
+          doc.text(
+            footerDate,
+            pageWidth - 14,
+            pageHeight - 16,
+            { align: 'right' }
+          );
+          
+          // Website
+          doc.setFontSize(6);
+          doc.setTextColor(139, 92, 246);
+          doc.text(
+            'luminiiadigital.com.br',
+            pageWidth - 14,
+            pageHeight - 11,
+            { align: 'right' }
+          );
+        }
+      } catch (footerError) {
+        console.warn('Erro ao adicionar footer:', footerError);
+      }
+      
+      // Save PDF
+      try {
+        const fileName = `lumini-relatorio-${selectedYear}-${selectedMonth === 'all' ? 'todos' : String(parseInt(selectedMonth) + 1).padStart(2, '0')}.pdf`;
+        doc.save(fileName);
+      } catch (saveError) {
+        console.error('Erro ao salvar PDF:', saveError);
+        throw new Error('Erro ao salvar arquivo PDF');
+      }
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      const errorMessage = error?.message || 'Erro desconhecido ao gerar o relatório PDF';
+      showAlert(t('common.error') || 'Erro', `Erro ao gerar o relatorio PDF: ${errorMessage}. Tente novamente.`, 'error');
+    }
   };
 
   const chartOptions = {

@@ -207,6 +207,37 @@ const Marketplace = () => {
     );
   };
 
+  const handleDeleteProfile = (accountantId) => {
+    showAlert(
+        'Tem certeza que deseja DELETAR seu perfil de contador? Esta ação não pode ser desfeita. Você perderá todos os clientes vinculados e seu perfil será removido do Marketplace.',
+        'confirm',
+        '⚠️ Deletar Perfil de Contador',
+        async () => {
+            try {
+                await api.delete(`/accountants/${accountantId}`);
+                
+                // Atualizar estado do usuário
+                const response = await api.get('/auth/me');
+                if (response.data) {
+                    setCurrentUser(response.data);
+                    
+                    // Atualizar localStorage
+                    const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+                    localStorage.setItem('user', JSON.stringify({ ...localUser, ...response.data }));
+                }
+                
+                // Atualizar lista de contadores
+                await fetchAccountants();
+                
+                showAlert('Perfil de contador deletado com sucesso!', 'success', 'Deletado');
+            } catch (error) {
+                console.error('Error deleting accountant profile:', error);
+                showAlert(error.response?.data?.message || 'Erro ao deletar perfil de contador.', 'error', 'Erro');
+            }
+        }
+    );
+  };
+
   const handleUnlink = () => {
     showAlert(
         'Tem certeza que deseja desvincular seu contador atual? Ele perderá acesso aos seus dados.',
@@ -313,29 +344,47 @@ const Marketplace = () => {
                   <div className="p-6">
                     <div className="flex items-start gap-4">
                       <div className="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-700 flex-shrink-0 overflow-hidden">
-                        {acc.image ? (
-                          <img 
-                            src={acc.image} 
-                            alt={acc.name} 
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.parentElement.innerHTML = `
-                                <div class="w-full h-full flex items-center justify-center text-slate-400">
-                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                  </svg>
-                                </div>
-                              `;
-                            }}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-slate-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        {(() => {
+                          // Construir URL correta para imagem do contador
+                          const getImageUrl = () => {
+                            if (!acc.image) return null;
+                            if (acc.image.startsWith('http')) return acc.image;
+                            
+                            const API_URL = import.meta.env.VITE_API_URL;
+                            const BASE_URL = API_URL ? API_URL.replace('/api', '') : '';
+                            return `${BASE_URL}/uploads/accountants/${acc.image}`;
+                          };
+                          
+                          const imageUrl = getImageUrl();
+                          
+                          if (imageUrl) {
+                            return (
+                              <img 
+                                src={imageUrl} 
+                                alt={acc.name} 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.parentElement.innerHTML = `
+                                    <div class="w-full h-full flex items-center justify-center text-slate-400">
+                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                      </svg>
+                                    </div>
+                                  `;
+                                }}
+                              />
+                            );
+                          }
+                          
+                          return (
+                            <div className="w-full h-full flex items-center justify-center text-slate-400">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
                           </div>
-                        )}
+                          );
+                        })()}
                       </div>
                       <div>
                         <div className="flex items-center gap-1">
@@ -423,13 +472,22 @@ const Marketplace = () => {
                       {currentUser && String(currentUser.id) === String(acc.userId) && (
                           <button 
                             onClick={() => handleDeleteMyAccountant(acc.id, acc.name)}
-                            className="w-full bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-blue-600/20 hover:from-blue-500/30 hover:via-indigo-500/30 hover:to-blue-600/30 dark:from-blue-400/25 dark:via-indigo-400/25 dark:to-blue-500/25 dark:hover:from-blue-400/40 dark:hover:via-indigo-400/40 dark:hover:to-blue-500/40 text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 py-2.5 rounded-lg font-semibold text-sm transition-all duration-300 border border-blue-300/60 dark:border-blue-400/40 hover:border-blue-400 dark:hover:border-blue-300/60 flex items-center justify-center gap-2 group shadow-md hover:shadow-xl hover:shadow-blue-500/20 dark:hover:shadow-blue-400/20 hover:scale-[1.02] active:scale-[0.98]"
+                            className="w-full bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 py-3 rounded-lg font-semibold text-sm transition-all border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-700 flex items-center justify-center gap-2 group"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
-                            <span className="group-hover:tracking-wide transition-all duration-300">{t('marketplace.remove_my_registration')}</span>
+                            <span>🗑️ Deletar Meu Escritório</span>
                           </button>
+                      )}
+                      
+                      {/* Debug: mostrar informações para diagnosticar */}
+                      {currentUser && process.env.NODE_ENV === 'development' && (
+                        <div className="text-xs text-slate-500 mt-2">
+                          <p>currentUser.id: {currentUser.id}</p>
+                          <p>acc.userId: {acc.userId}</p>
+                          <p>Corresponde: {String(currentUser.id) === String(acc.userId) ? 'SIM' : 'NÃO'}</p>
+                        </div>
                       )}
                     </div>
                   </div>

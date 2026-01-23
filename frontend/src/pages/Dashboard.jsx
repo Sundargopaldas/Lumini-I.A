@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import TrendChart from '../components/TrendChart';
 import SourceChart from '../components/SourceChart';
@@ -12,6 +12,7 @@ import api from '../services/api';
 
 const Dashboard = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,7 +25,13 @@ const Dashboard = () => {
         try {
             const storedUser = localStorage.getItem('user');
             if (storedUser) {
-                setUser(JSON.parse(storedUser));
+                const userData = JSON.parse(storedUser);
+                setUser(userData);
+                
+                // Redirect contadores para o dashboard específico deles
+                if (userData.isAccountant) {
+                  navigate('/accountant-dashboard');
+                }
             }
         } catch (e) {
             console.error('Error parsing user from storage', e);
@@ -36,7 +43,7 @@ const Dashboard = () => {
     // Listen for storage changes
     window.addEventListener('storage', loadUser);
     return () => window.removeEventListener('storage', loadUser);
-  }, []);
+  }, [navigate]);
 
   const fetchTransactions = async () => {
     try {

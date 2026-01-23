@@ -250,7 +250,10 @@
     "attention": "Atenção",
     "select": "Selecione...",
     "none": "Nenhuma",
-    "activated": "Ativado"
+    "activated": "Ativado",
+    "date": "Data",
+    "description": "Descrição",
+    "uncategorized": "Sem Categoria"
   },
   "dashboard": {
     "title": "Painel",

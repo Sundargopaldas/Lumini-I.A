@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Accountant = require('../models/Accountant');
 const Transaction = require('../models/Transaction');
+const Notification = require('../models/Notification');
 const { Op } = require('sequelize');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
@@ -114,6 +115,87 @@ router.post('/invite', authMiddleware, async (req, res) => {
     }
 });
 
+// POST /api/accountants/link-client - Vincular cliente ao contador (TEMPORÁRIO - DEBUG)
+router.post('/link-client', authMiddleware, async (req, res) => {
+  try {
+    const { accountantEmail } = req.body;
+    
+    console.log('🔗 [LINK-CLIENT] User ID:', req.user.id);
+    console.log('🔗 [LINK-CLIENT] Accountant Email:', accountantEmail);
+    
+    // Buscar contador pelo email
+    const accountant = await Accountant.findOne({ where: { email: accountantEmail } });
+    
+    if (!accountant) {
+      return res.status(404).json({ message: 'Contador não encontrado com esse email' });
+    }
+    
+    console.log('🔗 [LINK-CLIENT] Accountant found:', accountant.id);
+    
+    // Vincular cliente ao contador
+    await User.update({ accountantId: accountant.id }, { where: { id: req.user.id } });
+    
+    console.log('✅ [LINK-CLIENT] Cliente vinculado com sucesso!');
+    
+    res.json({ 
+      message: 'Cliente vinculado ao contador com sucesso!',
+      accountantId: accountant.id,
+      accountantName: accountant.businessName || accountant.name
+    });
+  } catch (error) {
+    console.error('❌ [LINK-CLIENT] Error:', error);
+    res.status(500).json({ message: 'Erro ao vincular cliente' });
+  }
+});
+
+// GET /api/accountants/my-accountant - Get accountant profile of the logged-in client
+router.get('/my-accountant', authMiddleware, async (req, res) => {
+  try {
+    console.log('🔍 [MY-ACCOUNTANT] User ID:', req.user.id);
+    
+    // Buscar o usuário e seu contador vinculado
+    const user = await User.findByPk(req.user.id);
+    
+    console.log('🔍 [MY-ACCOUNTANT] User found:', !!user);
+    console.log('🔍 [MY-ACCOUNTANT] User accountantId:', user?.accountantId);
+    
+    if (!user || !user.accountantId) {
+      console.log('⚠️ [MY-ACCOUNTANT] Nenhum contador vinculado');
+      return res.status(404).json({ message: 'Nenhum contador vinculado' });
+    }
+    
+    // Buscar o perfil do contador
+    const accountantProfile = await Accountant.findByPk(user.accountantId);
+    
+    console.log('🔍 [MY-ACCOUNTANT] Accountant profile found:', !!accountantProfile);
+    
+    if (!accountantProfile) {
+      console.log('❌ [MY-ACCOUNTANT] Contador não encontrado');
+      return res.status(404).json({ message: 'Contador não encontrado' });
+    }
+    
+    // Buscar o usuário do contador para pegar a logo
+    const accountantUser = await User.findByPk(accountantProfile.userId);
+    const logoUrl = accountantProfile.logo || (accountantUser?.logo ? `/uploads/logos/${accountantUser.logo}` : null);
+    
+    console.log('✅ [MY-ACCOUNTANT] Logo URL:', logoUrl);
+    console.log('✅ [MY-ACCOUNTANT] Business Name:', accountantProfile.businessName);
+    
+    res.json({
+      id: accountantProfile.id,
+      name: accountantProfile.name,
+      businessName: accountantProfile.businessName,
+      email: accountantProfile.email,
+      phone: accountantProfile.phone,
+      logo: logoUrl,
+      website: accountantProfile.website
+    });
+  } catch (error) {
+    console.error('❌ [MY-ACCOUNTANT] Error:', error);
+    res.status(500).json({ message: 'Erro ao buscar contador' });
+  }
+});
+
 // GET /api/accountants/dashboard/stats - Dashboard agregado do contador
 router.get('/dashboard/stats', authMiddleware, async (req, res) => {
   try {
@@ -202,7 +284,28 @@ router.get('/dashboard/stats', authMiddleware, async (req, res) => {
       date: inv.createdAt
     }));
 
+    // Buscar logo do usuário se não tiver no perfil do contador
+    const userProfile = await User.findByPk(req.user.id);
+    
+    console.log('🔍 [DASHBOARD-STATS] accountantProfile.logo:', accountantProfile.logo);
+    console.log('🔍 [DASHBOARD-STATS] userProfile.logo:', userProfile?.logo);
+    
+    const logoUrl = accountantProfile.logo || (userProfile?.logo ? `/uploads/logos/${userProfile.logo}` : null);
+    
+    console.log('✅ [DASHBOARD-STATS] logoUrl final:', logoUrl);
+    console.log('✅ [DASHBOARD-STATS] businessName:', accountantProfile.businessName);
+    console.log('✅ [DASHBOARD-STATS] name:', accountantProfile.name);
+
     res.json({
+      accountantProfile: {
+        id: accountantProfile.id,
+        name: accountantProfile.name,
+        businessName: accountantProfile.businessName,
+        email: accountantProfile.email,
+        phone: accountantProfile.phone,
+        logo: logoUrl,
+        website: accountantProfile.website
+      },
       overview: {
         totalClients: clients.length,
         activeClients: clients.filter(c => c.plan !== 'free').length,
@@ -539,7 +642,7 @@ router.put('/:id/unverify', authMiddleware, async (req, res) => {
   }
 });
 
-// DELETE /api/accountants/:id - Delete an accountant (Admin only)
+// DELETE /api/accountants/:id - Delete an accountant (Admin or own profile)
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -547,6 +650,15 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
     if (!accountant) {
       return res.status(404).json({ message: 'Accountant not found' });
+    }
+
+    // Check if user is admin or owns this accountant profile
+    const user = await User.findByPk(req.user.id);
+    const isAdmin = user.isAdmin;
+    const ownsProfile = accountant.userId === req.user.id;
+
+    if (!isAdmin && !ownsProfile) {
+      return res.status(403).json({ message: 'You do not have permission to delete this accountant profile' });
     }
 
     // Delete image file if exists
@@ -561,6 +673,13 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     await User.update({ accountantId: null }, {
       where: { accountantId: id }
     });
+
+    // Update the user's isAccountant flag
+    if (ownsProfile) {
+      await User.update({ isAccountant: false }, {
+        where: { id: req.user.id }
+      });
+    }
 
     await accountant.destroy();
 
@@ -590,6 +709,35 @@ router.post('/link', authMiddleware, async (req, res) => {
         user.accountantId = accountantId;
         await user.save();
 
+        // Criar notificação para o contador
+        try {
+          console.log('🔔 [NOTIFICATION] Criando notificação de novo cliente...');
+          console.log('📊 Dados:', { 
+            accountantId: accountant.id, 
+            userId: user.id, 
+            userName: user.name || user.username 
+          });
+          
+          const notification = await Notification.create({
+            accountantId: accountant.id,
+            userId: user.id,
+            type: 'new_client',
+            title: '🎉 Novo Cliente Vinculado',
+            message: `${user.name || user.username} acabou de se vincular como seu cliente!`,
+            metadata: {
+              clientId: user.id,
+              clientName: user.name || user.username,
+              clientEmail: user.email
+            }
+          });
+          
+          console.log('✅ [NOTIFICATION] Notificação criada com sucesso! ID:', notification.id);
+        } catch (notifError) {
+          console.error('❌ [NOTIFICATION] Erro ao criar notificação:', notifError);
+          console.error('Stack:', notifError.stack);
+          // Não falhar a operação principal por causa da notificação
+        }
+
         res.json({ message: 'Contador vinculado com sucesso!', accountant });
     } catch (error) {
         console.error('Error linking accountant:', error);
@@ -607,8 +755,37 @@ router.post('/unlink', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
+        if (!user.accountantId) {
+            return res.status(400).json({ message: 'No accountant linked' });
+        }
+
+        const previousAccountantId = user.accountantId;
+
         user.accountantId = null;
         await user.save();
+
+        // Criar notificação para o contador
+        try {
+          console.log('🔔 [NOTIFICATION] Criando notificação de cliente desvinculado...');
+          
+          const notification = await Notification.create({
+            accountantId: previousAccountantId,
+            userId: user.id,
+            type: 'client_unlinked',
+            title: '⚠️ Cliente Desvinculado',
+            message: `${user.name || user.username} se desvinculou do seu perfil.`,
+            metadata: {
+              clientId: user.id,
+              clientName: user.name || user.username,
+              clientEmail: user.email
+            }
+          });
+          
+          console.log('✅ [NOTIFICATION] Notificação de desvinculação criada! ID:', notification.id);
+        } catch (notifError) {
+          console.error('❌ [NOTIFICATION] Erro ao criar notificação:', notifError);
+          // Não falhar a operação principal
+        }
 
         res.json({ message: 'Vínculo com contador removido com sucesso!' });
     } catch (error) {
@@ -710,6 +887,213 @@ router.get('/clients/:clientId/report', authMiddleware, async (req, res) => {
         console.error('Error fetching client report:', error);
         res.status(500).json({ message: 'Erro ao gerar relatório do cliente' });
     }
+});
+
+// GET /api/accountants/notifications - Get notifications for accountant
+router.get('/notifications', authMiddleware, async (req, res) => {
+  try {
+    const accountant = await Accountant.findOne({ where: { userId: req.user.id } });
+    
+    if (!accountant) {
+      return res.status(404).json({ message: 'Accountant profile not found' });
+    }
+
+    // Buscar notificações reais do banco de dados
+    console.log('📊 Buscando notificações para accountant ID:', accountant.id);
+    
+    const notifications = await Notification.findAll({
+      where: { accountantId: accountant.id },
+      order: [['createdAt', 'DESC']],
+      limit: 50
+    });
+
+    console.log(`✅ Encontradas ${notifications.length} notificações`);
+    res.json(notifications);
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ message: 'Error loading notifications' });
+  }
+});
+
+// PATCH /api/accountants/notifications/:id/read - Mark notification as read
+router.patch('/notifications/:id/read', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const accountant = await Accountant.findOne({ where: { userId: req.user.id } });
+    
+    if (!accountant) {
+      return res.status(404).json({ message: 'Accountant profile not found' });
+    }
+
+    const notification = await Notification.findOne({
+      where: {
+        id,
+        accountantId: accountant.id
+      }
+    });
+
+    if (!notification) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+
+    notification.read = true;
+    notification.readAt = new Date();
+    await notification.save();
+
+    res.json({ success: true, message: 'Notification marked as read', notification });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({ message: 'Error updating notification' });
+  }
+});
+
+// PATCH /api/accountants/notifications/mark-all-read - Mark all notifications as read
+router.patch('/notifications/mark-all-read', authMiddleware, async (req, res) => {
+  try {
+    const accountant = await Accountant.findOne({ where: { userId: req.user.id } });
+    
+    if (!accountant) {
+      return res.status(404).json({ message: 'Accountant profile not found' });
+    }
+
+    await Notification.update(
+      { 
+        read: true, 
+        readAt: new Date() 
+      },
+      {
+        where: {
+          accountantId: accountant.id,
+          read: false
+        }
+      }
+    );
+
+    res.json({ success: true, message: 'All notifications marked as read' });
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    res.status(500).json({ message: 'Error updating notifications' });
+  }
+});
+
+// GET /api/accountants/documents - Get shared documents
+router.get('/documents', authMiddleware, async (req, res) => {
+  try {
+    const accountant = await Accountant.findOne({ where: { userId: req.user.id } });
+    
+    if (!accountant) {
+      return res.status(404).json({ message: 'Accountant profile not found' });
+    }
+
+    // Em produção, buscar do banco de dados
+    const documents = [];
+
+    res.json(documents);
+  } catch (error) {
+    console.error('Error fetching documents:', error);
+    res.status(500).json({ message: 'Error loading documents' });
+  }
+});
+
+// POST /api/accountants/documents - Upload document
+router.post('/documents', authMiddleware, upload.single('document'), async (req, res) => {
+  try {
+    const { clientId } = req.body;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const accountant = await Accountant.findOne({ where: { userId: req.user.id } });
+    
+    if (!accountant) {
+      return res.status(404).json({ message: 'Accountant profile not found' });
+    }
+
+    // Verificar se o cliente pertence a este contador
+    const client = await User.findOne({
+      where: {
+        id: clientId,
+        accountantId: accountant.id
+      }
+    });
+
+    if (!client) {
+      // Deletar arquivo se cliente não encontrado
+      fs.unlinkSync(file.path);
+      return res.status(403).json({ message: 'Client not found or not assigned to you' });
+    }
+
+    // Em produção, salvar informações do documento no banco de dados
+    const document = {
+      id: Date.now(),
+      name: file.originalname,
+      path: file.path,
+      clientId,
+      clientName: client.name || client.username,
+      accountantId: accountant.id,
+      uploadedAt: new Date()
+    };
+
+    res.json({ success: true, document });
+  } catch (error) {
+    console.error('Error uploading document:', error);
+    res.status(500).json({ message: 'Error uploading document' });
+  }
+});
+
+// POST /api/accountants/invite-client - Invite a client via email
+router.post('/invite-client', authMiddleware, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const accountant = await Accountant.findOne({ where: { userId: req.user.id } });
+    
+    if (!accountant) {
+      return res.status(404).json({ message: 'Accountant profile not found' });
+    }
+
+    // Buscar usuário pelo email
+    const user = await User.findOne({ where: { email } });
+
+    if (user) {
+      // Se usuário existe, vincular diretamente
+      if (user.accountantId === accountant.id) {
+        return res.status(400).json({ message: 'Este cliente já está vinculado a você' });
+      }
+
+      if (user.accountantId) {
+        return res.status(400).json({ message: 'Este cliente já possui outro contador vinculado' });
+      }
+
+      await user.update({ accountantId: accountant.id });
+
+      // Enviar notificação (em produção)
+      
+      return res.json({ 
+        success: true, 
+        message: 'Cliente vinculado com sucesso!' 
+      });
+    }
+
+    // Se usuário não existe, enviar email de convite (em produção)
+    // await EmailService.sendInviteEmail(email, accountant);
+
+    res.json({ 
+      success: true, 
+      message: `Convite enviado para ${email}. O usuário poderá se cadastrar e será automaticamente vinculado a você.` 
+    });
+
+  } catch (error) {
+    console.error('Error inviting client:', error);
+    res.status(500).json({ message: 'Error sending invite' });
+  }
 });
 
 module.exports = router;

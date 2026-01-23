@@ -16,6 +16,12 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config(); // Load .env BEFORE database config
 const sequelize = require('./config/database');
 
+// Import models to ensure they are registered before sync
+const User = require('./models/User');
+const Accountant = require('./models/Accountant');
+const Transaction = require('./models/Transaction');
+const Notification = require('./models/Notification');
+
 // 🐛 Error Logging System
 const logger = require('./utils/errorLogger');
 const requestLogger = require('./middleware/requestLogger');
@@ -107,7 +113,14 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // 📁 Serve uploads folder (accountant images, certificates, etc)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Com headers CORS para permitir acesso de qualquer origem
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(path.join(__dirname, 'uploads')));
 
 // 📊 Request Logger (todas as requisições)
 app.use(requestLogger);
@@ -221,10 +234,10 @@ if (process.env.NODE_ENV === 'production') {
     maxAge: '1d'
   }));
   
-  // The "catchall" handler: para qualquer rota que não seja /api/*, servir o React
+  // The "catchall" handler: para qualquer rota que não seja /api/* ou /uploads/*, servir o React
   app.get('*', (req, res, next) => {
-    // Se for rota de API, pular para próximo handler
-    if (req.path.startsWith('/api/')) {
+    // Se for rota de API ou uploads, pular para próximo handler
+    if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/')) {
       return next();
     }
     

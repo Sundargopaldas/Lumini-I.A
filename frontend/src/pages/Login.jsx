@@ -4,6 +4,7 @@ import api from '../services/api';
 import Logo from '../components/Logo';
 import CustomAlert from '../components/CustomAlert';
 import { trackLogin, trackError } from '../utils/analytics';
+import { setToken, setUser } from '../utils/storage';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -38,15 +39,24 @@ const Login = () => {
         password: formData.password
       });
 
-      // Save token to localStorage
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      // Save token and user to storage (com tratamento de erros)
+      const tokenSaved = setToken(response.data.token);
+      const userSaved = setUser(response.data.user);
+      
+      if (!tokenSaved || !userSaved) {
+        console.warn('⚠️ Não foi possível salvar dados no storage (Tracking Prevention pode estar ativo)');
+        // Continua mesmo assim, pois o token está na resposta
+      }
 
       // Track login success no GA4
       trackLogin('email');
 
-      // Redirect to dashboard
-      navigate('/dashboard');
+      // Redirect baseado no tipo de usuário
+      if (response.data.user.isAccountant) {
+        navigate('/accountant-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error('Login failed:', error);
       let msg = error.response?.data?.message || 'Falha no login.';

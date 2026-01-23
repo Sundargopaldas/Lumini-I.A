@@ -29,34 +29,30 @@ import Help from './pages/Help';
 
 const PrivateRoute = ({ children }) => {
   try {
-    const userStr = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
+    const user = getUser();
+    const token = getToken();
     
-    if (!userStr || !token || userStr === 'undefined') {
+    if (!user || !token || !user.id) {
       return <Navigate to="/login" replace />;
     }
 
-    const user = JSON.parse(userStr);
-    return user && user.id && token ? children : <Navigate to="/login" replace />;
+    return children;
   } catch (error) {
     console.error('Auth Error:', error);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
     return <Navigate to="/login" replace />;
   }
 };
 
 const AdminRoute = ({ children }) => {
   try {
-    const userStr = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
+    const user = getUser();
+    const token = getToken();
     
-    if (!userStr || !token || userStr === 'undefined') {
+    if (!user || !token) {
       return <Navigate to="/login" replace />;
     }
 
-    const user = JSON.parse(userStr);
-    return user && user.isAdmin ? children : <Navigate to="/dashboard" replace />;
+    return user.isAdmin ? children : <Navigate to="/dashboard" replace />;
   } catch (error) {
     return <Navigate to="/login" replace />;
   }
@@ -64,22 +60,22 @@ const AdminRoute = ({ children }) => {
 
 const AccountantRoute = ({ children }) => {
   try {
-    const userStr = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
+    const user = getUser();
+    const token = getToken();
     
-    if (!userStr || !token || userStr === 'undefined') {
+    if (!user || !token) {
       return <Navigate to="/login" replace />;
     }
 
-    const user = JSON.parse(userStr);
     // Check isAccountant flag OR isAdmin (admins can access accountant area)
-    return user && (user.isAccountant || user.isAdmin) ? children : <Navigate to="/dashboard" replace />;
+    return (user.isAccountant || user.isAdmin) ? children : <Navigate to="/dashboard" replace />;
   } catch (error) {
     return <Navigate to="/login" replace />;
   }
 };
 
 import ErrorBoundary from './components/ErrorBoundary';
+import { getToken, getUser, isAuthenticated } from './utils/storage';
 
 // Component para rastrear mudanças de rota - DESABILITADO (GA4 via HTML)
 function RouteTracker() {
