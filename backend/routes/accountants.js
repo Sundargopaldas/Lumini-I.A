@@ -1370,4 +1370,53 @@ router.get('/documents/:id/download', authMiddleware, async (req, res) => {
   }
 });
 
+// PATCH /api/accountants/documents/:id/mark-viewed - Mark document as viewed
+router.patch('/documents/:id/mark-viewed', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Buscar documento
+    const document = await Document.findByPk(id);
+
+    if (!document) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
+    // Verificar se é o cliente dono do documento
+    if (document.clientId !== userId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Marcar como visualizado
+    await document.update({ viewed: true });
+
+    console.log(`✅ Documento ${id} marcado como visualizado por ${userId}`);
+    res.json({ success: true, message: 'Document marked as viewed' });
+  } catch (error) {
+    console.error('Error marking document as viewed:', error);
+    res.status(500).json({ message: 'Error updating document' });
+  }
+});
+
+// GET /api/accountants/documents/unviewed/count - Count unviewed documents
+router.get('/documents/unviewed/count', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const count = await Document.count({
+      where: { 
+        clientId: userId,
+        viewed: false 
+      }
+    });
+
+    console.log(`📊 Cliente ${userId} tem ${count} documentos não visualizados`);
+    res.json({ count });
+  } catch (error) {
+    console.error('Error counting unviewed documents:', error);
+    res.status(500).json({ message: 'Error counting documents' });
+  }
+});
+
 module.exports = router;

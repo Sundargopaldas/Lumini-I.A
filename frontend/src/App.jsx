@@ -7,6 +7,7 @@ import Reports from './pages/Reports';
 import Plans from './pages/Plans';
 import Checkout from './pages/Checkout';
 import Invoices from './pages/Invoices';
+import MeusDocumentos from './pages/MeusDocumentos';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -107,6 +108,7 @@ function App() {
                     <Routes>
                       <Route path="/" element={<Navigate to="/dashboard" replace />} />
                       <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/meus-documentos" element={<MeusDocumentos />} />
                       <Route path="/transactions" element={<Transactions />} />
                       <Route path="/reports" element={<Reports />} />
                       <Route path="/invoices" element={<Invoices />} />

@@ -1,14 +1,17 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import CustomAlert from './CustomAlert';
 
 const SubscriptionWidget = ({ user }) => {
+  const navigate = useNavigate();
+  
   if (!user) return null;
 
   // Local state to handle sync updates
   const [localUser, setLocalUser] = useState(user);
   const [syncing, setSyncing] = useState(false);
+  const [unviewedCount, setUnviewedCount] = useState(0);
   const [alert, setAlert] = useState({ 
     show: false, 
     message: '', 
@@ -20,6 +23,24 @@ const SubscriptionWidget = ({ user }) => {
   useEffect(() => {
      setLocalUser(user);
   }, [user]);
+
+  // Buscar contagem de documentos não visualizados
+  useEffect(() => {
+    const fetchUnviewedCount = async () => {
+      try {
+        const response = await api.get('/accountants/documents/unviewed/count');
+        setUnviewedCount(response.data.count);
+      } catch (error) {
+        console.error('Error fetching unviewed documents count:', error);
+      }
+    };
+
+    fetchUnviewedCount();
+    
+    // Atualizar a cada 30 segundos
+    const interval = setInterval(fetchUnviewedCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSync = async () => {
       setSyncing(true);
@@ -94,25 +115,39 @@ const SubscriptionWidget = ({ user }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto flex-wrap md:flex-nowrap">
+             {/* Botão Upgrade (apenas free) ou Gerenciar (apenas pagos) */}
              {isFree ? (
                 <Link 
                   to="/plans" 
-                  className="w-full md:w-auto px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition-colors shadow text-sm text-center"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition-colors shadow text-sm text-center"
                 >
                   Upgrade 🚀
                 </Link>
              ) : (
-                <div className="flex gap-2">
-                    <Link 
-                      to="/plans" 
-                      className="px-4 py-2 bg-slate-700 text-white rounded-lg font-semibold hover:bg-slate-600 transition-colors border border-slate-600 text-sm text-center"
-                    >
-                      Gerenciar
-                    </Link>
-                </div>
+                <Link 
+                  to="/plans" 
+                  className="px-4 py-2 bg-slate-700 text-white rounded-lg font-semibold hover:bg-slate-600 transition-colors border border-slate-600 text-sm text-center"
+                >
+                  Gerenciar
+                </Link>
              )}
              
+             {/* Botão de Notificação de Documentos - APARECE PARA TODOS */}
+             <button
+               onClick={() => navigate('/meus-documentos')}
+               className="relative px-4 py-2 bg-slate-700 text-white rounded-lg font-semibold hover:bg-slate-600 transition-colors border border-slate-600 text-sm"
+               title="Meus Documentos"
+             >
+               📄 Documentos
+               {unviewedCount > 0 && (
+                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+                   {unviewedCount}
+                 </span>
+               )}
+             </button>
+             
+             {/* Botão Sincronizar */}
              <button
                 onClick={handleSync}
                 disabled={syncing}

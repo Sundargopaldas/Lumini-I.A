@@ -7,6 +7,8 @@ const CheckEmail = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const email = location.state?.email;
+  const emailSent = location.state?.emailSent !== false; // Default true
+  const emailError = location.state?.emailError;
 
   // Se não tem email no state, redireciona para login
   if (!email) {
@@ -36,6 +38,30 @@ const CheckEmail = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white dark:bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-xl border border-slate-200 dark:border-white/20"
         >
+          {/* Aviso se email não foi enviado */}
+          {!emailSent && (
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-lg">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                    ⚠️ Email não foi enviado automaticamente
+                  </h3>
+                  <p className="mt-2 text-sm text-red-700 dark:text-red-300">
+                    Não foi possível enviar o email de confirmação automaticamente.
+                    {emailError && <span className="block mt-1">Erro: {emailError}</span>}
+                    <br />
+                    <strong>Use o botão "Reenviar Email" abaixo para tentar novamente.</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Email Banner */}
           <EmailVerificationBanner email={email} />
 

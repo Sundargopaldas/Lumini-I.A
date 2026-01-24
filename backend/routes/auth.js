@@ -126,6 +126,9 @@ router.post('/register', validate(schemas.registerSchema), async (req, res) => {
     });
 
     // Send verification email
+    let emailSent = false;
+    let emailError = null;
+    
     try {
       const frontendUrl = process.env.FRONTEND_URL || 'https://lumini-i-a.fly.dev';
       const encodedToken = encodeURIComponent(verificationToken); // Encode token para URL
@@ -135,19 +138,64 @@ router.post('/register', validate(schemas.registerSchema), async (req, res) => {
       console.log(`🔗 [REGISTER] Link de verificação: ${verificationLink}`);
       await sendVerificationEmail(user, verificationLink);
       console.log(`✅ [REGISTER] Email de verificação enviado com sucesso!`);
+      emailSent = true;
     } catch (emailError) {
       console.error('❌ [REGISTER] Erro ao enviar email de verificação:', emailError);
+      console.error('❌ [REGISTER] Erro detalhado:', {
+        message: emailError.message,
+        code: emailError.code,
+        stack: emailError.stack
+      });
+      emailError = emailError.message || 'Erro desconhecido ao enviar email';
       // Não bloqueamos o registro se o email falhar
     }
 
     res.status(201).json({ 
       message: 'Cadastro realizado com sucesso! Você já pode fazer login.',
-      emailSent: true,
-      note: 'Um email de confirmação foi enviado, mas você já pode usar o sistema.'
+      emailSent: emailSent,
+      emailError: emailError,
+      note: emailSent 
+        ? 'Um email de confirmação foi enviado, mas você já pode usar o sistema.'
+        : 'Não foi possível enviar o email de confirmação. Use o botão "Reenviar Email" na página de verificação.'
     });
   } catch (error) {
-    console.error('Registration Error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('❌ [REGISTER] Registration Error:', error);
+    console.error('❌ [REGISTER] Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+    
+    // Mensagens de erro mais específicas
+    let errorMessage = 'Erro ao cadastrar. Tente novamente.';
+    let statusCode = 500;
+    
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      errorMessage = 'Email ou nome de usuário já está em uso.';
+      statusCode = 400;
+    } else if (error.name === 'SequelizeValidationError') {
+      // Extrair mensagens específicas de validação
+      const validationErrors = error.errors || [];
+      const errorMessages = validationErrors.map(err => err.message).filter(Boolean);
+      
+      if (errorMessages.length > 0) {
+        errorMessage = errorMessages[0]; // Primeira mensagem de erro
+      } else {
+        errorMessage = 'Dados inválidos. Verifique os campos preenchidos.';
+      }
+      statusCode = 400;
+    } else if (error.name === 'SequelizeDatabaseError') {
+      errorMessage = 'Erro no banco de dados. Contate o suporte.';
+      console.error('❌ [REGISTER] Database Error:', error.original);
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    res.status(statusCode).json({ 
+      message: errorMessage,
+      error: error.name,
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
@@ -226,14 +274,28 @@ router.post('/login', validate(schemas.loginSchema), async (req, res) => {
     logger.auth('Login successful', user.id, true);
 
     // Check email verification status
-    if (!user.emailVerified) {
-      console.log(`⚠️ [LOGIN] Email não verificado para: ${email} - BLOQUEANDO LOGIN`);
+    // REGRAS:
+    // 1. Admins sempre podem fazer login (bypass)
+    // 2. Usuários antigos (sem verificationToken) podem fazer login (criados antes da implementação)
+    // 3. Novos usuários (com verificationToken mas não verificado) precisam verificar email
+    const isOldUser = !user.verificationToken; // Usuário criado antes da implementação
+    const isNewUnverifiedUser = user.verificationToken && !user.emailVerified;
+    
+    if (isNewUnverifiedUser && !user.isAdmin) {
+      console.log(`⚠️ [LOGIN] Email não verificado para NOVO usuário: ${email} - BLOQUEANDO LOGIN`);
       return res.status(403).json({ 
         message: 'Confirme seu email!',
         error: 'EMAIL_NOT_VERIFIED',
         email: user.email,
         details: 'Verifique sua caixa de entrada e clique no link de confirmação que enviamos.'
       });
+    }
+    
+    // Log para diferentes casos
+    if (isOldUser && !user.emailVerified) {
+      console.log(`ℹ️ [LOGIN] Usuário antigo sem email verificado: ${email} - PERMITINDO LOGIN (usuário antigo)`);
+    } else if (user.isAdmin && !user.emailVerified) {
+      console.log(`ℹ️ [LOGIN] Admin sem email verificado: ${email} - PERMITINDO LOGIN (admin bypass)`);
     }
 
     // Generate token

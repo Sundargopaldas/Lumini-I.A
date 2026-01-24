@@ -50,6 +50,11 @@ const Document = sequelize.define('Document', {
   uploadedAt: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  viewed: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false
   }
 }, {
   tableName: 'Documents',

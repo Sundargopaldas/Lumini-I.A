@@ -32,27 +32,59 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validar username (apenas letras e números, sem espaços)
+    const usernameRegex = /^[a-zA-Z0-9]+$/;
+    if (!usernameRegex.test(formData.username)) {
+      showAlert('Erro', 'O nome de usuário deve conter apenas letras e números, sem espaços.', 'error');
+      return;
+    }
+    
     if (formData.password !== formData.confirmPassword) {
       showAlert('Erro', 'As senhas não coincidem.', 'error');
       return;
     }
 
     try {
-      await api.post('/auth/register', {
+      console.log('🚀 [REGISTER] Iniciando cadastro...', {
+        username: formData.username,
+        email: formData.email
+      });
+      
+      const response = await api.post('/auth/register', {
         username: formData.username,
         email: formData.email,
         password: formData.password
       });
       
+      console.log('✅ [REGISTER] Cadastro realizado com sucesso!', response.data);
+      
       // Track signup success no GA4
       trackSignup('email');
       
-      showAlert('Sucesso', 'Cadastro realizado! Verifique seu email para confirmar sua conta.', 'success');
+      const emailSent = response.data.emailSent !== false;
+      const emailError = response.data.emailError;
+      
+      if (emailSent) {
+        showAlert('Sucesso', 'Cadastro realizado! Verifique seu email para confirmar sua conta.', 'success');
+      } else {
+        showAlert('Atenção', 'Cadastro realizado, mas não foi possível enviar o email. Use o botão "Reenviar Email" na próxima tela.', 'warning');
+      }
+      
       setTimeout(() => {
-        navigate('/check-email', { state: { email: formData.email } });
+        navigate('/check-email', { 
+          state: { 
+            email: formData.email,
+            emailSent: emailSent,
+            emailError: emailError
+          } 
+        });
       }, 2000);
     } catch (error) {
-      console.error('Registration failed:', error);
+      console.error('❌ [REGISTER] Registration failed:', error);
+      console.error('❌ [REGISTER] Error response:', error.response?.data);
+      console.error('❌ [REGISTER] Error details:', error.response?.data?.details);
+      console.error('❌ [REGISTER] Error status:', error.response?.status);
+      console.error('❌ [REGISTER] Full error object:', JSON.stringify(error, null, 2));
       
       // Track signup error no GA4
       trackError(`Registration Error: ${error.response?.data?.message || 'Unknown'}`, 'warning');
@@ -60,11 +92,18 @@ const Register = () => {
       // Se houver erros de validação de senha
       if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
         const errorTitle = error.response.data.message || 'Senha Insegura';
-        const errorList = '• ' + error.response.data.errors.join('\n• ');
-        const fullMessage = `${errorList}\n\nForça da senha: ${error.response.data.strength || 0}%`;
+        // Garantir que todos os erros sejam strings
+        const errorList = error.response.data.errors
+          .map(err => typeof err === 'string' ? err : err.message || String(err))
+          .join('\n• ');
+        const fullMessage = `• ${errorList}\n\nForça da senha: ${error.response.data.strength || 0}%`;
         showAlert(errorTitle, fullMessage, 'error');
       } else if (error.response?.data?.message) {
-        showAlert('Erro no Cadastro', error.response.data.message, 'error');
+        // Mostrar mensagem específica do backend
+        const details = error.response.data.details ? `\n\nDetalhes: ${error.response.data.details}` : '';
+        showAlert('Erro no Cadastro', `${error.response.data.message}${details}`, 'error');
+      } else if (error.message === 'Network Error') {
+        showAlert('Erro de Conexão', 'Não foi possível conectar ao servidor. Verifique sua internet.', 'error');
       } else {
         showAlert('Erro no Cadastro', 'Falha ao cadastrar. Verifique os dados e tente novamente.', 'error');
       }
