@@ -1,9 +1,10 @@
 import axios from 'axios';
 import { getToken, clearAuth } from '../utils/storage';
 
-// ⚠️ FORÇANDO LOCALHOST PARA DESENVOLVIMENTO - TIMESTAMP: 2026-01-11-15:30
+// ⚠️ API CONFIG - CAMINHO RELATIVO PARA FUNCIONAR EM QUALQUER DOMÍNIO - 2026-01-24-12:20
 const IS_DEV = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const FORCED_LOCAL_URL = 'http://localhost:8080/api';
+// ✅ USAR CAMINHO RELATIVO EM PRODUÇÃO (funciona com lumini-i-a.fly.dev E luminiiadigital.com.br)
 const PROD_URL = '/api';
 
 const baseURL = IS_DEV ? FORCED_LOCAL_URL : PROD_URL;

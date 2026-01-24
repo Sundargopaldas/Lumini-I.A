@@ -17,7 +17,7 @@ export default defineConfig({
             urlPattern: /^https:\/\/www\.luminiiadigital\.com\.br\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'lumini-cache-v236-logo-fix-final',
+              cacheName: 'lumini-cache-v245-layout-fix',
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 // 24 horas
@@ -30,7 +30,7 @@ export default defineConfig({
       manifest: {
         name: 'Lumini I.A - Gestão Financeira Inteligente',
         short_name: 'Lumini',
-        version: '2.3.6',
+        version: '2.4.5',
         description: 'Gestão financeira inteligente com IA. Controle suas finanças, integre bancos e emita notas fiscais.',
         theme_color: '#8b5cf6',
         background_color: '#1e1b4b',

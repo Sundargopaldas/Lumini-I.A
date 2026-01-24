@@ -76,7 +76,7 @@ ChartJS.register(
 );
 
 const Reports = () => {
-  console.log('🚀🚀🚀 VERSÃO NOVA CARREGADA - 23/01/2026 19:45 🚀🚀🚀');
+  console.log('🚀🚀🚀 VERSÃO 2.4.5 - PERFEITO: LOGO + LAYOUT ENDEREÇO CORRIGIDO - 24/01/2026 12:35 🚀🚀🚀');
   
   const { t, i18n } = useTranslation();
   const [transactions, setTransactions] = useState([]);
@@ -84,6 +84,7 @@ const Reports = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isPlanningModalOpen, setIsPlanningModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null); // 🎯 Dados do usuário logado (com logo do Settings)
   const [accountantProfile, setAccountantProfile] = useState(null);
 
   // Custom Alert State
@@ -114,19 +115,22 @@ const Reports = () => {
         const transactionsResponse = await api.get('/transactions');
         setTransactions(transactionsResponse.data);
 
-        // Buscar dados do usuário atual
+        // Buscar dados do usuário atual (com logo do Settings!)
         const currentUserResponse = await api.get('/auth/me');
-        const currentUser = currentUserResponse.data;
-        console.log('👤 [REPORTS-INIT] Usuário atual:', currentUser.email, 'isAccountant:', currentUser.isAccountant);
+        const fetchedUser = currentUserResponse.data;
+        setCurrentUser(fetchedUser); // 🎯 SALVAR NO ESTADO!
+        console.log('👤 [REPORTS-INIT] Usuário atual:', fetchedUser.email, 'isAccountant:', fetchedUser.isAccountant);
+        console.log('🖼️ [REPORTS-INIT] Logo do USUÁRIO (Settings):', fetchedUser.logo);
+        console.log('🏢 [REPORTS-INIT] Nome do USUÁRIO:', fetchedUser.name);
 
-        // Se usuário É contador, buscar próprio perfil
-        if (currentUser.isAccountant) {
+        // Buscar contador vinculado (se houver) - OPCIONAL, só para fallback
+        if (fetchedUser.isAccountant) {
           console.log('🔍 [REPORTS-INIT] Usuário é contador! Buscando próprio perfil...');
           try {
             const response = await api.get('/accountants/dashboard/stats');
             setAccountantProfile(response.data.accountantProfile);
             console.log('✅ [REPORTS-INIT] Perfil do contador salvo no estado:', response.data.accountantProfile?.businessName);
-            console.log('🖼️ [REPORTS-INIT] Logo do contador:', response.data.accountantProfile?.logo);
+            console.log('🖼️ [REPORTS-INIT] Logo do PERFIL CONTADOR:', response.data.accountantProfile?.logo);
           } catch (error) {
             console.warn('⚠️ [REPORTS-INIT] Erro ao buscar perfil do contador:', error);
           }
@@ -305,27 +309,64 @@ const Reports = () => {
       const pageHeight = doc.internal.pageSize.getHeight();
       let yPosition = 20;
       
-      // 🎯 LOGO DO CONTADOR - COPIADO EXATAMENTE DO AccountantDashboard.jsx (FUNCIONA!)
-      let logoAdded = false;
+      // 🎯 PREPARAR DADOS DA LOGO (mas não adicionar ainda!)
+      let logoData = null; // Armazenar data URL da logo
+      let logoSource = null; // Para debug
+      let displayName = null; // Nome para o header
       
-      if (accountantProfile?.logo) {
-        console.log('✅ [LOGO] Carregando logo:', accountantProfile.logo);
+      console.log('🔍 [LOGO-DEBUG] currentUser:', currentUser);
+      console.log('🔍 [LOGO-DEBUG] currentUser.logo:', currentUser?.logo);
+      console.log('🔍 [LOGO-DEBUG] accountantProfile:', accountantProfile);
+      console.log('🔍 [LOGO-DEBUG] accountantProfile.logo:', accountantProfile?.logo);
+      
+      // 1️⃣ PRIORIDADE: Logo do USUÁRIO (cadastrada no Settings)
+      if (currentUser?.logo) {
+        logoSource = currentUser.logo;
+        displayName = currentUser.name || 'Usuario';
+        console.log('🎯 [LOGO-PRIORITY] Usando logo do USUÁRIO (Settings):', logoSource);
+        console.log('🎯 [LOGO-PRIORITY] Nome do USUÁRIO:', displayName);
+      } 
+      // 2️⃣ FALLBACK: Logo do perfil de contador
+      else if (accountantProfile?.logo) {
+        logoSource = accountantProfile.logo;
+        displayName = accountantProfile.businessName || accountantProfile.name || 'Contador';
+        console.log('🔄 [LOGO-FALLBACK] Usando logo do PERFIL CONTADOR:', logoSource);
+        console.log('🔄 [LOGO-FALLBACK] Nome do CONTADOR:', displayName);
+      }
+      // 3️⃣ SEM LOGO: Vai usar inicial depois
+      else {
+        console.log('⚠️ [LOGO] Nenhuma logo encontrada - usará inicial');
+        displayName = currentUser?.name || accountantProfile?.businessName || 'Lumini';
+        console.log('⚠️ [LOGO] displayName final:', displayName);
+      }
+      
+      // Se tem logo para carregar, PROCESSAR (mas NÃO adicionar ainda!)
+      if (logoSource) {
+        console.log('✅ [LOGO] Carregando logo:', logoSource);
         try {
           const img = new Image();
           img.crossOrigin = 'anonymous';
           
-          // Construir URL completa
-          let logoUrl = accountantProfile.logo;
-          if (!logoUrl.startsWith('http')) {
-            // Se começa com /, é caminho absoluto
-            logoUrl = logoUrl.startsWith('/') 
-              ? `${window.location.origin}${logoUrl}`
-              : `${window.location.origin}/${logoUrl}`;
+          // 🔧 CONSTRUIR URL COMPLETA CORRETA
+          let logoUrl = logoSource;
+          
+          // Se já é URL completa, usar como está
+          if (logoUrl.startsWith('http')) {
+            console.log('🌐 [LOGO] Já é URL completa:', logoUrl);
+          } else {
+            // Se não tem o prefixo /uploads/logos/, adicionar
+            if (!logoUrl.startsWith('/uploads/logos/')) {
+              logoUrl = `/uploads/logos/${logoUrl}`;
+              console.log('📁 [LOGO] Adicionado prefixo /uploads/logos/:', logoUrl);
+            }
+            
+            // 🔥 FORÇAR DOMÍNIO CORRETO DO FLY.IO
+            const baseUrl = 'https://lumini-i-a.fly.dev';
+            logoUrl = `${baseUrl}${logoUrl}`;
+            console.log('🌐 [LOGO] URL CORRIGIDA para Fly.io:', logoUrl);
           }
           
-          console.log('🌐 [LOGO] URL completa:', logoUrl);
-          
-          await new Promise((resolve, reject) => {
+          logoData = await new Promise((resolve, reject) => {
             const timeout = setTimeout(() => reject(new Error('Timeout')), 3000);
             img.onload = () => {
               clearTimeout(timeout);
@@ -360,36 +401,32 @@ const Reports = () => {
                   ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
                   
                   // 📸 Exportar com MÁXIMA qualidade
-                  const logoData = canvas.toDataURL('image/png', 1.0);
+                  const data = canvas.toDataURL('image/png', 1.0);
                   
-                  if (logoData && logoData.length > 100) {
-                    // Logo em ALTA RESOLUÇÃO (sem background)
-                    doc.addImage(logoData, 'PNG', 14, 8, 32, 32);
-                    logoAdded = true;
-                    console.log('✅ [LOGO] Logo HD adicionada ao PDF!');
-                    resolve(true);
+                  if (data && data.length > 100) {
+                    console.log('✅ [LOGO] Logo processada com sucesso! Tamanho:', data.length);
+                    resolve(data); // RETORNAR data URL, NÃO adicionar ao PDF ainda!
                   } else {
-                    resolve(false);
+                    resolve(null);
                   }
                 } else {
-                  resolve(false);
+                  resolve(null);
                 }
               } catch (e) {
-                console.warn('Erro ao processar logo do contador:', e);
-                resolve(false);
+                console.warn('Erro ao processar logo:', e);
+                resolve(null);
               }
             };
             img.onerror = () => {
               clearTimeout(timeout);
-              resolve(false);
+              resolve(null);
             };
             img.src = logoUrl;
           });
         } catch (e) {
           console.error('❌ [LOGO] Erro:', e);
+          logoData = null;
         }
-      } else {
-        console.log('⚠️ [LOGO] Campo logo está vazio ou null');
       }
       
       // ===== HEADER ULTRA MODERNO COM GRADIENTE SUAVE =====
@@ -408,15 +445,35 @@ const Reports = () => {
       doc.circle(pageWidth - 40, 35, 15, 'F');
       doc.setGState(doc.GState({opacity: 1}));
       
-      // Title Section - Nome do Contador ou Lumini
-      const headerTitle = accountantProfile?.businessName || accountantProfile?.name || 'Lumini I.A';
+      // Title Section - Nome do USUÁRIO (Settings) ou Contador ou Lumini
+      const headerTitle = displayName || 'Lumini I.A';
       console.log('📝 [PDF-HEADER] Título selecionado:', headerTitle);
-      console.log('   - businessName:', accountantProfile?.businessName);
-      console.log('   - name:', accountantProfile?.name);
-      doc.setFontSize(28);
+      console.log('   - currentUser.name:', currentUser?.name);
+      console.log('   - accountantProfile.businessName:', accountantProfile?.businessName);
+      
+      // Ajustar fonte dinamicamente baseado no tamanho do texto
+      let fontSize = 28;
+      const normalizedTitle = normalizeForPDF(headerTitle);
+      if (normalizedTitle.length > 30) {
+        fontSize = 20; // Título muito longo
+      } else if (normalizedTitle.length > 25) {
+        fontSize = 24; // Título médio
+      }
+      
+      doc.setFontSize(fontSize);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(255, 255, 255);
-      doc.text(normalizeForPDF(headerTitle), 50, 22);
+      
+      // Quebrar texto se for muito longo (máximo 100mm de largura)
+      const maxWidth = pageWidth - 60; // Deixar espaço para logo e margens
+      const titleLines = doc.splitTextToSize(normalizedTitle, maxWidth);
+      
+      // Se tiver múltiplas linhas, ajustar posição vertical
+      if (titleLines.length > 1) {
+        doc.text(titleLines, 50, 20); // Começar um pouco mais acima
+      } else {
+        doc.text(normalizedTitle, 50, 22);
+      }
       
       // Subtitle com ícone
       doc.setFontSize(11);
@@ -437,6 +494,41 @@ const Reports = () => {
       });
       doc.text(normalizeForPDF(`Gerado em ${headerDate}`), 50, 35);
       doc.setGState(doc.GState({opacity: 1}));
+      
+      // 🎯 ADICIONAR LOGO POR CIMA DO HEADER (depois de desenhar o fundo roxo!)
+      console.log('🔍 [LOGO-FINAL] logoData existe?', !!logoData);
+      console.log('🔍 [LOGO-FINAL] logoData length:', logoData?.length);
+      console.log('🔍 [LOGO-FINAL] displayName:', displayName);
+      
+      if (logoData && logoData.length > 100) {
+        try {
+          console.log('📸 [LOGO-FINAL] Tentando adicionar logo ao PDF...');
+          doc.addImage(logoData, 'PNG', 14, 8, 32, 32);
+          console.log('✅ [LOGO] Logo HD adicionada ao PDF POR CIMA do header!');
+        } catch (e) {
+          console.error('❌ [LOGO] Erro ao adicionar logo ao PDF:', e);
+          // Fallback: usar inicial
+          const initial = normalizeForPDF(displayName || 'L').charAt(0).toUpperCase();
+          doc.setFontSize(18);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(255, 255, 255);
+          doc.text(initial, 26, 29);
+        }
+      } else if (!logoData && displayName) {
+        // Fallback: usar inicial se não tem logo
+        console.log('📝 [LOGO-FALLBACK] Usando inicial:', displayName.charAt(0));
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        const initial = normalizeForPDF(displayName).charAt(0).toUpperCase();
+        doc.text(initial, 26, 29);
+      } else {
+        console.warn('⚠️ [LOGO-FALLBACK] Nenhuma logo nem displayName! Usando "L"');
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text('L', 26, 29);
+      }
       
       // Linha decorativa com gradiente
       doc.setDrawColor(255, 255, 255);
@@ -468,16 +560,6 @@ const Reports = () => {
         doc.setLineWidth(0.5);
         doc.rect(14, yPosition - 5, pageWidth - 28, 38);
         
-        // Ícone do usuário
-        doc.setFillColor(139, 92, 246);
-        doc.setGState(doc.GState({opacity: 0.15}));
-        doc.circle(22, yPosition + 8, 6, 'F');
-        doc.setGState(doc.GState({opacity: 1}));
-        doc.setTextColor(139, 92, 246);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('U', 20, yPosition + 10);
-        
         // Title
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
@@ -492,6 +574,7 @@ const Reports = () => {
         let infoY = yPosition + 10;
         const infoWidth = (pageWidth - 50) / 2;
         
+        // Linha 1: Nome e Email
         if (currentUser.name) {
           doc.setFont('helvetica', 'bold');
           doc.setTextColor(30, 41, 59);
@@ -502,12 +585,19 @@ const Reports = () => {
         if (currentUser.email) {
           doc.text(`${currentUser.email}`, infoX + infoWidth, infoY);
         }
+        
+        // Linha 2: CPF/CNPJ (se existir)
         if (currentUser.cpfCnpj) {
           infoY += 6;
           doc.text(`CPF/CNPJ: ${currentUser.cpfCnpj}`, infoX, infoY);
         }
+        
+        // Linha 3: Endereço (sempre em nova linha)
         if (currentUser.address) {
-          doc.text(normalizeForPDF(`Endereco: ${currentUser.address.substring(0, 38)}`), infoX + infoWidth, infoY);
+          infoY += 6;
+          // Não usar normalizeForPDF no endereço para preservar caracteres especiais
+          const addressText = `Endereco: ${currentUser.address.substring(0, 50)}`;
+          doc.text(addressText, infoX, infoY);
         }
         
         yPosition += 43;
@@ -853,9 +943,9 @@ const Reports = () => {
           doc.circle(pageWidth - 30, pageHeight - 14, 8, 'F');
           doc.setGState(doc.GState({opacity: 1}));
           
-          // Texto principal - Nome do Contador ou Lumini
-          const footerTitle = accountantProfile?.businessName || accountantProfile?.name || 'Lumini I.A';
-          const footerSubtitle = accountantProfile ? 'Contabilidade Profissional' : 'Gestao Financeira Inteligente';
+          // Texto principal - Nome do USUÁRIO ou Contador ou Lumini
+          const footerTitle = displayName || 'Lumini I.A';
+          const footerSubtitle = (currentUser?.logo || accountantProfile) ? 'Contabilidade Profissional' : 'Gestao Financeira Inteligente';
           
           doc.setFontSize(8);
           doc.setFont('helvetica', 'bold');
