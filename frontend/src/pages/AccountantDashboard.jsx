@@ -23,11 +23,13 @@ const AccountantDashboard = () => {
   const [loadingClientReport, setLoadingClientReport] = useState(false);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [alert, setAlert] = useState({ show: false, title: '', message: '', type: 'info' });
+  const [alert, setAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null });
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [documents, setDocuments] = useState([]);
   const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [downloadingDoc, setDownloadingDoc] = useState(null);
+  const [deletingDoc, setDeletingDoc] = useState(null);
   const [lastNotificationId, setLastNotificationId] = useState(null);
 
   useEffect(() => {
@@ -71,8 +73,8 @@ const AccountantDashboard = () => {
     }
   };
 
-  const showAlert = (title, message, type = 'info') => {
-    setAlert({ show: true, title, message, type });
+  const showAlert = (title, message, type = 'info', onConfirm = null) => {
+    setAlert({ show: true, title, message, type, onConfirm });
   };
 
   const handleInviteClient = async (e) => {
@@ -193,6 +195,22 @@ const AccountantDashboard = () => {
     } catch (error) {
       console.error('Error marking all as read:', error);
       showAlert('Erro', 'Erro ao marcar notificações como lidas', 'error');
+    }
+  };
+
+  const deleteNotification = async (notificationId) => {
+    try {
+      await api.delete(`/accountants/notifications/${notificationId}`);
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      // Atualizar contador de não lidas
+      const deletedNotif = notifications.find(n => n.id === notificationId);
+      if (deletedNotif && !deletedNotif.read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+      showAlert('Sucesso', 'Notificação deletada', 'success');
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      showAlert('Erro', 'Erro ao deletar notificação', 'error');
     }
   };
 
@@ -651,22 +669,96 @@ const AccountantDashboard = () => {
 
   const uploadDocument = async (file, clientId) => {
     try {
+      console.log('🔍 [FRONTEND] Iniciando upload...');
+      console.log('🔍 [FRONTEND] Arquivo:', file.name, file.type, file.size);
+      console.log('🔍 [FRONTEND] ClientId:', clientId);
+      
       setUploadingDocument(true);
       const formData = new FormData();
       formData.append('document', file);
       formData.append('clientId', clientId);
 
-      await api.post('/accountants/documents', formData, {
+      console.log('🔍 [FRONTEND] FormData criado, enviando...');
+
+      const response = await api.post('/accountants/documents', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
+      console.log('✅ [FRONTEND] Upload sucesso:', response.data);
       showAlert('Sucesso', 'Documento enviado com sucesso!', 'success');
       await fetchDocuments();
     } catch (error) {
-      console.error('Error uploading document:', error);
-      showAlert('Erro', 'Erro ao enviar documento', 'error');
+      console.error('❌ [FRONTEND] Erro completo:', error);
+      console.error('❌ [FRONTEND] Response:', error.response?.data);
+      console.error('❌ [FRONTEND] Status:', error.response?.status);
+      showAlert('Erro', error.response?.data?.message || 'Erro ao enviar documento', 'error');
     } finally {
       setUploadingDocument(false);
+    }
+  };
+
+  const downloadDocument = async (documentId, filename) => {
+    try {
+      console.log('🔍 [DOWNLOAD FRONTEND] Iniciando download...');
+      console.log('🔍 [DOWNLOAD FRONTEND] Document ID:', documentId);
+      console.log('🔍 [DOWNLOAD FRONTEND] Filename:', filename);
+      
+      setDownloadingDoc(documentId);
+      const response = await api.get(`/accountants/documents/${documentId}/download`, {
+        responseType: 'blob'
+      });
+      
+      console.log('✅ [DOWNLOAD FRONTEND] Blob recebido, criando link...');
+      
+      // Criar link de download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      console.log('✅ [DOWNLOAD FRONTEND] Download concluído!');
+      showAlert('Sucesso', 'Documento baixado com sucesso!', 'success');
+    } catch (error) {
+      console.error('❌ [DOWNLOAD FRONTEND] Erro completo:', error);
+      console.error('❌ [DOWNLOAD FRONTEND] Response:', error.response?.data);
+      console.error('❌ [DOWNLOAD FRONTEND] Status:', error.response?.status);
+      showAlert('Erro', error.response?.data?.message || 'Erro ao baixar documento', 'error');
+    } finally {
+      setDownloadingDoc(null);
+    }
+  };
+
+  const confirmDeleteDocument = (documentId, filename) => {
+    showAlert(
+      'Confirmar Exclusão',
+      `Tem certeza que deseja deletar "${filename}"?`,
+      'confirm',
+      () => deleteDocument(documentId, filename)
+    );
+  };
+
+  const deleteDocument = async (documentId, filename) => {
+    try {
+      console.log('🔍 [DELETE FRONTEND] Iniciando deleção...');
+      console.log('🔍 [DELETE FRONTEND] Document ID:', documentId);
+      
+      setDeletingDoc(documentId);
+      await api.delete(`/accountants/documents/${documentId}`);
+      
+      console.log('✅ [DELETE FRONTEND] Documento deletado!');
+      showAlert('Sucesso', 'Documento deletado com sucesso!', 'success');
+      await fetchDocuments();
+    } catch (error) {
+      console.error('❌ [DELETE FRONTEND] Erro completo:', error);
+      console.error('❌ [DELETE FRONTEND] Response:', error.response?.data);
+      console.error('❌ [DELETE FRONTEND] Status:', error.response?.status);
+      showAlert('Erro', error.response?.data?.message || 'Erro ao deletar documento', 'error');
+    } finally {
+      setDeletingDoc(null);
     }
   };
 
@@ -707,10 +799,11 @@ const AccountantDashboard = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
       <CustomAlert 
         isOpen={alert.show}
-        onClose={() => setAlert(prev => ({ ...prev, show: false }))}
+        onClose={() => setAlert(prev => ({ ...prev, show: false, onConfirm: null }))}
         title={alert.title}
         message={alert.message}
         type={alert.type}
+        onConfirm={alert.onConfirm}
       />
 
       {/* Header */}
@@ -1439,7 +1532,7 @@ const AccountantDashboard = () => {
                         : 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
                     }`}
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <p className="font-medium text-slate-900 dark:text-white">
                           {notif.title}
@@ -1451,14 +1544,23 @@ const AccountantDashboard = () => {
                           {new Date(notif.createdAt).toLocaleString('pt-BR')}
                         </p>
                       </div>
-                      {!notif.read && (
+                      <div className="flex flex-col gap-2">
+                        {!notif.read && (
+                          <button
+                            onClick={() => markNotificationAsRead(notif.id)}
+                            className="text-purple-600 dark:text-purple-400 hover:underline text-sm whitespace-nowrap"
+                          >
+                            ✓ Marcar lida
+                          </button>
+                        )}
                         <button
-                          onClick={() => markNotificationAsRead(notif.id)}
-                          className="ml-4 text-purple-600 dark:text-purple-400 hover:underline text-sm"
+                          onClick={() => deleteNotification(notif.id)}
+                          className="text-red-600 dark:text-red-400 hover:underline text-sm whitespace-nowrap"
+                          title="Deletar notificação"
                         >
-                          Marcar como lida
+                          🗑️ Deletar
                         </button>
-                      )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1476,29 +1578,77 @@ const AccountantDashboard = () => {
           >
             <h3 className="text-xl font-bold mb-6 text-slate-900 dark:text-white">📁 Documentos Compartilhados</h3>
 
-            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">Enviar Documento</h4>
-              <p className="text-sm text-blue-800 dark:text-blue-400 mb-3">
-                Compartilhe documentos com seus clientes (contratos, relatórios, guias fiscais, etc.)
-              </p>
-              <input
-                type="file"
-                onChange={(e) => {
-                  if (e.target.files[0] && selectedClient) {
-                    uploadDocument(e.target.files[0], selectedClient.id);
-                  } else if (!selectedClient) {
-                    showAlert('Atenção', 'Selecione um cliente primeiro', 'warning');
-                  }
-                }}
-                disabled={uploadingDocument}
-                className="block w-full text-sm text-slate-500 dark:text-slate-400
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-lg file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-purple-50 file:text-purple-700
-                  hover:file:bg-purple-100
-                  dark:file:bg-purple-900/30 dark:file:text-purple-300"
-              />
+            {/* Upload de Documento */}
+            <div className="mb-6 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-5 border border-purple-200 dark:border-purple-800">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h4 className="font-semibold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
+                    📤 Enviar Documento
+                  </h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    PDF, Word, Excel, imagens (máx. 10MB)
+                  </p>
+                </div>
+                {selectedClient && (
+                  <div className="text-right">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Enviar para:</p>
+                    <p className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                      {selectedClient.name}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {selectedClient ? (
+                <div className="flex items-center gap-3">
+                  <label
+                    htmlFor="documentFileInput"
+                    className={`flex-1 px-4 py-2.5 rounded-lg font-medium cursor-pointer transition-all text-center ${
+                      uploadingDocument
+                        ? 'bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm hover:shadow-md'
+                    }`}
+                  >
+                    <span className="flex items-center justify-center gap-2 text-sm">
+                      {uploadingDocument ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          📎 Selecionar arquivo
+                        </>
+                      )}
+                    </span>
+                  </label>
+                  <input
+                    id="documentFileInput"
+                    type="file"
+                    onChange={(e) => {
+                      if (e.target.files[0]) {
+                        uploadDocument(e.target.files[0], selectedClient.id);
+                        e.target.value = '';
+                      }
+                    }}
+                    disabled={uploadingDocument}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-4 px-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border-2 border-dashed border-amber-300 dark:border-amber-700">
+                  <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-1">
+                    ⚠️ Nenhum cliente selecionado
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
+                    Vá para a aba "Clientes" e selecione um cliente primeiro
+                  </p>
+                </div>
+              )}
             </div>
 
             {documents.length === 0 ? (
@@ -1517,23 +1667,57 @@ const AccountantDashboard = () => {
                       <div className="text-3xl">📄</div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-slate-900 dark:text-white truncate">
-                          {doc.name}
+                          {doc.originalName || doc.name}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                          Cliente: {doc.clientName}
+                          Cliente: {doc.client?.name || doc.clientName || 'N/A'}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
                           {new Date(doc.uploadedAt).toLocaleDateString('pt-BR')}
                         </p>
                       </div>
                     </div>
-                    <a
-                      href={doc.url}
-                      download
-                      className="mt-3 block text-center text-sm text-purple-600 dark:text-purple-400 hover:underline"
-                    >
-                      Baixar
-                    </a>
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => downloadDocument(doc.id, doc.originalName || doc.name)}
+                        disabled={downloadingDoc === doc.id || deletingDoc === doc.id}
+                        className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                          downloadingDoc === doc.id
+                            ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-wait'
+                            : 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'
+                        }`}
+                      >
+                        {downloadingDoc === doc.id ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            ...
+                          </span>
+                        ) : (
+                          '📥 Baixar'
+                        )}
+                      </button>
+                      <button
+                        onClick={() => confirmDeleteDocument(doc.id, doc.originalName || doc.name)}
+                        disabled={deletingDoc === doc.id || downloadingDoc === doc.id}
+                        className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                          deletingDoc === doc.id
+                            ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-wait'
+                            : 'bg-red-600 hover:bg-red-700 text-white cursor-pointer'
+                        }`}
+                      >
+                        {deletingDoc === doc.id ? (
+                          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : (
+                          '🗑️'
+                        )}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

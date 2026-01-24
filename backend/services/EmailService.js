@@ -234,6 +234,94 @@ const sendWelcomeEmail = async (user, planName) => {
 };
 
 /**
+ * Send Email Verification Email
+ * @param {Object} user - User object containing email
+ * @param {String} verificationLink - The email verification link
+ */
+const sendVerificationEmail = async (user, verificationLink) => {
+    console.log('\n🚀 ===== EMAIL VERIFICATION START =====');
+    console.log(`📧 Target: ${user.email}`);
+    console.log(`🔗 Verification Link: ${verificationLink}`);
+    
+    if (!user.email) {
+        console.warn('⚠️ No email provided, aborting');
+        return;
+    }
+
+    console.log('📞 Calling getTransporter()...');
+    const transporter = await getTransporter();
+    
+    if (!transporter) {
+        console.error('❌ TRANSPORTER IS NULL! Email cannot be sent.');
+        throw new Error('SMTP não configurado ou falha na verificação da conexão');
+    }
+    
+    console.log('✅ Transporter OK, getting FROM address...');
+    const fromAddress = await getFromAddress();
+    console.log(`📤 From: ${fromAddress}`);
+
+    const logoPath = getLogoPath();
+    const attachments = [];
+    if (logoPath) {
+        attachments.push({
+            filename: 'logo.png',
+            path: logoPath,
+            cid: 'logo'
+        });
+    }
+
+    // Usar cid:logo se o attachment estiver disponível, senão usar URL externa
+    const logoImg = logoPath 
+        ? '<img src="cid:logo" alt="Lumini I.A" style="width: 60px; height: 60px; margin-bottom: 10px; display: inline-block; background-color: white; padding: 8px; border-radius: 8px;">'
+        : '<img src="https://www.luminiiadigital.com.br/logo.png" alt="Lumini I.A" style="width: 60px; height: 60px; margin-bottom: 10px; display: inline-block; background-color: white; padding: 8px; border-radius: 8px;">';
+
+    const mailOptions = {
+        from: fromAddress,
+        to: user.email,
+        subject: 'Confirme seu Cadastro - Lumini I.A',
+        attachments: attachments.length > 0 ? attachments : undefined,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+              <div style="background: linear-gradient(135deg, #6d28d9 0%, #4f46e5 100%); padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                  ${logoImg}
+                  <h2 style="color: white; margin: 0;">Bem-vindo ao Lumini I.A!</h2>
+              </div>
+              <div style="padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; background-color: white;">
+                  <p style="font-size: 16px;">Olá, <strong>${user.name || user.username || 'Usuário'}</strong>,</p>
+                  <p style="line-height: 1.6;">Você se cadastrou no <strong>Lumini I.A</strong>, a plataforma completa de gestão financeira para criadores de conteúdo!</p>
+                  <p>Para começar a usar todas as funcionalidades, por favor confirme seu email clicando no botão abaixo:</p>
+                  <p style="text-align: center; margin: 30px 0;">
+                    <a href="${verificationLink}" style="background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Confirmar meu Email</a>
+                  </p>
+                  <p>Se o botão não funcionar, copie e cole o link abaixo no seu navegador:</p>
+                  <p style="word-break: break-all; color: #6d28d9;">${verificationLink}</p>
+                  <p style="font-size: 12px; color: #666; margin-top: 30px;">Este link expira em 24 horas.</p>
+                  <p>Se você não se cadastrou no Lumini I.A, pode ignorar este e-mail.</p>
+              </div>
+            </div>
+        `
+    };
+
+    try {
+        console.log('📨 Sending verification email with nodemailer...');
+        const info = await transporter.sendMail(mailOptions);
+        
+        console.log('✅ ===== VERIFICATION EMAIL SENT SUCCESSFULLY =====');
+        console.log(`📧 Message ID: ${info.messageId}`);
+        console.log(`📬 Response: ${info.response}`);
+        console.log(`📧 Email sent to: ${user.email}`);
+        console.log('===================================\n');
+    } catch (error) {
+        console.error('❌ ===== VERIFICATION EMAIL SEND FAILED =====');
+        console.error('Error:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        console.error('================================\n');
+        throw error;
+    }
+};
+
+/**
  * Send Password Reset Email
  * @param {Object} user - User object containing email
  * @param {String} resetLink - The reset password link
@@ -691,6 +779,7 @@ module.exports = {
     sendCancellationEmail,
     sendInvoiceEmail,
     sendWelcomeEmail,
+    sendVerificationEmail,
     sendPasswordResetEmail,
     sendInviteEmail,
     sendNewClientNotification,

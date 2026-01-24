@@ -860,7 +860,7 @@ const Reports = () => {
           console.log('✅ Dados da tabela processados:', tableData.length, 'linhas');
           
           if (tableData.length > 0) {
-            autoTable(doc, {
+    autoTable(doc, {
                 startY: yPosition,
                 head: [[
                     normalizeForPDF(t('common.date') || 'Data'), 
@@ -868,8 +868,8 @@ const Reports = () => {
                     normalizeForPDF('Fonte/Categoria'), 
                     normalizeForPDF('Valor')
                 ]], 
-                body: tableData,
-                theme: 'striped',
+        body: tableData,
+        theme: 'striped',
                 headStyles: { 
                     fillColor: [71, 85, 105], // Slate 600
                     textColor: [255, 255, 255],

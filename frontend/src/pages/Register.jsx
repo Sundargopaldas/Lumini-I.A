@@ -47,9 +47,9 @@ const Register = () => {
       // Track signup success no GA4
       trackSignup('email');
       
-      showAlert('Sucesso', 'Cadastro realizado com sucesso! Por favor faça login.', 'success');
+      showAlert('Sucesso', 'Cadastro realizado! Verifique seu email para confirmar sua conta.', 'success');
       setTimeout(() => {
-        navigate('/login');
+        navigate('/check-email', { state: { email: formData.email } });
       }, 2000);
     } catch (error) {
       console.error('Registration failed:', error);

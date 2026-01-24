@@ -113,14 +113,38 @@ router.post('/register', validate(schemas.registerSchema), async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Generate verification token
+    const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '24h' });
+
     // Create user
     const user = await User.create({
       username,
       email,
       password: hashedPassword,
+      emailVerified: false,
+      verificationToken,
     });
 
-    res.status(201).json({ message: 'User created successfully' });
+    // Send verification email
+    try {
+      const frontendUrl = process.env.FRONTEND_URL || 'https://lumini-i-a.fly.dev';
+      const encodedToken = encodeURIComponent(verificationToken); // Encode token para URL
+      const verificationLink = `${frontendUrl}/verify-email/${encodedToken}`;
+      
+      console.log(`📧 [REGISTER] Enviando email de verificação para: ${email}`);
+      console.log(`🔗 [REGISTER] Link de verificação: ${verificationLink}`);
+      await sendVerificationEmail(user, verificationLink);
+      console.log(`✅ [REGISTER] Email de verificação enviado com sucesso!`);
+    } catch (emailError) {
+      console.error('❌ [REGISTER] Erro ao enviar email de verificação:', emailError);
+      // Não bloqueamos o registro se o email falhar
+    }
+
+    res.status(201).json({ 
+      message: 'Cadastro realizado com sucesso! Você já pode fazer login.',
+      emailSent: true,
+      note: 'Um email de confirmação foi enviado, mas você já pode usar o sistema.'
+    });
   } catch (error) {
     console.error('Registration Error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -201,6 +225,17 @@ router.post('/login', validate(schemas.loginSchema), async (req, res) => {
     clearAttempts(email);
     logger.auth('Login successful', user.id, true);
 
+    // Check email verification status
+    if (!user.emailVerified) {
+      console.log(`⚠️ [LOGIN] Email não verificado para: ${email} - BLOQUEANDO LOGIN`);
+      return res.status(403).json({ 
+        message: 'Confirme seu email!',
+        error: 'EMAIL_NOT_VERIFIED',
+        email: user.email,
+        details: 'Verifique sua caixa de entrada e clique no link de confirmação que enviamos.'
+      });
+    }
+
     // Generate token
     if (!process.env.JWT_SECRET) {
       console.error('[AUTH] FATAL: JWT_SECRET not configured');
@@ -228,8 +263,10 @@ router.post('/login', validate(schemas.loginSchema), async (req, res) => {
             isAdmin: user.isAdmin,
             logo: user.logo, // Include logo in login response
             cpfCnpj: user.cpfCnpj, // Include CPF/CNPJ for PDF reports
-            address: user.address // Include address for PDF reports
-        } 
+            address: user.address, // Include address for PDF reports
+            emailVerified: user.emailVerified // Include email verification status
+        },
+        emailVerified: user.emailVerified // Also include at root level for easy access
     });
   } catch (error) {
     console.error(error);
@@ -284,7 +321,56 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-const { sendPasswordResetEmail } = require('../services/EmailService');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/EmailService');
+
+// Resend Verification Email
+router.post('/resend-verification', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email é obrigatório' });
+    }
+    
+    console.log(`📧 [RESEND] Solicitação de reenvio para: ${email}`);
+    
+    const user = await User.findOne({ where: { email } });
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+    
+    if (user.emailVerified) {
+      return res.status(400).json({ message: 'Email já está verificado!' });
+    }
+    
+    // Generate new verification token
+    const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    
+    // Update token in database
+    await User.update(
+      { verificationToken },
+      { where: { id: user.id } }
+    );
+    
+    // Send verification email
+    const frontendUrl = process.env.FRONTEND_URL || 'https://lumini-i-a.fly.dev';
+    const encodedToken = encodeURIComponent(verificationToken);
+    const verificationLink = `${frontendUrl}/verify-email/${encodedToken}`;
+    
+    await sendVerificationEmail(user, verificationLink);
+    
+    console.log(`✅ [RESEND] Email de verificação reenviado para: ${email}`);
+    
+    res.json({ 
+      message: 'Email de verificação reenviado com sucesso!',
+      success: true
+    });
+  } catch (error) {
+    console.error('❌ [RESEND] Erro:', error);
+    res.status(500).json({ message: 'Erro ao reenviar email' });
+  }
+});
 
 // Forgot Password (Simulation)
 router.post('/forgot-password', async (req, res) => {
@@ -384,6 +470,91 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ message: 'Token expirado. Solicite um novo link de recuperação.' });
     }
     res.status(400).json({ message: 'Invalid or expired token' });
+  }
+});
+
+// Verify Email
+router.get('/verify-email/:token', async (req, res) => {
+  try {
+    let { token } = req.params;
+    
+    console.log('✉️ [VERIFY-EMAIL] Iniciando verificação de email...');
+    console.log('🔍 [VERIFY-EMAIL] Token recebido:', token);
+    
+    // Decode token from URL (caso tenha sido encoded)
+    token = decodeURIComponent(token);
+    console.log('🔓 [VERIFY-EMAIL] Token decodificado:', token);
+    
+    // Verify token
+    if (!process.env.JWT_SECRET) {
+      console.error('[VERIFY-EMAIL] FATAL: JWT_SECRET not configured');
+      return res.status(500).json({ message: 'Erro de configuração do servidor' });
+    }
+    
+    console.log('🔍 [VERIFY-EMAIL] Verificando token JWT...');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log(`✅ [VERIFY-EMAIL] Token válido para email: ${decoded.email}`);
+    
+    // Find user by email and verificationToken
+    console.log('🔍 [VERIFY-EMAIL] Buscando usuário no banco...');
+    console.log(`   📧 Email procurado: ${decoded.email}`);
+    console.log(`   🔑 Token procurado (50 chars): ${token.substring(0, 50)}...`);
+    
+    const user = await User.findOne({ 
+      where: { 
+        email: decoded.email,
+        verificationToken: token
+      } 
+    });
+
+    if (!user) {
+      console.log('❌ [VERIFY-EMAIL] Usuário não encontrado ou token já usado');
+      
+      // Debug: Verificar se existe usuário com esse email mas token diferente
+      const userDebug = await User.findOne({ where: { email: decoded.email } });
+      if (userDebug) {
+        console.log('⚠️  [DEBUG] Usuário EXISTE mas token não bate:');
+        console.log(`   🔑 Token no banco (50 chars): ${userDebug.verificationToken?.substring(0, 50)}...`);
+        console.log(`   🔑 Token recebido (50 chars): ${token.substring(0, 50)}...`);
+        console.log(`   📏 Tamanho token banco: ${userDebug.verificationToken?.length}`);
+        console.log(`   📏 Tamanho token recebido: ${token.length}`);
+        console.log(`   ✔️  Tokens são iguais: ${userDebug.verificationToken === token}`);
+      } else {
+        console.log('⚠️  [DEBUG] Usuário NÃO EXISTE com email: ${decoded.email}');
+      }
+      
+      return res.status(400).json({ message: 'Token inválido ou já utilizado' });
+    }
+
+    if (user.emailVerified) {
+      console.log('ℹ️ [VERIFY-EMAIL] Email já verificado anteriormente');
+      return res.status(200).json({ message: 'Email já verificado anteriormente', alreadyVerified: true });
+    }
+
+    // Update user email verification status
+    await User.update(
+      { 
+        emailVerified: true,
+        verificationToken: null // Clear token after use
+      }, 
+      { where: { id: user.id } }
+    );
+    
+    console.log(`✅ [VERIFY-EMAIL] Email verificado com sucesso para user: ${user.email}`);
+
+    res.json({ 
+      message: 'Email verificado com sucesso! Você já pode fazer login.',
+      success: true
+    });
+  } catch (error) {
+    console.error('❌ [VERIFY-EMAIL] Erro:', error.message);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(400).json({ message: 'Token inválido' });
+    }
+    if (error.name === 'TokenExpiredError') {
+      return res.status(400).json({ message: 'Link expirado. Solicite um novo email de verificação.' });
+    }
+    res.status(400).json({ message: 'Erro ao verificar email' });
   }
 });
 

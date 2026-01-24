@@ -6,6 +6,7 @@ import SourceChart from '../components/SourceChart';
 import TransactionCard from '../components/TransactionCard';
 import GoalsWidget from '../components/GoalsWidget';
 import SubscriptionWidget from '../components/SubscriptionWidget';
+import DocumentsWidget from '../components/DocumentsWidget';
 import TaxSimulatorModal from '../components/TaxSimulatorModal';
 import AIInsightsWidget from '../components/AIInsightsWidget';
 import api from '../services/api';
@@ -28,10 +29,8 @@ const Dashboard = () => {
                 const userData = JSON.parse(storedUser);
                 setUser(userData);
                 
-                // Redirect contadores para o dashboard específico deles
-                if (userData.isAccountant) {
-                  navigate('/accountant-dashboard');
-                }
+                // ✅ REMOVIDO: Contadores podem acessar suas finanças pessoais (/dashboard)
+                // Eles têm acesso a AMBOS: /dashboard (pessoal) E /accountant-dashboard (clientes)
             }
         } catch (e) {
             console.error('Error parsing user from storage', e);
@@ -269,6 +268,10 @@ const Dashboard = () => {
       
       {/* Subscription Status Widget */}
       <SubscriptionWidget user={user} />
+      
+      {/* Documents Widget - Documentos recebidos do contador */}
+      <DocumentsWidget />
+      
       <h1 className="text-2xl md:text-3xl font-bold text-white mb-4 md:mb-8">{t('dashboard.title')}</h1>
 
       {error && (

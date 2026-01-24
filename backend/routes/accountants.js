@@ -3,6 +3,7 @@ const router = express.Router();
 const Accountant = require('../models/Accountant');
 const Transaction = require('../models/Transaction');
 const Notification = require('../models/Notification');
+const Document = require('../models/Document');
 const { Op } = require('sequelize');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
@@ -12,7 +13,7 @@ const fs = require('fs');
 const EmailService = require('../services/EmailService');
 const EmailValidator = require('../utils/emailValidator');
 
-// Configure Multer for Image Upload
+// Configure Multer for Image Upload (Accountant Profiles)
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = 'uploads/accountants';
@@ -35,6 +36,48 @@ const upload = multer({
       cb(null, true);
     } else {
       cb(new Error('Apenas imagens são permitidas'));
+    }
+  }
+});
+
+// Configure Multer for Document Upload (Client Documents)
+const documentStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = 'uploads/documents';
+    if (!fs.existsSync(uploadDir)){
+        fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+    cb(null, 'doc-' + uniqueSuffix + '-' + sanitizedFilename);
+  }
+});
+
+const uploadDocument = multer({ 
+  storage: documentStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    // Aceitar documentos e imagens
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Tipo de arquivo não permitido. Apenas PDF, Word, Excel, TXT e imagens.'));
     }
   }
 });
@@ -977,7 +1020,39 @@ router.patch('/notifications/mark-all-read', authMiddleware, async (req, res) =>
   }
 });
 
-// GET /api/accountants/documents - Get shared documents
+// DELETE /api/accountants/notifications/:id - Delete notification
+router.delete('/notifications/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const accountant = await Accountant.findOne({ where: { userId: req.user.id } });
+    
+    if (!accountant) {
+      return res.status(404).json({ message: 'Accountant profile not found' });
+    }
+
+    const notification = await Notification.findOne({
+      where: {
+        id: id,
+        accountantId: accountant.id
+      }
+    });
+
+    if (!notification) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+
+    await notification.destroy();
+
+    console.log('🗑️ Notificação deletada:', id);
+    res.json({ success: true, message: 'Notification deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    res.status(500).json({ message: 'Error deleting notification' });
+  }
+});
+
+// GET /api/accountants/documents - Get shared documents (for accountant)
 router.get('/documents', authMiddleware, async (req, res) => {
   try {
     const accountant = await Accountant.findOne({ where: { userId: req.user.id } });
@@ -986,8 +1061,16 @@ router.get('/documents', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Accountant profile not found' });
     }
 
-    // Em produção, buscar do banco de dados
-    const documents = [];
+    // Buscar documentos enviados por este contador
+    const documents = await Document.findAll({
+      where: { accountantId: accountant.id },
+      include: [{
+        model: User,
+        as: 'client',
+        attributes: ['id', 'name', 'username', 'email']
+      }],
+      order: [['uploadedAt', 'DESC']]
+    });
 
     res.json(documents);
   } catch (error) {
@@ -997,20 +1080,31 @@ router.get('/documents', authMiddleware, async (req, res) => {
 });
 
 // POST /api/accountants/documents - Upload document
-router.post('/documents', authMiddleware, upload.single('document'), async (req, res) => {
+router.post('/documents', authMiddleware, uploadDocument.single('document'), async (req, res) => {
   try {
-    const { clientId } = req.body;
+    console.log('🔍 [UPLOAD DEBUG] Iniciando upload...');
+    console.log('🔍 [UPLOAD DEBUG] req.body:', req.body);
+    console.log('🔍 [UPLOAD DEBUG] req.file:', req.file);
+    
+    const { clientId, description } = req.body;
     const file = req.file;
 
     if (!file) {
+      console.log('❌ [UPLOAD DEBUG] Nenhum arquivo recebido!');
       return res.status(400).json({ message: 'No file uploaded' });
     }
+
+    console.log('✅ [UPLOAD DEBUG] Arquivo recebido:', file.originalname, file.mimetype);
 
     const accountant = await Accountant.findOne({ where: { userId: req.user.id } });
     
     if (!accountant) {
+      console.log('❌ [UPLOAD DEBUG] Contador não encontrado para userId:', req.user.id);
       return res.status(404).json({ message: 'Accountant profile not found' });
     }
+
+    console.log('✅ [UPLOAD DEBUG] Contador encontrado:', accountant.id);
+    console.log('🔍 [UPLOAD DEBUG] ClientId recebido:', clientId);
 
     // Verificar se o cliente pertence a este contador
     const client = await User.findOne({
@@ -1021,26 +1115,65 @@ router.post('/documents', authMiddleware, upload.single('document'), async (req,
     });
 
     if (!client) {
+      console.log('❌ [UPLOAD DEBUG] Cliente não encontrado ou não pertence ao contador');
+      console.log('🔍 [UPLOAD DEBUG] Buscando cliente com id:', clientId, 'accountantId:', accountant.id);
+      
+      // Verificar se cliente existe
+      const clientExists = await User.findByPk(clientId);
+      if (clientExists) {
+        console.log('🔍 [UPLOAD DEBUG] Cliente existe mas accountantId é:', clientExists.accountantId);
+      } else {
+        console.log('🔍 [UPLOAD DEBUG] Cliente não existe no banco');
+      }
+      
       // Deletar arquivo se cliente não encontrado
       fs.unlinkSync(file.path);
       return res.status(403).json({ message: 'Client not found or not assigned to you' });
     }
 
-    // Em produção, salvar informações do documento no banco de dados
-    const document = {
-      id: Date.now(),
-      name: file.originalname,
-      path: file.path,
-      clientId,
-      clientName: client.name || client.username,
+    console.log('✅ [UPLOAD DEBUG] Cliente encontrado:', client.name);
+
+    // Salvar documento no banco de dados
+    const document = await Document.create({
+      filename: file.filename,
+      originalName: file.originalname,
+      filepath: file.path,
+      fileSize: file.size,
+      fileType: file.mimetype,
+      description: description || null,
+      clientId: clientId,
       accountantId: accountant.id,
       uploadedAt: new Date()
-    };
+    });
+
+    console.log('✅ [UPLOAD DEBUG] Documento salvo no banco:', document.id);
+
+    // Criar notificação para o cliente
+    await Notification.create({
+      accountantId: accountant.id,
+      type: 'new_document',
+      title: '📄 Novo Documento Recebido',
+      message: `Seu contador enviou: ${file.originalname}`,
+      read: false,
+      userId: clientId // Notificação para o cliente
+    });
+
+    console.log('✅ [UPLOAD DEBUG] Notificação criada para cliente');
+    console.log('📤 Documento enviado:', file.originalname, 'para cliente:', client.name);
 
     res.json({ success: true, document });
   } catch (error) {
-    console.error('Error uploading document:', error);
-    res.status(500).json({ message: 'Error uploading document' });
+    console.error('❌ [UPLOAD DEBUG] ERRO COMPLETO:', error);
+    console.error('❌ [UPLOAD DEBUG] Stack:', error.stack);
+    // Deletar arquivo se houver erro
+    if (req.file) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        console.error('Error deleting file:', unlinkError);
+      }
+    }
+    res.status(500).json({ message: 'Error uploading document', error: error.message });
   }
 });
 
@@ -1093,6 +1226,147 @@ router.post('/invite-client', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error inviting client:', error);
     res.status(500).json({ message: 'Error sending invite' });
+  }
+});
+
+// ============================================
+// ROTAS PARA CLIENTES (Client Document Access)
+// ============================================
+
+// GET /api/accountants/my-documents - Get documents shared with logged-in client
+router.get('/my-documents', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Buscar documentos compartilhados com este usuário
+    const documents = await Document.findAll({
+      where: { clientId: userId },
+      include: [{
+        model: Accountant,
+        as: 'accountant',
+        attributes: ['id', 'name', 'email']
+      }],
+      order: [['uploadedAt', 'DESC']]
+    });
+
+    console.log(`📥 Cliente ${userId} buscou ${documents.length} documentos`);
+    res.json(documents);
+  } catch (error) {
+    console.error('Error fetching client documents:', error);
+    res.status(500).json({ message: 'Error loading documents' });
+  }
+});
+
+// DELETE /api/accountants/documents/:id - Delete document
+router.delete('/documents/:id', authMiddleware, async (req, res) => {
+  try {
+    console.log('🔍 [DELETE DEBUG] Iniciando deleção...');
+    console.log('🔍 [DELETE DEBUG] Document ID:', req.params.id);
+    console.log('🔍 [DELETE DEBUG] User ID:', req.user.id);
+    
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Buscar documento
+    const document = await Document.findByPk(id);
+
+    if (!document) {
+      console.log('❌ [DELETE DEBUG] Documento não encontrado:', id);
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
+    console.log('✅ [DELETE DEBUG] Documento encontrado:', document.originalName);
+
+    // Verificar permissão (só o contador que enviou pode deletar)
+    const accountant = await Accountant.findOne({ where: { userId } });
+    
+    if (!accountant || document.accountantId !== accountant.id) {
+      console.log('❌ [DELETE DEBUG] Sem permissão para deletar');
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    console.log('✅ [DELETE DEBUG] Permissão OK, deletando arquivo...');
+
+    // Deletar arquivo físico
+    if (fs.existsSync(document.filepath)) {
+      fs.unlinkSync(document.filepath);
+      console.log('✅ [DELETE DEBUG] Arquivo físico deletado');
+    } else {
+      console.log('⚠️ [DELETE DEBUG] Arquivo físico não existe');
+    }
+
+    // Deletar do banco
+    await document.destroy();
+    console.log('✅ [DELETE DEBUG] Documento removido do banco');
+
+    res.json({ success: true, message: 'Document deleted successfully' });
+  } catch (error) {
+    console.error('❌ [DELETE DEBUG] Erro completo:', error);
+    res.status(500).json({ message: 'Error deleting document' });
+  }
+});
+
+// GET /api/accountants/documents/:id/download - Download document
+router.get('/documents/:id/download', authMiddleware, async (req, res) => {
+  try {
+    console.log('🔍 [DOWNLOAD DEBUG] Iniciando download...');
+    console.log('🔍 [DOWNLOAD DEBUG] Document ID:', req.params.id);
+    console.log('🔍 [DOWNLOAD DEBUG] User ID:', req.user.id);
+    
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Buscar documento
+    const document = await Document.findByPk(id);
+
+    if (!document) {
+      console.log('❌ [DOWNLOAD DEBUG] Documento não encontrado:', id);
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
+    console.log('✅ [DOWNLOAD DEBUG] Documento encontrado:', document.originalName);
+    console.log('🔍 [DOWNLOAD DEBUG] Filepath:', document.filepath);
+    console.log('🔍 [DOWNLOAD DEBUG] ClientId do documento:', document.clientId);
+
+    // Verificar permissão (cliente pode baixar seus docs, contador pode baixar docs que enviou)
+    const accountant = await Accountant.findOne({ where: { userId } });
+    
+    console.log('🔍 [DOWNLOAD DEBUG] Accountant:', accountant?.id || 'null');
+    
+    const isOwner = document.clientId === userId; // É o cliente dono
+    const isSender = accountant && document.accountantId === accountant.id; // É o contador que enviou
+
+    console.log('🔍 [DOWNLOAD DEBUG] isOwner:', isOwner);
+    console.log('🔍 [DOWNLOAD DEBUG] isSender:', isSender);
+
+    if (!isOwner && !isSender) {
+      console.log('❌ [DOWNLOAD DEBUG] Acesso negado!');
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Verificar se arquivo existe
+    if (!fs.existsSync(document.filepath)) {
+      console.log('❌ [DOWNLOAD DEBUG] Arquivo não existe no servidor:', document.filepath);
+      return res.status(404).json({ message: 'File not found on server' });
+    }
+
+    console.log('✅ [DOWNLOAD DEBUG] Arquivo existe, iniciando download...');
+    console.log(`📥 Download: ${document.originalName} por usuário ${userId}`);
+
+    // Enviar arquivo
+    res.download(document.filepath, document.originalName, (err) => {
+      if (err) {
+        console.error('❌ [DOWNLOAD DEBUG] Erro no download:', err);
+        if (!res.headersSent) {
+          res.status(500).json({ message: 'Error downloading file' });
+        }
+      } else {
+        console.log('✅ [DOWNLOAD DEBUG] Download concluído com sucesso!');
+      }
+    });
+  } catch (error) {
+    console.error('❌ [DOWNLOAD DEBUG] Erro completo:', error);
+    res.status(500).json({ message: 'Error downloading document' });
   }
 });
 

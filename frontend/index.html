@@ -17,7 +17,43 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <meta name="version" content="2.4.5-layout-endereco-fix-20260124-1235" />
+    <meta name="version" content="3.1.0-email-verification-complete-20260124-1750" />
+    
+    <!-- 🔥 FORÇAR LIMPEZA DE CACHE NO LOAD -->
+    <script>
+      // Limpar Service Worker antigo e todos os caches
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            if (registration.active && registration.active.scriptURL.includes('/sw.js')) {
+              console.log('🗑️ Desregistrando Service Worker antigo:', registration.active.scriptURL);
+              registration.unregister();
+            }
+          }
+        });
+      }
+      
+      // Limpar TODOS os caches
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (let name of names) {
+            if (name.includes('lumini')) {
+              console.log('🗑️ Deletando cache antigo:', name);
+              caches.delete(name);
+            }
+          }
+        });
+      }
+      
+      // Limpar localStorage se necessário
+      const APP_VERSION = '3.0.0';
+      const storedVersion = localStorage.getItem('app_version');
+      if (storedVersion !== APP_VERSION) {
+        console.log('🔄 Nova versão detectada. Limpando storage...');
+        // NÃO limpar user/token, apenas versão
+        localStorage.setItem('app_version', APP_VERSION);
+      }
+    </script>
     
     <!-- SEO Meta Tags -->
     <title>Lumini I.A - Gestão Financeira Inteligente com IA</title>

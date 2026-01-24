@@ -59,6 +59,26 @@ const Login = () => {
       }
     } catch (error) {
       console.error('Login failed:', error);
+      
+      // Check if it's email not verified error
+      if (error.response?.data?.error === 'EMAIL_NOT_VERIFIED') {
+        const email = error.response.data.email;
+        showAlert(
+          'Confirme seu email!',
+          `Enviamos um email de confirmação para ${email}.\n\nPor favor, verifique sua caixa de entrada e clique no link de confirmação.\n\nNão recebeu? Verifique sua pasta de SPAM ou clique em "Reenviar Email".`,
+          'warning'
+        );
+        
+        // Redirecionar para página de check email
+        setTimeout(() => {
+          navigate('/check-email', { state: { email } });
+        }, 3000);
+        
+        trackError('Login Error: Email not verified', 'warning');
+        setLoading(false);
+        return;
+      }
+      
       let msg = error.response?.data?.message || 'Falha no login.';
       if (error.message === 'Network Error') {
           msg = 'Erro de conexão com o servidor. Verifique sua internet ou tente novamente mais tarde.';

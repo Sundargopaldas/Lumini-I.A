@@ -12,16 +12,18 @@ export default defineConfig({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
+        cleanupOutdatedCaches: true, // 🔥 LIMPAR CACHES ANTIGOS
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/www\.luminiiadigital\.com\.br\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'lumini-cache-v245-layout-fix',
+              cacheName: 'lumini-v310-email-verify-2026', // 🔥 NOVA VERSÃO
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 horas
-              }
+                maxAgeSeconds: 60 * 30 // 🔥 30 minutos apenas
+              },
+              networkTimeoutSeconds: 3
             }
           }
         ]
@@ -30,7 +32,7 @@ export default defineConfig({
       manifest: {
         name: 'Lumini I.A - Gestão Financeira Inteligente',
         short_name: 'Lumini',
-        version: '2.4.5',
+        version: '3.1.0',
         description: 'Gestão financeira inteligente com IA. Controle suas finanças, integre bancos e emita notas fiscais.',
         theme_color: '#8b5cf6',
         background_color: '#1e1b4b',
@@ -84,9 +86,14 @@ export default defineConfig({
     })
   ],
   build: {
-    // Otimizações de build
+    // 🔥 HASH NOS ARQUIVOS PARA FORÇAR CACHE BUST
+    assetsDir: 'assets',
     rollupOptions: {
       output: {
+        // Hash único em TODOS os arquivos
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'chart-vendor': ['chart.js', 'react-chartjs-2'],

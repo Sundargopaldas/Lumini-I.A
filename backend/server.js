@@ -21,6 +21,7 @@ const User = require('./models/User');
 const Accountant = require('./models/Accountant');
 const Transaction = require('./models/Transaction');
 const Notification = require('./models/Notification');
+const Document = require('./models/Document');
 
 // 🐛 Error Logging System
 const logger = require('./utils/errorLogger');
@@ -293,6 +294,17 @@ const startServer = async () => {
     console.log('>>> [STARTUP] Attempting to authenticate with the database...');
     await sequelize.authenticate();
     console.log('>>> [STARTUP] Database connection has been established successfully.');
+
+    // Configurar relacionamentos dos models
+    console.log('>>> [STARTUP] Configuring model associations...');
+    
+    // Document relationships
+    Document.belongsTo(User, { foreignKey: 'clientId', as: 'client' });
+    Document.belongsTo(Accountant, { foreignKey: 'accountantId', as: 'accountant' });
+    User.hasMany(Document, { foreignKey: 'clientId', as: 'documents' });
+    Accountant.hasMany(Document, { foreignKey: 'accountantId', as: 'sentDocuments' });
+    
+    console.log('>>> [STARTUP] Model associations configured.');
 
     console.log('>>> [STARTUP] Attempting to sync database schema...');
     await sequelize.sync();

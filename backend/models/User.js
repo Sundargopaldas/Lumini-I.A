@@ -56,6 +56,14 @@ const User = sequelize.define('User', {
         key: 'id'
     }
   },
+  emailVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  verificationToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   createdAt: {
     type: DataTypes.DATE,
     allowNull: true,

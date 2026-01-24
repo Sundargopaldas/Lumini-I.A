@@ -499,4 +499,42 @@ router.post('/clear-smtp-db', authMiddleware, adminMiddleware, async (req, res) 
     }
 });
 
+// DELETE user by email (TEMPORARY - for testing)
+router.delete('/users/:email', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { email } = req.params;
+        console.log(`🗑️ [ADMIN] Tentando deletar usuário: ${email}`);
+        
+        const user = await User.findOne({ where: { email } });
+        
+        if (!user) {
+            console.log(`❌ [ADMIN] Usuário não encontrado: ${email}`);
+            return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+        }
+        
+        console.log(`✅ [ADMIN] Usuário encontrado:`, {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            name: user.name
+        });
+        
+        await user.destroy();
+        console.log(`✅ [ADMIN] Usuário deletado com sucesso: ${email}`);
+        
+        res.json({ 
+            success: true, 
+            message: 'Usuário deletado com sucesso',
+            email: email
+        });
+    } catch (error) {
+        console.error('❌ [ADMIN] Erro ao deletar usuário:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Erro ao deletar usuário',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;
