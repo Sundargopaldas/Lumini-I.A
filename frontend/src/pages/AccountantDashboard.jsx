@@ -796,7 +796,8 @@ const AccountantDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
+    <>
+      {/* Alert Modal - Renderizado fora do container principal */}
       <CustomAlert 
         isOpen={alert.show}
         onClose={() => setAlert(prev => ({ ...prev, show: false, onConfirm: null }))}
@@ -805,8 +806,9 @@ const AccountantDashboard = () => {
         type={alert.type}
         onConfirm={alert.onConfirm}
       />
-
-      {/* Header */}
+      
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
+        {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between">
@@ -2030,7 +2032,8 @@ const AccountantDashboard = () => {
           </motion.div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -8,6 +8,7 @@ import GoalsWidget from '../components/GoalsWidget';
 import SubscriptionWidget from '../components/SubscriptionWidget';
 import TaxSimulatorModal from '../components/TaxSimulatorModal';
 import AIInsightsWidget from '../components/AIInsightsWidget';
+import CustomAlert from '../components/CustomAlert';
 import api from '../services/api';
 
 const Dashboard = () => {
@@ -18,6 +19,9 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
   const [user, setUser] = useState(null);
+  
+  const [alertState, setAlertState] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+  const showAlert = (title, message, type, onConfirm) => setAlertState({ isOpen: true, title, message, type, onConfirm });
 
   useEffect(() => {
     // Load user from LocalStorage only
@@ -46,6 +50,7 @@ const Dashboard = () => {
   const fetchTransactions = async () => {
     try {
       setError(null);
+      setLoading(true);
       const response = await api.get('/transactions');
       console.log('Dashboard received transactions:', response.data);
       if (Array.isArray(response.data)) {
@@ -67,6 +72,24 @@ const Dashboard = () => {
   useEffect(() => {
     fetchTransactions();
   }, []);
+
+  const handleDeleteTransaction = (id) => {
+    showAlert(
+      t('transactions.delete_title'), 
+      t('transactions.delete_confirm'), 
+      'confirm', 
+      async () => {
+        try {
+          await api.delete(`/transactions/${id}`);
+          setTransactions(transactions.filter(t => t.id !== id));
+          showAlert(t('common.success'), t('transactions.delete_success'), 'success');
+        } catch (error) {
+          console.error('Error deleting transaction:', error);
+          showAlert(t('common.error'), t('transactions.delete_error'), 'error');
+        }
+      }
+    );
+  };
 
   const metrics = useMemo(() => {
     if (!Array.isArray(transactions)) return {
@@ -263,10 +286,20 @@ const Dashboard = () => {
   if (loading) return <div className="text-center py-10">{t('plans.processing')}</div>;
 
   return (
-    <div className="space-y-5 lg:space-y-6 px-3 md:px-4 lg:px-0">
+    <>
+      {/* Alert Modal - Renderizado fora do container principal */}
+      <CustomAlert 
+        isOpen={alertState.isOpen}
+        onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        onConfirm={alertState.onConfirm}
+      />
       
-      {/* Subscription Status Widget */}
-      <SubscriptionWidget user={user} />
+      <div className="space-y-5 lg:space-y-6 px-3 md:px-4 lg:px-0">
+        {/* Subscription Status Widget */}
+        <SubscriptionWidget user={user} />
       
       <h1 className="text-2xl md:text-3xl font-bold text-white mb-4 md:mb-8">{t('dashboard.title')}</h1>
 
@@ -380,7 +413,11 @@ const Dashboard = () => {
             <div className="space-y-3 md:space-y-4">
               {transactions.length > 0 ? (
                 transactions.slice(0, 3).map((transaction) => (
-                  <TransactionCard key={transaction.id} transaction={transaction} />
+                  <TransactionCard 
+                    key={transaction.id} 
+                    transaction={transaction}
+                    onDelete={handleDeleteTransaction}
+                  />
                 ))
               ) : (
                 <p className="text-slate-500 dark:text-gray-400 text-sm">{t('dashboard.no_transactions')}</p>
@@ -391,7 +428,8 @@ const Dashboard = () => {
       </div>
 
       <TaxSimulatorModal isOpen={isTaxModalOpen} onClose={() => setIsTaxModalOpen(false)} />
-    </div>
+      </div>
+    </>
   );
 };
 

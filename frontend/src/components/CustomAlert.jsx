@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 const CustomAlert = ({ isOpen, onClose, title, message, type = 'info', onConfirm, confirmText, cancelText }) => {
@@ -8,16 +9,42 @@ const CustomAlert = ({ isOpen, onClose, title, message, type = 'info', onConfirm
   const finalCancelText = cancelText || t('common.cancel');
   
   useEffect(() => {
-    if (isOpen && !onConfirm) {
+    if (isOpen) {
+      // Bloquear scroll do body quando modal está aberto
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      
+      // Tecla ESC para emergência - sempre fecha
+      const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+      };
+      document.addEventListener('keydown', handleEscape);
+      
       // Auto-close after 3 seconds for success messages only if it's not a confirmation dialog
-      if (type === 'success') {
+      if (!onConfirm && type === 'success') {
         const timer = setTimeout(() => {
           onClose();
         }, 3000);
-        return () => clearTimeout(timer);
+        return () => {
+          clearTimeout(timer);
+          document.removeEventListener('keydown', handleEscape);
+          document.body.style.overflow = '';
+          document.body.style.position = '';
+          document.body.style.width = '';
+        };
       }
+      
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.width = '';
+      };
     }
-  }, [isOpen, type, onClose, onConfirm]);
+  }, [isOpen, type, onClose, onConfirm, title, message]);
 
   if (!isOpen) return null;
 
@@ -43,10 +70,35 @@ const CustomAlert = ({ isOpen, onClose, title, message, type = 'info', onConfirm
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+  const modalContent = (
+    <div 
+      className="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+      style={{ 
+        zIndex: 2147483647, // Máximo valor de z-index possível
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        pointerEvents: 'auto'
+      }}
+      onClick={(e) => {
+        // Fechar se clicar no fundo escuro (apenas para não-confirmação)
+        if (e.target === e.currentTarget && type !== 'confirm') {
+          onClose();
+        }
+      }}
+    >
       <div 
-        className={`w-full max-w-sm rounded-xl border p-6 shadow-2xl bg-white dark:bg-slate-900 ${getColors()}`}
+        className={`relative w-full max-w-sm rounded-xl border p-6 shadow-2xl bg-white dark:bg-slate-900 ${getColors()}`}
+        style={{ 
+          zIndex: 2147483647,
+          position: 'relative',
+          display: 'block',
+          opacity: 1,
+          visibility: 'visible'
+        }}
       >
         <div className="flex flex-col items-center text-center gap-4">
           <div className="text-4xl">{getIcon()}</div>
@@ -93,6 +145,9 @@ const CustomAlert = ({ isOpen, onClose, title, message, type = 'info', onConfirm
       </div>
     </div>
   );
+
+  // Renderizar usando Portal diretamente no body
+  return createPortal(modalContent, document.body);
 };
 
 export default CustomAlert;
