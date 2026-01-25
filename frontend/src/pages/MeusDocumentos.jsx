@@ -9,7 +9,7 @@ const MeusDocumentos = () => {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(null);
-  const [filter, setFilter] = useState('all'); // all, viewed, unviewed
+  const [deleting, setDeleting] = useState(null);
   const [alert, setAlert] = useState({
     show: false,
     title: '',
@@ -81,6 +81,24 @@ const MeusDocumentos = () => {
     }
   };
 
+  const deleteDocument = async (documentId, filename) => {
+    try {
+      setDeleting(documentId);
+      
+      await api.delete(`/accountants/my-documents/${documentId}`);
+      
+      // Remover da lista local
+      setDocuments(docs => docs.filter(doc => doc.id !== documentId));
+      
+      showAlert('Sucesso', `Documento "${filename}" removido da sua visualização!`, 'success');
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      showAlert('Erro', 'Não foi possível deletar o documento', 'error');
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   const formatFileSize = (bytes) => {
     if (!bytes) return 'N/A';
     const kb = bytes / 1024;
@@ -109,13 +127,6 @@ const MeusDocumentos = () => {
     return '📄';
   };
 
-  // Filtrar documentos
-  const filteredDocuments = documents.filter(doc => {
-    if (filter === 'viewed') return doc.viewed;
-    if (filter === 'unviewed') return !doc.viewed;
-    return true;
-  });
-
   const unviewedCount = documents.filter(doc => !doc.viewed).length;
 
   if (loading) {
@@ -130,186 +141,111 @@ const MeusDocumentos = () => {
   }
 
   return (
-    <div className="space-y-6 px-2 md:px-0">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">📄 Meus Documentos</h1>
-          <p className="text-slate-400">
-            Documentos compartilhados pelo seu contador
-          </p>
+    <div className="space-y-4 px-2 md:px-0">
+      {/* Header Simplificado */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-white">
+            📄 Meus Documentos
+          </h1>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="px-3 py-1 bg-slate-800 text-slate-300 rounded-full border border-slate-700">
+              {documents.length} total
+            </span>
+            {unviewedCount > 0 && (
+              <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-full border border-red-500/50 font-semibold animate-pulse">
+                {unviewedCount} novos
+              </span>
+            )}
+          </div>
         </div>
         <button
           onClick={() => navigate('/dashboard')}
-          className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+          className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors text-sm"
         >
           ← Voltar
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-slate-400 text-sm mb-1">Total de Documentos</p>
-              <p className="text-3xl font-bold text-white">{documents.length}</p>
-            </div>
-            <span className="text-4xl">📁</span>
-          </div>
-        </div>
-
-        <div className="bg-red-900/20 rounded-xl p-6 border border-red-700/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-red-300 text-sm mb-1">Não Visualizados</p>
-              <p className="text-3xl font-bold text-red-400">{unviewedCount}</p>
-            </div>
-            <span className="text-4xl">🔴</span>
-          </div>
-        </div>
-
-        <div className="bg-green-900/20 rounded-xl p-6 border border-green-700/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-300 text-sm mb-1">Visualizados</p>
-              <p className="text-3xl font-bold text-green-400">{documents.length - unviewedCount}</p>
-            </div>
-            <span className="text-4xl">✅</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Filtros */}
-      <div className="flex gap-2 flex-wrap">
-        <button
-          onClick={() => setFilter('all')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filter === 'all'
-              ? 'bg-purple-600 text-white'
-              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-          }`}
-        >
-          Todos ({documents.length})
-        </button>
-        <button
-          onClick={() => setFilter('unviewed')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filter === 'unviewed'
-              ? 'bg-red-600 text-white'
-              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-          }`}
-        >
-          Não Visualizados ({unviewedCount})
-        </button>
-        <button
-          onClick={() => setFilter('viewed')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filter === 'viewed'
-              ? 'bg-green-600 text-white'
-              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-          }`}
-        >
-          Visualizados ({documents.length - unviewedCount})
-        </button>
-      </div>
-
       {/* Lista de Documentos */}
-      {filteredDocuments.length === 0 ? (
+      {documents.length === 0 ? (
         <div className="bg-slate-800 rounded-xl p-12 text-center border border-slate-700">
           <span className="text-6xl mb-4 block">📭</span>
-          <h3 className="text-xl font-bold text-white mb-2">
-            {filter === 'all' ? 'Nenhum documento' : `Nenhum documento ${filter === 'viewed' ? 'visualizado' : 'não visualizado'}`}
-          </h3>
+          <h3 className="text-xl font-bold text-white mb-2">Nenhum documento</h3>
           <p className="text-slate-400">
-            {filter === 'all' 
-              ? 'Você ainda não recebeu documentos do seu contador'
-              : 'Tente outro filtro'}
+            Você ainda não recebeu documentos do seu contador
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredDocuments.map((doc, index) => (
+        <div className="space-y-3">
+          {documents.map((doc, index) => (
             <motion.div
               key={doc.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className={`bg-slate-800 rounded-xl p-6 border transition-all hover:shadow-xl ${
+              transition={{ delay: index * 0.03 }}
+              className={`bg-slate-800 rounded-lg p-4 border transition-all hover:border-purple-500/50 ${
                 doc.viewed 
                   ? 'border-slate-700' 
-                  : 'border-red-500/50 bg-red-900/10'
+                  : 'border-red-500/50 bg-red-900/5'
               }`}
             >
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-4xl">{getFileIcon(doc.fileType)}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-xl font-bold text-white truncate">
-                          {doc.originalName}
-                        </h3>
-                        {!doc.viewed && (
-                          <span className="px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
-                            NOVO
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-slate-400 flex-wrap">
-                        <span>{formatFileSize(doc.fileSize)}</span>
-                        <span>•</span>
-                        <span>{formatDate(doc.uploadedAt)}</span>
-                        {doc.accountant && (
-                          <>
-                            <span>•</span>
-                            <span className="truncate">📤 De: {doc.accountant.name}</span>
-                          </>
-                        )}
-                      </div>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <span className="text-3xl">{getFileIcon(doc.fileType)}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="text-base font-semibold text-white truncate">
+                        {doc.originalName}
+                      </h3>
+                      {!doc.viewed && (
+                        <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                          NOVO
+                        </span>
+                      )}
                     </div>
-                  </div>
-                  
-                  {doc.description && (
-                    <div className="bg-slate-900/50 rounded-lg p-3 mt-3">
-                      <p className="text-slate-300 text-sm">
+                    <div className="flex items-center gap-2 text-xs text-slate-400 flex-wrap">
+                      <span>{formatFileSize(doc.fileSize)}</span>
+                      <span>•</span>
+                      <span>{formatDate(doc.uploadedAt)}</span>
+                      {doc.accountant && (
+                        <>
+                          <span>•</span>
+                          <span>{doc.accountant.name}</span>
+                        </>
+                      )}
+                    </div>
+                    {doc.description && (
+                      <p className="text-xs text-slate-300 mt-2 line-clamp-2">
                         💬 {doc.description}
                       </p>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex gap-2">
-                  {!doc.viewed && (
-                    <button
-                      onClick={() => markAsViewed(doc.id)}
-                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all whitespace-nowrap"
-                    >
-                      ✓ Marcar como Lido
-                    </button>
-                  )}
                   <button
                     onClick={() => downloadDocument(doc.id, doc.originalName)}
                     disabled={downloading === doc.id}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                    className={`px-4 py-2 rounded-lg font-medium transition-all text-sm ${
                       downloading === doc.id
                         ? 'bg-slate-700 text-slate-400 cursor-wait'
-                        : 'bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white'
                     }`}
                   >
-                    {downloading === doc.id ? (
-                      <span className="flex items-center gap-2">
-                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Baixando...
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        📥 Baixar
-                      </span>
-                    )}
+                    {downloading === doc.id ? '...' : '📥 Baixar'}
+                  </button>
+                  <button
+                    onClick={() => deleteDocument(doc.id, doc.originalName)}
+                    disabled={deleting === doc.id}
+                    className={`px-3 py-2 rounded-lg transition-all text-sm ${
+                      deleting === doc.id
+                        ? 'bg-slate-700 text-slate-400 cursor-wait'
+                        : 'bg-slate-700 hover:bg-red-600 text-white'
+                    }`}
+                    title="Remover da minha visualização"
+                  >
+                    🗑️
                   </button>
                 </div>
               </div>

@@ -74,9 +74,10 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo - Esquerda */}
           <div className="flex-shrink-0">
-            <Link to="/dashboard" className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white transition-colors">
-              <Logo className="w-8 h-8" />
-              <span>Lumini I.A</span>
+            <Link to="/dashboard" className="flex items-center gap-2 text-lg sm:text-xl font-bold text-slate-900 dark:text-white transition-colors">
+              <Logo className="w-7 h-7 sm:w-8 sm:h-8" />
+              <span className="hidden xs:inline sm:inline">Lumini I.A</span>
+              <span className="inline xs:hidden sm:hidden">Lumini</span>
             </Link>
           </div>
 

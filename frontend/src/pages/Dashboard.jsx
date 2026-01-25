@@ -263,7 +263,7 @@ const Dashboard = () => {
   if (loading) return <div className="text-center py-10">{t('plans.processing')}</div>;
 
   return (
-    <div className="space-y-4 md:space-y-6 px-2 md:px-0">
+    <div className="space-y-5 lg:space-y-6 px-3 md:px-4 lg:px-0">
       
       {/* Subscription Status Widget */}
       <SubscriptionWidget user={user} />
@@ -319,22 +319,22 @@ const Dashboard = () => {
       {/* AI Insights Widget */}
       <AIInsightsWidget />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
-          <h3 className="text-slate-600 dark:text-gray-300 text-xs md:text-sm font-medium mb-1">{t('dashboard.total_balance')}</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-5 lg:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+          <h3 className="text-slate-600 dark:text-gray-300 text-sm font-medium mb-1">{t('dashboard.total_balance')}</h3>
           <p className={`text-xl md:text-3xl font-bold break-all ${metrics.totalBalance >= 0 ? 'text-slate-900 dark:text-white' : 'text-red-500 dark:text-red-400'}`}>
             R$ {metrics.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </p>
         </div>
-        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
-          <h3 className="text-slate-600 dark:text-gray-300 text-xs md:text-sm font-medium mb-1">{t('dashboard.income_month')}</h3>
+        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-5 lg:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+          <h3 className="text-slate-600 dark:text-gray-300 text-sm font-medium mb-1">{t('dashboard.income_month')}</h3>
           <p className="text-xl md:text-3xl font-bold text-green-600 dark:text-green-400 break-all">+R$ {metrics.monthlyIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
           <p className="text-[10px] md:text-xs text-slate-500 dark:text-gray-400 mt-1 break-words truncate" title={`${t('dashboard.top_source')}: ${metrics.topSource}`}>
             {t('dashboard.top_source')}: {metrics.topSource}
           </p>
         </div>
-        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors sm:col-span-2 md:col-span-1">
-          <h3 className="text-slate-600 dark:text-gray-300 text-xs md:text-sm font-medium mb-1">{t('dashboard.expenses_month')}</h3>
+        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-5 lg:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors sm:col-span-2 lg:col-span-1">
+          <h3 className="text-slate-600 dark:text-gray-300 text-sm font-medium mb-1">{t('dashboard.expenses_month')}</h3>
           <p className="text-xl md:text-3xl font-bold text-red-600 dark:text-red-400 break-all">-R$ {metrics.monthlyExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
           <p className="text-[10px] md:text-xs text-slate-500 dark:text-gray-400 mt-1 break-words truncate" title={`${t('dashboard.top_expense')}: ${metrics.topExpense}`}>
             {t('dashboard.top_expense')}: {metrics.topExpense}
@@ -343,8 +343,8 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-white/10 backdrop-blur-lg p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
-          <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white mb-3 md:mb-4">{t('dashboard.balance_evolution')}</h2>
+        <div className="lg:col-span-2 bg-white dark:bg-white/10 backdrop-blur-lg p-5 lg:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{t('dashboard.balance_evolution')}</h2>
           <div className="h-48 md:h-64">
              {trendData ? (
                  <TrendChart data={trendData} />
@@ -354,8 +354,8 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
-            <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white mb-3 md:mb-4">{t('dashboard.income_source')}</h2>
+        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-5 lg:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{t('dashboard.income_source')}</h2>
             <div className="h-48 md:h-64">
                 {sourceData ? (
                     <SourceChart data={sourceData} />
@@ -366,14 +366,14 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        <div className="lg:col-span-2 space-y-4 md:space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
+        <div className="lg:col-span-2 space-y-5 lg:space-y-6">
             <GoalsWidget />
         </div>
 
         <div className="space-y-4 md:space-y-6">
-          <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
-            <div className="flex justify-between items-center mb-3 md:mb-4">
+          <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-5 lg:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+            <div className="flex justify-between items-center mb-4">
                <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">{t('dashboard.recent_transactions')}</h2>
                <Link to="/transactions" className="text-xs md:text-sm text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 whitespace-nowrap">{t('dashboard.view_all')}</Link>
             </div>

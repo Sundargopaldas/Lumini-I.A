@@ -1,19 +1,25 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import Logo from '../components/Logo';
 import CustomAlert from '../components/CustomAlert';
+import ConsentModal from '../components/ConsentModal';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import { trackSignup, trackError } from '../utils/analytics';
 
 const Register = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
+  const [inviteToken, setInviteToken] = useState(null);
+  const [inviteInfo, setInviteInfo] = useState(null);
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [hasGivenConsent, setHasGivenConsent] = useState(false);
   const [alertConfig, setAlertConfig] = useState({
     isOpen: false,
     title: '',
@@ -21,12 +27,60 @@ const Register = () => {
     type: 'info'
   });
 
+  // Extrair token de convite da URL e validar
+  useEffect(() => {
+    const token = searchParams.get('invite');
+    if (token) {
+      setInviteToken(token);
+      
+      // Buscar informações do convite
+      const validateInvite = async () => {
+        try {
+          const response = await api.get(`/accountants/validate-invite/${token}`);
+          
+          if (response.data.valid) {
+            setInviteInfo({
+              message: '🎉 Você foi convidado por seu contador! Complete o cadastro para começar.',
+              accountantName: response.data.accountantName
+            });
+            
+            // Preencher email automaticamente
+            if (response.data.email) {
+              setFormData(prev => ({ ...prev, email: response.data.email }));
+            }
+            
+            console.log(`✅ [REGISTER] Convite válido de: ${response.data.accountantName}`);
+          } else {
+            showAlert('Aviso', response.data.message || 'Convite inválido', 'warning');
+            setInviteToken(null);
+          }
+        } catch (error) {
+          console.error('❌ [REGISTER] Erro ao validar convite:', error);
+          showAlert('Erro', 'Não foi possível validar o convite', 'error');
+          setInviteToken(null);
+        }
+      };
+      
+      validateInvite();
+    }
+  }, [searchParams]);
+
   const showAlert = (title, message, type = 'info') => {
     setAlertConfig({ isOpen: true, title, message, type });
   };
 
   const closeAlert = () => {
     setAlertConfig(prev => ({ ...prev, isOpen: false }));
+  };
+
+  const handleConsentAccept = () => {
+    setHasGivenConsent(true);
+    setShowConsentModal(false);
+    // Trigger o submit do formulário novamente
+    const form = document.getElementById('register-form');
+    if (form) {
+      form.requestSubmit();
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -44,17 +98,31 @@ const Register = () => {
       return;
     }
 
+    // Se há convite e usuário ainda não deu consentimento, mostrar modal
+    if (inviteToken && !hasGivenConsent) {
+      setShowConsentModal(true);
+      return;
+    }
+
     try {
       console.log('🚀 [REGISTER] Iniciando cadastro...', {
         username: formData.username,
         email: formData.email
       });
       
-      const response = await api.post('/auth/register', {
+      const payload = {
         username: formData.username,
         email: formData.email,
         password: formData.password
-      });
+      };
+      
+      // Incluir token de convite se existir
+      if (inviteToken) {
+        payload.inviteToken = inviteToken;
+        console.log('📧 [REGISTER] Registrando com convite de contador');
+      }
+      
+      const response = await api.post('/auth/register', payload);
       
       console.log('✅ [REGISTER] Cadastro realizado com sucesso!', response.data);
       
@@ -124,7 +192,30 @@ const Register = () => {
             Clareza financeira para empreendedores.
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+
+        {/* Banner de Convite */}
+        {inviteInfo && (
+          <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-purple-50 dark:from-purple-900/30 dark:via-blue-900/30 dark:to-purple-900/30 border-2 border-purple-300 dark:border-purple-700 rounded-xl p-4 animate-pulse">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">🎉</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-purple-900 dark:text-purple-100">
+                  Convite Especial
+                </p>
+                <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                  {inviteInfo.message}
+                </p>
+                {inviteInfo.accountantName && (
+                  <p className="text-xs text-purple-600 dark:text-purple-200 mt-1 font-medium">
+                    Contador: {inviteInfo.accountantName}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <form id="register-form" className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">
             <div>
               <label htmlFor="username" className="sr-only">Nome de usuário</label>
@@ -207,6 +298,14 @@ const Register = () => {
         title={alertConfig.title}
         message={alertConfig.message}
         type={alertConfig.type}
+      />
+
+      {/* Consent Modal for Accountant Link */}
+      <ConsentModal
+        isOpen={showConsentModal}
+        onClose={() => setShowConsentModal(false)}
+        onAccept={handleConsentAccept}
+        accountantName={inviteInfo?.accountantName || 'seu contador'}
       />
     </div>
   );

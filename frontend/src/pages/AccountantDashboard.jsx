@@ -507,7 +507,7 @@ const AccountantDashboard = () => {
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(16, 185, 129);
-      doc.text(normalize(`R$ ${parseFloat(clientReport.incomeBySource?.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`), c1X + 8, yPos + 22);
+      doc.text(normalize(`R$ ${parseFloat(clientReport.financials?.incomeBySource?.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`), c1X + 8, yPos + 22);
       
       // Despesas
       const c2X = c1X + cardW + spacing;
@@ -529,11 +529,11 @@ const AccountantDashboard = () => {
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(239, 68, 68);
-      doc.text(normalize(`R$ ${parseFloat(clientReport.expensesByCategory?.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`), c2X + 8, yPos + 22);
+      doc.text(normalize(`R$ ${parseFloat(clientReport.financials?.expensesByCategory?.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`), c2X + 8, yPos + 22);
       
       // Lucro
       const c3X = c2X + cardW + spacing;
-      const profit = parseFloat(clientReport.incomeBySource?.total || 0) - parseFloat(clientReport.expensesByCategory?.total || 0);
+      const profit = parseFloat(clientReport.financials?.incomeBySource?.total || 0) - parseFloat(clientReport.financials?.expensesByCategory?.total || 0);
       const profitColor = profit >= 0 ? [139, 92, 246] : [239, 68, 68];
       const profitBg = profit >= 0 ? [245, 243, 255] : [254, 242, 242];
       
@@ -857,6 +857,65 @@ const AccountantDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Banner de Novo Cliente - CHAMATIVO */}
+        {notifications.filter(n => n.type === 'new_client' && !n.read).length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 relative"
+          >
+            <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-xl p-6 shadow-2xl border-2 border-green-400 relative overflow-hidden">
+              {/* Animação de brilho */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+              
+              <div className="relative flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4 flex-1">
+                  <div className="text-5xl animate-bounce">🎉</div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                      Novo Cliente Vinculado!
+                      <span className="px-3 py-1 bg-white/30 text-white text-sm rounded-full animate-pulse">
+                        {notifications.filter(n => n.type === 'new_client' && !n.read).length}
+                      </span>
+                    </h3>
+                    <div className="space-y-1">
+                      {notifications
+                        .filter(n => n.type === 'new_client' && !n.read)
+                        .slice(0, 3)
+                        .map(notif => (
+                          <p key={notif.id} className="text-white/90 text-base flex items-center gap-2">
+                            <span className="text-xl">👤</span>
+                            <strong>{notif.metadata?.clientName || 'Cliente'}</strong> se vinculou ao seu perfil!
+                          </p>
+                        ))
+                      }
+                    </div>
+                    <button
+                      onClick={() => setActiveTab('notifications')}
+                      className="mt-3 px-4 py-2 bg-white text-green-600 rounded-lg font-semibold hover:bg-green-50 transition-colors text-sm shadow-md"
+                    >
+                      Ver Detalhes →
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={async () => {
+                    // Marcar todas as notificações de novo cliente como lidas
+                    const newClientNotifs = notifications.filter(n => n.type === 'new_client' && !n.read);
+                    for (const notif of newClientNotifs) {
+                      await markNotificationAsRead(notif.id);
+                    }
+                  }}
+                  className="text-white/80 hover:text-white transition-colors text-2xl"
+                  title="Dispensar"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Tabs Navigation */}
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm mb-6 p-2 flex gap-2 overflow-x-auto">
           <button
@@ -1386,6 +1445,22 @@ const AccountantDashboard = () => {
             <h3 className="text-xl font-bold mb-6 text-slate-900 dark:text-white">✉️ Convidar Clientes</h3>
             
             <div className="max-w-2xl">
+              {/* Info Banner sobre Consentimento */}
+              <div className="mb-6 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border-2 border-green-200 dark:border-green-700 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">✅</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-green-900 dark:text-green-100 mb-2">
+                      Sistema de Consentimento Implementado
+                    </p>
+                    <p className="text-xs text-green-700 dark:text-green-300 leading-relaxed">
+                      Seus clientes agora receberão um <strong>termo de consentimento claro e transparente</strong> antes de 
+                      vincular sua conta. Isso garante conformidade com a LGPD e aumenta a confiança no seu serviço! 🔒
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <p className="text-slate-600 dark:text-slate-400 mb-6">
                 Envie um convite para que seus clientes possam vinculá-lo como contador no sistema.
               </p>
@@ -1790,19 +1865,19 @@ const AccountantDashboard = () => {
                   <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border-l-4 border-green-500">
                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Receitas (12m)</p>
                     <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      R$ {parseFloat(clientReport.incomeBySource?.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {parseFloat(clientReport.financials?.incomeBySource?.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border-l-4 border-red-500">
                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Despesas (12m)</p>
                     <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                      R$ {parseFloat(clientReport.expensesByCategory?.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {parseFloat(clientReport.financials?.expensesByCategory?.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border-l-4 border-blue-500">
                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Lucro Líquido</p>
                     <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                      R$ {(parseFloat(clientReport.incomeBySource?.total || 0) - parseFloat(clientReport.expensesByCategory?.total || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {(parseFloat(clientReport.financials?.incomeBySource?.total || 0) - parseFloat(clientReport.financials?.expensesByCategory?.total || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                 </div>
@@ -1913,11 +1988,11 @@ const AccountantDashboard = () => {
 
                 {/* Categories Breakdown */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {clientReport.incomeBySource && Object.keys(clientReport.incomeBySource.sources || {}).length > 0 && (
+                  {clientReport.financials?.incomeBySource && Object.keys(clientReport.financials.incomeBySource.sources || {}).length > 0 && (
                     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
                       <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-white">💰 Receitas por Fonte</h3>
                       <div className="space-y-3">
-                        {Object.entries(clientReport.incomeBySource.sources).map(([source, amount]) => (
+                        {Object.entries(clientReport.financials.incomeBySource.sources).map(([source, amount]) => (
                           <div key={source} className="flex items-center justify-between">
                             <span className="text-sm text-slate-600 dark:text-slate-400">{source}</span>
                             <span className="text-sm font-semibold text-slate-900 dark:text-white">
@@ -1929,11 +2004,11 @@ const AccountantDashboard = () => {
                     </div>
                   )}
 
-                  {clientReport.expensesByCategory && Object.keys(clientReport.expensesByCategory.categories || {}).length > 0 && (
+                  {clientReport.financials?.expensesByCategory && Object.keys(clientReport.financials.expensesByCategory.categories || {}).length > 0 && (
                     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
                       <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-white">📊 Despesas por Categoria</h3>
                       <div className="space-y-3">
-                        {Object.entries(clientReport.expensesByCategory.categories).map(([category, amount]) => (
+                        {Object.entries(clientReport.financials.expensesByCategory.categories).map(([category, amount]) => (
                           <div key={category} className="flex items-center justify-between">
                             <span className="text-sm text-slate-600 dark:text-slate-400">{category}</span>
                             <span className="text-sm font-semibold text-slate-900 dark:text-white">

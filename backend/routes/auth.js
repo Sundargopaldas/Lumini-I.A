@@ -74,7 +74,36 @@ const upload = multer({
 // Register
 router.post('/register', validate(schemas.registerSchema), async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, inviteToken } = req.body;
+
+    // Validar e processar convite (se fornecido)
+    let accountantIdFromInvite = null;
+    if (inviteToken) {
+      const InviteToken = require('../models/InviteToken');
+      const invite = await InviteToken.findOne({ 
+        where: { 
+          token: inviteToken,
+          email: email, // Deve ser para este email
+          used: false 
+        } 
+      });
+
+      if (!invite) {
+        return res.status(400).json({ 
+          message: 'Convite inválido ou já utilizado' 
+        });
+      }
+
+      // Verificar se expirou
+      if (new Date() > invite.expiresAt) {
+        return res.status(400).json({ 
+          message: 'Este convite expirou. Solicite um novo convite ao seu contador.' 
+        });
+      }
+
+      accountantIdFromInvite = invite.accountantId;
+      console.log(`✅ [INVITE] Convite válido encontrado! AccountantId: ${accountantIdFromInvite}`);
+    }
 
     // Validate email existence
     const emailValidation = await EmailValidator.validate(email);
@@ -116,14 +145,47 @@ router.post('/register', validate(schemas.registerSchema), async (req, res) => {
     // Generate verification token
     const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-    // Create user
+    // Create user (com accountantId se veio de convite)
     const user = await User.create({
       username,
       email,
       password: hashedPassword,
       emailVerified: false,
       verificationToken,
+      accountantId: accountantIdFromInvite // Vincular automaticamente ao contador
     });
+
+    // Se foi criado via convite, marcar o token como usado e criar notificação
+    if (inviteToken && accountantIdFromInvite) {
+      const InviteToken = require('../models/InviteToken');
+      await InviteToken.update(
+        { used: true },
+        { where: { token: inviteToken } }
+      );
+
+      // Criar notificação para o contador
+      const Notification = require('../models/Notification');
+      const Accountant = require('../models/Accountant');
+      
+      const accountant = await Accountant.findByPk(accountantIdFromInvite);
+      if (accountant) {
+        await Notification.create({
+          accountantId: accountant.id,
+          userId: user.id,
+          type: 'new_client',
+          title: '🎉 Novo Cliente Cadastrado',
+          message: `${user.username} aceitou seu convite e criou uma conta!`,
+          metadata: {
+            clientId: user.id,
+            clientName: user.username,
+            clientEmail: user.email,
+            viaInvite: true
+          }
+        });
+
+        console.log(`✅ [INVITE] Notificação criada para o contador ${accountant.id}`);
+      }
+    }
 
     // Send verification email
     let emailSent = false;

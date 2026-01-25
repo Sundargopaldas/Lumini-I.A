@@ -24,8 +24,11 @@ const SubscriptionWidget = ({ user }) => {
      setLocalUser(user);
   }, [user]);
 
-  // Buscar contagem de documentos não visualizados
+  // Buscar contagem de documentos não visualizados (SÓ PARA CLIENTES, NÃO ADMIN)
   useEffect(() => {
+    // Se for admin/contador, não buscar documentos
+    if (user?.isAdmin) return;
+
     const fetchUnviewedCount = async () => {
       try {
         const response = await api.get('/accountants/documents/unviewed/count');
@@ -40,7 +43,7 @@ const SubscriptionWidget = ({ user }) => {
     // Atualizar a cada 30 segundos
     const interval = setInterval(fetchUnviewedCount, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.isAdmin]);
 
   const handleSync = async () => {
       setSyncing(true);
@@ -133,19 +136,21 @@ const SubscriptionWidget = ({ user }) => {
                 </Link>
              )}
              
-             {/* Botão de Notificação de Documentos - APARECE PARA TODOS */}
-             <button
-               onClick={() => navigate('/meus-documentos')}
-               className="relative px-4 py-2 bg-slate-700 text-white rounded-lg font-semibold hover:bg-slate-600 transition-colors border border-slate-600 text-sm"
-               title="Meus Documentos"
-             >
-               📄 Documentos
-               {unviewedCount > 0 && (
-                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-                   {unviewedCount}
-                 </span>
-               )}
-             </button>
+             {/* Botão de Notificação de Documentos - SÓ PARA CLIENTES (não admin/contador) */}
+             {!localUser.isAdmin && (
+               <button
+                 onClick={() => navigate('/meus-documentos')}
+                 className="relative px-4 py-2 bg-slate-700 text-white rounded-lg font-semibold hover:bg-slate-600 transition-colors border border-slate-600 text-sm"
+                 title="Meus Documentos"
+               >
+                 📄 Documentos
+                 {unviewedCount > 0 && (
+                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+                     {unviewedCount}
+                   </span>
+                 )}
+               </button>
+             )}
              
              {/* Botão Sincronizar */}
              <button

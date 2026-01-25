@@ -713,6 +713,105 @@ const getSmtpStatus = async () => {
 };
 
 /**
+ * Send Client Invite Email (from Accountant to Client)
+ * @param {Object} accountant - Accountant object sending the invite
+ * @param {String} email - Client email
+ * @param {String} inviteToken - Unique token for invitation
+ */
+const sendClientInviteEmail = async (accountant, email, inviteToken) => {
+    console.log(`📧 Attempting to send client invite email to: ${email}`);
+    
+    const transporter = await getTransporter();
+    if (!transporter) {
+        console.error('❌ SMTP not configured! Cannot send invite email.');
+        throw new Error('SMTP não configurado. Configure em Admin → Configurações do Sistema.');
+    }
+    
+    const fromAddress = await getFromAddress();
+    console.log(`📤 Sending from: ${fromAddress}`);
+
+    const logoPath = getLogoPath();
+    const attachments = [];
+    if (logoPath) {
+        attachments.push({
+            filename: 'logo.png',
+            path: logoPath,
+            cid: 'logo'
+        });
+    }
+
+    const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register?invite=${inviteToken}`;
+    
+    const mailOptions = {
+        from: fromAddress,
+        to: email,
+        subject: `${accountant.name || 'Seu contador'} te convidou para o Lumini I.A! 🎉`,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                <div style="background: linear-gradient(135deg, #6d28d9 0%, #4f46e5 100%); padding: 30px; text-align: center;">
+                    ${logoPath ? '<img src="cid:logo" alt="Lumini I.A" style="width: 60px; height: 60px; background-color: white; padding: 8px; border-radius: 8px; margin-bottom: 15px;">' : ''}
+                    <h1 style="color: white; margin: 0; font-size: 26px;">Você foi convidado!</h1>
+                </div>
+                
+                <div style="padding: 30px; background-color: white;">
+                    <p style="font-size: 16px; color: #4a5568;">Olá,</p>
+                    
+                    <p style="font-size: 16px; color: #4a5568; line-height: 1.6;">
+                        <strong>${accountant.name || accountant.email}</strong>, seu contador, convidou você para se juntar ao <strong>Lumini I.A</strong>!
+                    </p>
+                    
+                    <div style="background: linear-gradient(to right, #eff6ff, #f3f4f6); border-left: 4px solid #6d28d9; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                        <h3 style="margin: 0 0 10px 0; color: #1e293b; font-size: 18px;">🚀 Por que usar o Lumini I.A?</h3>
+                        <ul style="margin: 0; padding-left: 20px; color: #475569;">
+                            <li style="margin: 8px 0;">✅ Gestão financeira completa e automatizada</li>
+                            <li style="margin: 8px 0;">📊 Relatórios e gráficos em tempo real</li>
+                            <li style="margin: 8px 0;">🤝 Compartilhe dados com seu contador facilmente</li>
+                            <li style="margin: 8px 0;">📄 Organize documentos fiscais em um só lugar</li>
+                        </ul>
+                    </div>
+                    
+                    <p style="font-size: 16px; color: #4a5568; line-height: 1.6;">
+                        Ao criar sua conta, você será automaticamente conectado ao seu contador, facilitando todo o processo de gestão fiscal e financeira!
+                    </p>
+                    
+                    <div style="text-align: center; margin: 35px 0;">
+                        <a href="${inviteLink}" style="background: linear-gradient(135deg, #6d28d9 0%, #4f46e5 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(109, 40, 217, 0.3); display: inline-block;">
+                            🎯 Criar Minha Conta Grátis
+                        </a>
+                    </div>
+
+                    <p style="color: #718096; font-size: 13px; text-align: center; margin-top: 25px;">
+                        Este convite é válido por 7 dias.<br>
+                        Se o botão não funcionar, copie e cole este link no navegador:<br>
+                        <span style="word-break: break-all; color: #6d28d9;">${inviteLink}</span>
+                    </p>
+                </div>
+                
+                <div style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+                    <p style="margin: 0; color: #94a3b8; font-size: 12px;">© ${new Date().getFullYear()} Lumini I.A. Todos os direitos reservados.</p>
+                </div>
+            </div>
+        `,
+        attachments: attachments
+    };
+
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`✅ Client invite email sent successfully to ${email}`);
+        console.log(`   Message ID: ${info.messageId}`);
+        return info;
+    } catch (error) {
+        console.error('❌ Error sending client invite email:', error);
+        console.error('   Error details:', {
+            message: error.message,
+            code: error.code,
+            command: error.command
+        });
+        throw error;
+    }
+};
+
+/**
  * Send Notification Email (Generic)
  */
 const sendNotificationEmail = async (email, title, message) => {
@@ -783,6 +882,7 @@ module.exports = {
     sendPasswordResetEmail,
     sendInviteEmail,
     sendNewClientNotification,
+    sendClientInviteEmail,
     sendNotificationEmail,
     getSmtpStatus
 };

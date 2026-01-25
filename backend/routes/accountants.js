@@ -944,13 +944,21 @@ router.get('/notifications', authMiddleware, async (req, res) => {
     // Buscar notificações reais do banco de dados
     console.log('📊 Buscando notificações para accountant ID:', accountant.id);
     
+    // Buscar apenas notificações PARA O CONTADOR (não para clientes)
+    // Notificações de documentos (new_document) têm userId e são PARA O CLIENTE
+    // Notificações de novo cliente (new_client, client_unlinked) são PARA O CONTADOR
     const notifications = await Notification.findAll({
-      where: { accountantId: accountant.id },
+      where: { 
+        accountantId: accountant.id,
+        type: {
+          [Op.in]: ['new_client', 'client_unlinked'] // Apenas tipos de notificação para o contador
+        }
+      },
       order: [['createdAt', 'DESC']],
       limit: 50
     });
 
-    console.log(`✅ Encontradas ${notifications.length} notificações`);
+    console.log(`✅ Encontradas ${notifications.length} notificações para o contador`);
     res.json(notifications);
   } catch (error) {
     console.error('Error fetching notifications:', error);
@@ -1061,9 +1069,12 @@ router.get('/documents', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Accountant profile not found' });
     }
 
-    // Buscar documentos enviados por este contador
+    // Buscar documentos enviados por este contador (apenas não deletados por ele)
     const documents = await Document.findAll({
-      where: { accountantId: accountant.id },
+      where: { 
+        accountantId: accountant.id,
+        deletedByAccountant: false  // SOFT DELETE: só mostra não deletados
+      },
       include: [{
         model: User,
         as: 'client',
@@ -1177,26 +1188,86 @@ router.post('/documents', authMiddleware, uploadDocument.single('document'), asy
   }
 });
 
+// GET /api/accountants/validate-invite/:token - Validate invite token and return accountant info
+router.get('/validate-invite/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    const InviteToken = require('../models/InviteToken');
+    const invite = await InviteToken.findOne({ 
+      where: { 
+        token,
+        used: false 
+      } 
+    });
+
+    if (!invite) {
+      return res.status(404).json({ 
+        valid: false,
+        message: 'Convite não encontrado ou já utilizado' 
+      });
+    }
+
+    // Verificar se expirou
+    if (new Date() > invite.expiresAt) {
+      return res.status(400).json({ 
+        valid: false,
+        message: 'Este convite expirou' 
+      });
+    }
+
+    // Buscar informações do contador
+    const accountant = await Accountant.findByPk(invite.accountantId);
+    
+    if (!accountant) {
+      return res.status(404).json({ 
+        valid: false,
+        message: 'Contador não encontrado' 
+      });
+    }
+
+    res.json({
+      valid: true,
+      accountantName: accountant.name || accountant.email,
+      email: invite.email,
+      expiresAt: invite.expiresAt
+    });
+
+  } catch (error) {
+    console.error('Error validating invite:', error);
+    res.status(500).json({ 
+      valid: false,
+      message: 'Erro ao validar convite' 
+    });
+  }
+});
+
 // POST /api/accountants/invite-client - Invite a client via email
 router.post('/invite-client', authMiddleware, async (req, res) => {
   try {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: 'Email is required' });
+      return res.status(400).json({ message: 'Email é obrigatório' });
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Email inválido' });
     }
 
     const accountant = await Accountant.findOne({ where: { userId: req.user.id } });
     
     if (!accountant) {
-      return res.status(404).json({ message: 'Accountant profile not found' });
+      return res.status(404).json({ message: 'Perfil de contador não encontrado' });
     }
 
     // Buscar usuário pelo email
     const user = await User.findOne({ where: { email } });
 
     if (user) {
-      // Se usuário existe, vincular diretamente
+      // Se usuário JÁ existe no sistema, vincular diretamente
       if (user.accountantId === accountant.id) {
         return res.status(400).json({ message: 'Este cliente já está vinculado a você' });
       }
@@ -1205,27 +1276,88 @@ router.post('/invite-client', authMiddleware, async (req, res) => {
         return res.status(400).json({ message: 'Este cliente já possui outro contador vinculado' });
       }
 
+      // Vincular automaticamente
       await user.update({ accountantId: accountant.id });
 
-      // Enviar notificação (em produção)
+      // Criar notificação para o contador
+      await Notification.create({
+        accountantId: accountant.id,
+        userId: user.id,
+        type: 'new_client',
+        title: '🎉 Novo Cliente Vinculado',
+        message: `${user.name || user.username} aceitou seu convite e foi vinculado ao seu perfil!`,
+        metadata: {
+          clientId: user.id,
+          clientName: user.name || user.username,
+          clientEmail: user.email
+        }
+      });
       
       return res.json({ 
         success: true, 
-        message: 'Cliente vinculado com sucesso!' 
+        message: 'Cliente vinculado com sucesso! Ele já tinha cadastro no sistema.' 
       });
     }
 
-    // Se usuário não existe, enviar email de convite (em produção)
-    // await EmailService.sendInviteEmail(email, accountant);
+    // Se usuário NÃO existe, criar token de convite e enviar email
+    const crypto = require('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+    
+    // Data de expiração: 7 dias a partir de agora
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
 
-    res.json({ 
-      success: true, 
-      message: `Convite enviado para ${email}. O usuário poderá se cadastrar e será automaticamente vinculado a você.` 
+    // Verificar se já existe convite pendente para este email
+    const InviteToken = require('../models/InviteToken');
+    const existingInvite = await InviteToken.findOne({ 
+      where: { 
+        email, 
+        accountantId: accountant.id,
+        used: false 
+      } 
     });
+
+    if (existingInvite) {
+      // Se já existe, atualizar o token e data de expiração
+      await existingInvite.update({ 
+        token, 
+        expiresAt,
+        updatedAt: new Date()
+      });
+    } else {
+      // Criar novo token de convite
+      await InviteToken.create({
+        email,
+        token,
+        accountantId: accountant.id,
+        used: false,
+        expiresAt
+      });
+    }
+
+    // Enviar email de convite
+    const EmailService = require('../services/EmailService');
+    try {
+      await EmailService.sendClientInviteEmail(accountant, email, token);
+      
+      res.json({ 
+        success: true, 
+        message: `Convite enviado para ${email}! O link é válido por 7 dias.` 
+      });
+    } catch (emailError) {
+      console.error('Error sending invite email:', emailError);
+      
+      // Mesmo se o email falhar, o convite foi criado
+      res.json({
+        success: true,
+        message: `Convite criado para ${email}, mas houve um problema ao enviar o email. Entre em contato com o suporte se o problema persistir.`,
+        warning: 'Email não enviado - verifique configurações SMTP'
+      });
+    }
 
   } catch (error) {
     console.error('Error inviting client:', error);
-    res.status(500).json({ message: 'Error sending invite' });
+    res.status(500).json({ message: 'Erro ao enviar convite', error: error.message });
   }
 });
 
@@ -1238,9 +1370,12 @@ router.get('/my-documents', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Buscar documentos compartilhados com este usuário
+    // Buscar documentos compartilhados com este usuário (apenas não deletados por ele)
     const documents = await Document.findAll({
-      where: { clientId: userId },
+      where: { 
+        clientId: userId,
+        deletedByClient: false  // SOFT DELETE: só mostra não deletados pelo cliente
+      },
       include: [{
         model: Accountant,
         as: 'accountant',
@@ -1258,11 +1393,12 @@ router.get('/my-documents', authMiddleware, async (req, res) => {
 });
 
 // DELETE /api/accountants/documents/:id - Delete document
+// DELETE (CONTADOR) - Soft delete para contador
 router.delete('/documents/:id', authMiddleware, async (req, res) => {
   try {
-    console.log('🔍 [DELETE DEBUG] Iniciando deleção...');
-    console.log('🔍 [DELETE DEBUG] Document ID:', req.params.id);
-    console.log('🔍 [DELETE DEBUG] User ID:', req.user.id);
+    console.log('🔍 [DELETE CONTADOR] Iniciando soft delete...');
+    console.log('🔍 [DELETE CONTADOR] Document ID:', req.params.id);
+    console.log('🔍 [DELETE CONTADOR] User ID:', req.user.id);
     
     const { id } = req.params;
     const userId = req.user.id;
@@ -1271,37 +1407,44 @@ router.delete('/documents/:id', authMiddleware, async (req, res) => {
     const document = await Document.findByPk(id);
 
     if (!document) {
-      console.log('❌ [DELETE DEBUG] Documento não encontrado:', id);
+      console.log('❌ [DELETE CONTADOR] Documento não encontrado:', id);
       return res.status(404).json({ message: 'Document not found' });
     }
 
-    console.log('✅ [DELETE DEBUG] Documento encontrado:', document.originalName);
+    console.log('✅ [DELETE CONTADOR] Documento encontrado:', document.originalName);
 
     // Verificar permissão (só o contador que enviou pode deletar)
     const accountant = await Accountant.findOne({ where: { userId } });
     
     if (!accountant || document.accountantId !== accountant.id) {
-      console.log('❌ [DELETE DEBUG] Sem permissão para deletar');
+      console.log('❌ [DELETE CONTADOR] Sem permissão para deletar');
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    console.log('✅ [DELETE DEBUG] Permissão OK, deletando arquivo...');
+    // SOFT DELETE: marca como deletado pelo contador
+    await document.update({ deletedByAccountant: true });
+    console.log('✅ [DELETE CONTADOR] Marcado como deletado pelo contador');
 
-    // Deletar arquivo físico
-    if (fs.existsSync(document.filepath)) {
-      fs.unlinkSync(document.filepath);
-      console.log('✅ [DELETE DEBUG] Arquivo físico deletado');
+    // Se AMBOS (contador E cliente) deletaram, FAZ DELEÇÃO FÍSICA
+    if (document.deletedByClient) {
+      console.log('🔥 [DELETE CONTADOR] Ambos deletaram! Fazendo deleção física...');
+      
+      // Deletar arquivo físico
+      if (fs.existsSync(document.filepath)) {
+        fs.unlinkSync(document.filepath);
+        console.log('✅ [DELETE CONTADOR] Arquivo físico deletado');
+      }
+
+      // Deletar do banco
+      await document.destroy();
+      console.log('✅ [DELETE CONTADOR] Documento removido completamente do banco');
     } else {
-      console.log('⚠️ [DELETE DEBUG] Arquivo físico não existe');
+      console.log('ℹ️ [DELETE CONTADOR] Cliente ainda não deletou. Documento preservado.');
     }
 
-    // Deletar do banco
-    await document.destroy();
-    console.log('✅ [DELETE DEBUG] Documento removido do banco');
-
-    res.json({ success: true, message: 'Document deleted successfully' });
+    res.json({ success: true, message: 'Document deleted from your view successfully' });
   } catch (error) {
-    console.error('❌ [DELETE DEBUG] Erro completo:', error);
+    console.error('❌ [DELETE CONTADOR] Erro completo:', error);
     res.status(500).json({ message: 'Error deleting document' });
   }
 });
@@ -1407,7 +1550,8 @@ router.get('/documents/unviewed/count', authMiddleware, async (req, res) => {
     const count = await Document.count({
       where: { 
         clientId: userId,
-        viewed: false 
+        viewed: false,
+        deletedByClient: false  // Não contar deletados
       }
     });
 
@@ -1416,6 +1560,55 @@ router.get('/documents/unviewed/count', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error counting unviewed documents:', error);
     res.status(500).json({ message: 'Error counting documents' });
+  }
+});
+
+// DELETE (CLIENTE) - Client deletes document from their view
+router.delete('/my-documents/:id', authMiddleware, async (req, res) => {
+  try {
+    console.log('🔍 [DELETE CLIENTE] Iniciando soft delete...');
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Buscar documento
+    const document = await Document.findByPk(id);
+
+    if (!document) {
+      console.log('❌ [DELETE CLIENTE] Documento não encontrado:', id);
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
+    // Verificar se é o cliente dono do documento
+    if (document.clientId !== userId) {
+      console.log('❌ [DELETE CLIENTE] Acesso negado');
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // SOFT DELETE: marca como deletado pelo cliente
+    await document.update({ deletedByClient: true });
+    console.log('✅ [DELETE CLIENTE] Marcado como deletado pelo cliente');
+
+    // Se AMBOS (contador E cliente) deletaram, FAZ DELEÇÃO FÍSICA
+    if (document.deletedByAccountant) {
+      console.log('🔥 [DELETE CLIENTE] Ambos deletaram! Fazendo deleção física...');
+      
+      // Deletar arquivo físico
+      if (fs.existsSync(document.filepath)) {
+        fs.unlinkSync(document.filepath);
+        console.log('✅ [DELETE CLIENTE] Arquivo físico deletado');
+      }
+
+      // Deletar do banco
+      await document.destroy();
+      console.log('✅ [DELETE CLIENTE] Documento removido completamente do banco');
+    } else {
+      console.log('ℹ️ [DELETE CLIENTE] Contador ainda não deletou. Documento preservado.');
+    }
+
+    res.json({ success: true, message: 'Document deleted from your view successfully' });
+  } catch (error) {
+    console.error('❌ [DELETE CLIENTE] Erro completo:', error);
+    res.status(500).json({ message: 'Error deleting document' });
   }
 });
 
