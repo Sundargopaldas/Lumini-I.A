@@ -22,6 +22,7 @@ import Admin from './pages/Admin';
 import AdminAccountants from './pages/AdminAccountants';
 import Settings from './pages/Settings';
 import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 import Footer from './components/Footer';
 import WhatsAppWidget from './components/WhatsAppWidget';
 import CookieConsent from './components/CookieConsent';
@@ -136,6 +137,7 @@ function App() {
                       } />
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/terms" element={<Terms />} />
+                      <Route path="/privacy" element={<Privacy />} />
                       <Route path="/help" element={<Help />} />
                     </Routes>
                 </div>

@@ -16,6 +16,7 @@ const Register = () => {
     password: '',
     confirmPassword: '',
   });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [inviteToken, setInviteToken] = useState(null);
   const [inviteInfo, setInviteInfo] = useState(null);
   const [showConsentModal, setShowConsentModal] = useState(false);
@@ -273,10 +274,50 @@ const Register = () => {
             </div>
           </div>
 
+          {/* Checkbox de Aceitação de Termos */}
+          <div className="flex items-start">
+            <div className="flex items-center h-5">
+              <input
+                id="accept-terms"
+                name="accept-terms"
+                type="checkbox"
+                required
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-slate-300 rounded cursor-pointer"
+              />
+            </div>
+            <div className="ml-3 text-sm">
+              <label htmlFor="accept-terms" className="text-slate-600 dark:text-gray-300 cursor-pointer">
+                Eu li e aceito os{' '}
+                <Link 
+                  to="/terms" 
+                  target="_blank"
+                  className="font-medium text-purple-600 dark:text-purple-400 hover:text-purple-500 hover:underline"
+                >
+                  Termos de Uso
+                </Link>
+                {' '}e a{' '}
+                <Link 
+                  to="/privacy" 
+                  target="_blank"
+                  className="font-medium text-purple-600 dark:text-purple-400 hover:text-purple-500 hover:underline"
+                >
+                  Política de Privacidade
+                </Link>
+              </label>
+            </div>
+          </div>
+
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 transform hover:scale-[1.02] shadow-lg shadow-purple-200 dark:shadow-none"
+              disabled={!acceptedTerms}
+              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white transition-all duration-200 transform shadow-lg ${
+                acceptedTerms 
+                  ? 'bg-purple-600 hover:bg-purple-700 hover:scale-[1.02] shadow-purple-200 dark:shadow-none cursor-pointer' 
+                  : 'bg-slate-400 cursor-not-allowed opacity-60'
+              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500`}
             >
               Criar Conta
             </button>
