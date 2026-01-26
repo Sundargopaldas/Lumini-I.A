@@ -97,11 +97,11 @@ const Navbar = () => {
               {t('sidebar.marketplace')}
             </Link>
             {(user.isAccountant || user.isAdmin) && (
-              <Link to="/accountant-dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
+              <Link to="/accountant-dashboard" className="accountant-link text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
                 {t('sidebar.accountant_area')}
               </Link>
             )}
-            <Link to="/invoices" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
+            <Link to="/invoices" className="invoice-button text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
               {t('sidebar.invoices')}
             </Link>
             <Link to="/integrations" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
@@ -123,7 +123,7 @@ const Navbar = () => {
 
             <Link 
                 to="/settings" 
-                className="p-2 text-slate-400 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 transition-colors"
+                className="settings-link p-2 text-slate-400 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 transition-colors"
                 title="Configurações"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -196,7 +196,7 @@ const Navbar = () => {
             {user.isAccountant && (
               <Link 
                 to="/accountant-dashboard" 
-                className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                className="accountant-link text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('sidebar.accountant_area')}
@@ -236,7 +236,7 @@ const Navbar = () => {
             <div className="mt-3 px-2 space-y-1">
               <Link
                 to="/settings"
-                className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
+                className="settings-link block px-3 py-2 rounded-md text-base font-medium text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('settings.title')}

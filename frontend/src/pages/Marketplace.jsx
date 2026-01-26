@@ -302,7 +302,7 @@ const Marketplace = () => {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <div className="flex flex-col ipad-air:flex-row justify-between items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-800 dark:text-white">
               {t('marketplace.title')}
@@ -328,7 +328,7 @@ const Marketplace = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 ipad-air:grid-cols-2 lg:grid-cols-3 gap-6 ipad-air:gap-7">
             {accountants.length === 0 ? (
               <div className="col-span-full text-center py-12 text-slate-500 dark:text-slate-400">
                 {t('marketplace.no_accountants')}

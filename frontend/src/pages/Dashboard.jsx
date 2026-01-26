@@ -9,6 +9,8 @@ import SubscriptionWidget from '../components/SubscriptionWidget';
 import TaxSimulatorModal from '../components/TaxSimulatorModal';
 import AIInsightsWidget from '../components/AIInsightsWidget';
 import CustomAlert from '../components/CustomAlert';
+import Logo from '../components/Logo';
+// import OnboardingChecklist from '../components/OnboardingChecklist';
 import api from '../services/api';
 
 const Dashboard = () => {
@@ -301,7 +303,7 @@ const Dashboard = () => {
         {/* Subscription Status Widget */}
         <SubscriptionWidget user={user} />
       
-      <h1 className="text-2xl md:text-3xl font-bold text-white mb-4 md:mb-8">{t('dashboard.title')}</h1>
+      <h1 className="text-2xl md:text-3xl ipad-air:text-4xl font-bold text-white mb-4 md:mb-6 ipad-air:mb-8">{t('dashboard.title')}</h1>
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/50 text-red-200 p-4 rounded-lg mb-6 flex justify-between items-center">
@@ -322,12 +324,12 @@ const Dashboard = () => {
       )}
 
       {/* MEI Tracker Widget */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-4 md:p-6 shadow-xl border border-white/20">
+      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-4 md:p-6 ipad-air:p-7 shadow-xl border border-white/20">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-2">
-          <h2 className="text-white font-semibold text-base md:text-lg">{t('dashboard.mei_tracker')}</h2>
+          <h2 className="text-white font-semibold text-base md:text-lg ipad-air:text-xl">{t('dashboard.mei_tracker')}</h2>
           <button 
             onClick={() => setIsTaxModalOpen(true)}
-            className="text-xs md:text-sm bg-white text-purple-700 hover:bg-gray-100 font-bold px-3 md:px-4 py-1.5 md:py-2 rounded-full shadow-lg transition-all transform hover:scale-105 flex items-center gap-1 md:gap-2 whitespace-nowrap"
+            className="text-xs md:text-sm ipad-air:text-base bg-white text-purple-700 hover:bg-gray-100 font-bold px-3 md:px-4 ipad-air:px-5 py-1.5 md:py-2 ipad-air:py-2.5 rounded-full shadow-lg transition-all transform hover:scale-105 flex items-center gap-1 md:gap-2 whitespace-nowrap"
           >
             <span>📊</span>
             <span className="hidden sm:inline">{t('dashboard.simulate_taxes')}</span>
@@ -349,13 +351,45 @@ const Dashboard = () => {
         </p>
       </div>
 
-      {/* AI Insights Widget */}
-      <AIInsightsWidget />
+      {/* Guide Banner - Novo por aqui? */}
+      <Link 
+        to="/guide"
+        className="block bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl p-6 ipad-air:p-7 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] border border-white/20"
+      >
+        <div className="flex items-center gap-4 ipad-air:gap-5">
+          <div className="flex-shrink-0 w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
+            <Logo className="w-12 h-12 text-white" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-white font-bold text-lg md:text-xl mb-1">
+              Novo por aqui? Comece pelo Guia Rápido!
+            </h3>
+            <p className="text-white/90 text-sm md:text-base">
+              Aprenda passo a passo como usar todas as funcionalidades do Lumini I.A
+            </p>
+          </div>
+          <div className="flex-shrink-0 hidden md:flex items-center justify-center w-12 h-12 bg-white/20 rounded-full">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </div>
+        </div>
+      </Link>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-5 lg:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
-          <h3 className="text-slate-600 dark:text-gray-300 text-sm font-medium mb-1">{t('dashboard.total_balance')}</h3>
-          <p className={`text-xl md:text-3xl font-bold break-all ${metrics.totalBalance >= 0 ? 'text-slate-900 dark:text-white' : 'text-red-500 dark:text-red-400'}`}>
+      {/* AI Insights Widget */}
+      <div className="ai-insights">
+        <AIInsightsWidget />
+      </div>
+
+      {/* Onboarding Checklist - TEMPORARILY DISABLED */}
+      {/* <div className="mb-6">
+        <OnboardingChecklist />
+      </div> */}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 ipad-air:grid-cols-3 lg:grid-cols-3 gap-4 ipad-air:gap-5 lg:gap-6 dashboard-metrics">
+        <div className="bg-white dark:bg-white/10 backdrop-blur-lg p-5 ipad-air:p-6 lg:p-6 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl transition-colors">
+          <h3 className="text-slate-600 dark:text-gray-300 text-sm ipad-air:text-base font-medium mb-1">{t('dashboard.total_balance')}</h3>
+          <p className={`text-xl md:text-2xl ipad-air:text-3xl font-bold break-all ${metrics.totalBalance >= 0 ? 'text-slate-900 dark:text-white' : 'text-red-500 dark:text-red-400'}`}>
             R$ {metrics.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </p>
         </div>

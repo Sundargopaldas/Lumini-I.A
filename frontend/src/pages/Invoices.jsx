@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import { useTranslation } from 'react-i18next';
-import CertificateModal from '../components/CertificateModal';
 import IssueInvoiceModal from '../components/IssueInvoiceModal';
 import CustomAlert from '../components/CustomAlert';
 import api from '../services/api';
@@ -35,7 +34,6 @@ const Invoices = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isPremium = user.plan === 'premium';
   
-  const [isCertModalOpen, setIsCertModalOpen] = useState(false);
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
   const [certificate, setCertificate] = useState(null);
 
@@ -79,14 +77,6 @@ const Invoices = () => {
     }
   }, [isPremium]);
 
-  const handleSaveCertificate = (data) => {
-    setCertificate(data);
-    if (data) {
-        showAlert(t('common.success'), t('invoices.cert_connected_success'), 'success');
-    } else {
-        showAlert(t('common.success'), t('invoices.cert_removed_success'), 'success');
-    }
-  };
 
   const handleIssueInvoice = async (data) => {
     try {
@@ -509,22 +499,16 @@ const Invoices = () => {
         onConfirm={alertState.onConfirm}
       />
       
-      <CertificateModal 
-        isOpen={isCertModalOpen}
-        onClose={() => setIsCertModalOpen(false)}
-        onSave={handleSaveCertificate}
-        certificate={certificate}
-      />
-      
       <IssueInvoiceModal
         isOpen={isIssueModalOpen}
         onClose={() => setIsIssueModalOpen(false)}
         onIssue={handleIssueInvoice}
+        hasCertificate={certificate !== null}
       />
 
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
         <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{t('invoices.title')}</h1>
+            <h1 className="text-2xl md:text-3xl ipad-air:text-4xl font-bold text-gray-900 dark:text-white">{t('invoices.title')}</h1>
             <p className="text-gray-600 dark:text-gray-400 text-sm">{t('invoices.subtitle')}</p>
         </div>
         <div className="flex gap-2 sm:gap-3">
@@ -537,7 +521,7 @@ const Invoices = () => {
                 <span className="sm:hidden">Emitir</span>
             </button>
             <button 
-                onClick={() => setIsCertModalOpen(true)}
+                onClick={() => navigate('/settings?tab=fiscal')}
                 className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors flex items-center gap-1 sm:gap-2 whitespace-nowrap ${
                     certificate ? 'bg-green-600/20 text-green-600 dark:text-green-400 border border-green-600/50' : 'bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 dark:text-white'
                 }`}
@@ -549,21 +533,21 @@ const Invoices = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-4 md:p-6 rounded-xl shadow-sm dark:shadow-none">
-            <h3 className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-1">{t('invoices.issued_month')}</h3>
-            <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 ipad-air:gap-7">
+        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-4 md:p-6 ipad-air:p-7 rounded-xl shadow-sm dark:shadow-none">
+            <h3 className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm ipad-air:text-base mb-1">{t('invoices.issued_month')}</h3>
+            <p className="text-2xl md:text-3xl ipad-air:text-4xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
         </div>
-        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-4 md:p-6 rounded-xl shadow-sm dark:shadow-none">
-            <h3 className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-1">{t('invoices.total_amount')}</h3>
-            <p className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400 break-all">
+        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-4 md:p-6 ipad-air:p-7 rounded-xl shadow-sm dark:shadow-none">
+            <h3 className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm ipad-air:text-base mb-1">{t('invoices.total_amount')}</h3>
+            <p className="text-2xl md:text-3xl ipad-air:text-4xl font-bold text-green-600 dark:text-green-400 break-all">
                 {(totalAmount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </p>
         </div>
-        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-4 md:p-6 rounded-xl shadow-sm dark:shadow-none sm:col-span-2 lg:col-span-1">
-            <h3 className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-1">{t('invoices.plan_franchise')}</h3>
+        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-4 md:p-6 ipad-air:p-7 rounded-xl shadow-sm dark:shadow-none sm:col-span-2 lg:col-span-1">
+            <h3 className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm ipad-air:text-base mb-1">{t('invoices.plan_franchise')}</h3>
             <div className="flex items-end gap-2 mb-2">
-                <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
+                <p className="text-2xl md:text-3xl ipad-air:text-4xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
                 <p className="text-gray-500 dark:text-gray-400 mb-1 text-sm">/ {franchiseLimit}</p>
             </div>
             <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
@@ -574,8 +558,8 @@ const Invoices = () => {
       </div>
 
       <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm dark:shadow-none overflow-hidden max-w-full">
-        <div className="p-4 md:p-6 border-b border-gray-200 dark:border-white/10">
-            <h2 className="font-semibold text-gray-900 dark:text-white text-base md:text-lg">{t('invoices.history')}</h2>
+        <div className="p-4 md:p-6 ipad-air:p-7 border-b border-gray-200 dark:border-white/10">
+            <h2 className="font-semibold text-gray-900 dark:text-white text-base md:text-lg ipad-air:text-xl">{t('invoices.history')}</h2>
         </div>
 
         {/* Layout DESKTOP - Tabela (apenas em monitores grandes ≥1536px) */}
@@ -650,10 +634,10 @@ const Invoices = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                     </div>
-                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                    <h3 className="text-xl md:text-2xl ipad-air:text-3xl font-bold text-gray-900 dark:text-white mb-3">
                         Nenhuma Nota Fiscal Emitida
                     </h3>
-                    <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-6 max-w-md text-center">
+                    <p className="text-sm md:text-base ipad-air:text-lg text-gray-600 dark:text-gray-400 mb-6 max-w-md text-center">
                         Comece a emitir suas notas fiscais eletrônicas (NFS-e) e gerencie seus documentos fiscais de forma profissional.
                     </p>
                     <button 
@@ -667,9 +651,9 @@ const Invoices = () => {
                     </button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 p-3 md:p-4 max-w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 ipad-air:gap-5 p-3 md:p-4 ipad-air:p-6 max-w-full">
                     {invoices.map((inv) => (
-                        <div key={inv.id} className="border border-gray-200 dark:border-white/10 rounded-lg p-3 md:p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-all hover:shadow-md dark:hover:shadow-lg min-w-0">
+                        <div key={inv.id} className="border border-gray-200 dark:border-white/10 rounded-lg p-3 md:p-4 ipad-air:p-5 hover:bg-gray-50 dark:hover:bg-white/5 transition-all hover:shadow-md dark:hover:shadow-lg min-w-0">
                             {/* Cabeçalho do Card: Número, Tipo e Status */}
                             <div className="flex items-start justify-between gap-2 mb-3">
                                 <div className="flex-1 min-w-0">

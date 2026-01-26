@@ -168,7 +168,7 @@ const Plans = () => {
   return (
     <div className="space-y-12 pb-12">
       <div className="text-center space-y-4 px-4 sm:px-0">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white transition-colors">{t('plans.title')}</h1>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl ipad-air:text-5xl font-bold text-slate-900 dark:text-white transition-colors">{t('plans.title')}</h1>
         <p className="text-sm sm:text-base text-slate-500 dark:text-gray-400 max-w-2xl mx-auto transition-colors">
           {t('plans.subtitle')}
         </p>
@@ -177,7 +177,7 @@ const Plans = () => {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 px-4 sm:px-0">
+      <div className="grid grid-cols-1 ipad-air:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 ipad-air:gap-9 px-4 sm:px-0">
         {plans.map((plan) => {
             const isCurrent = currentPlan === plan.name.toLowerCase();
             return (
@@ -313,7 +313,7 @@ const Plans = () => {
       {/* Upsells Section */}
       <div className="mt-16 border-t border-slate-200 dark:border-white/10 pt-12 transition-colors">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8 text-center transition-colors">{t('plans.addons_title')}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 ipad-air:grid-cols-2 md:grid-cols-3 gap-6 ipad-air:gap-7">
             {[
                 {
                     name: t('addons.accountant_name'),

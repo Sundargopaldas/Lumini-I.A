@@ -1118,8 +1118,8 @@ const Reports = () => {
       />
       <div className="flex flex-col gap-4 px-2 sm:px-0">
         <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2 transition-colors">{t('reports.title')}</h1>
-            <p className="text-sm sm:text-base text-slate-500 dark:text-gray-400">{t('reports.subtitle')}</p>
+            <h1 className="text-2xl sm:text-3xl ipad-air:text-4xl font-bold text-slate-900 dark:text-white mb-2 transition-colors">{t('reports.title')}</h1>
+            <p className="text-sm sm:text-base ipad-air:text-lg text-slate-500 dark:text-gray-400">{t('reports.subtitle')}</p>
         </div>
         
         {/* Filtros de Mês/Ano */}
@@ -1158,7 +1158,7 @@ const Reports = () => {
                         showAlert(t('reports.feature_locked'), t('reports.planning_locked_msg'), 'locked');
                     }
                 }}
-                className={`w-full px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base ${isPremium ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`w-full px-3 sm:px-4 ipad-air:px-5 py-2 ipad-air:py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base ipad-air:text-lg ${isPremium ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
                 <span>📈</span> <span className="truncate">{t('reports.planning_btn')} {!isPremium && '🔒'}</span>
             </button>
@@ -1170,7 +1170,7 @@ const Reports = () => {
             </button>
             <button 
                 onClick={exportPDF}
-                className={`w-full px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base ${isPro ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`w-full px-3 sm:px-4 ipad-air:px-5 py-2 ipad-air:py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base ipad-air:text-lg ${isPro ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
                 <span>📄</span> <span className="truncate">{t('reports.export_pdf')} {!isPro && '🔒'}</span>
             </button>
@@ -1178,9 +1178,9 @@ const Reports = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 px-2 sm:px-0">
-        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl transition-colors">
-            <h3 className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium mb-1">{t('reports.total_income')}</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ipad-air:grid-cols-3 gap-4 md:gap-5 ipad-air:gap-6 px-2 sm:px-0">
+        <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-4 sm:p-6 ipad-air:p-7 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl transition-colors">
+            <h3 className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm ipad-air:text-base font-medium mb-1">{t('reports.total_income')}</h3>
             <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 break-all">R$ {summary.income.toFixed(2)}</p>
         </div>
         <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl transition-colors">

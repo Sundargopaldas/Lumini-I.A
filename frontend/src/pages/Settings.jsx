@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import CustomAlert from '../components/CustomAlert';
 import { useTheme } from '../contexts/ThemeContext';
@@ -8,7 +9,16 @@ import { extractErrorMessage } from '../utils/errorHandler';
 const Settings = () => {
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useTheme();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'fiscal' | 'preferences'
+  
+  // Set active tab from URL parameter
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['profile', 'accountant', 'fiscal', 'preferences', 'legal'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   // Limpar cache antigo da logo (fix temporário)
   const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -97,13 +107,13 @@ const Settings = () => {
   const handleFillTestData = () => {
     setFormData({
         ...formData,
-        municipalRegistration: '12345678 (TESTE)',
+        municipalRegistration: '12345678',
         taxRegime: 'mei' // Valor válido do schema
     });
     setAlertState({
         isOpen: true,
         title: 'Dados Preenchidos',
-        message: 'Dados de teste preenchidos. Clique em "Salvar Dados" para confirmar.',
+        message: 'Dados de exemplo preenchidos. Clique em "Salvar Dados" para confirmar.',
         type: 'success'
     });
   };
@@ -364,7 +374,7 @@ const Settings = () => {
   const isPremium = ['premium', 'agency'].includes(user.plan);
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto pb-12">
+    <div className="space-y-8 max-w-4xl mx-auto pb-12 px-4 sm:px-6 ipad-air:px-8">
       <CustomAlert 
         isOpen={alertState.isOpen}
         onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))}
@@ -446,13 +456,13 @@ const Settings = () => {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-8 space-y-8 backdrop-blur-md transition-colors shadow-sm dark:shadow-none">
+      <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-6 sm:p-8 ipad-air:p-10 space-y-8 backdrop-blur-md transition-colors shadow-sm dark:shadow-none">
         
         {activeTab === 'profile' && (
             <div className="space-y-8 animate-fadeIn">
                 {/* Personal/Company Data Form */}
                 <form onSubmit={handleSaveProfile} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 ipad-air:grid-cols-2 md:grid-cols-2 gap-6 ipad-air:gap-7">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                                 {t('settings.company_name')}
@@ -618,18 +628,27 @@ const Settings = () => {
 
         {activeTab === 'fiscal' && (
             <div className="space-y-8 animate-fadeIn">
-                <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                    <h4 className="text-blue-800 dark:text-blue-200 font-semibold mb-2">Configuração Profissional</h4>
-                    <p className="text-sm text-blue-600 dark:text-blue-300">
-                        Para emitir notas fiscais reais, é necessário configurar os dados abaixo e o certificado digital A1.
-                    </p>
+                <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-5">
+                    <div className="flex items-start gap-3">
+                        <span className="text-3xl">🔒</span>
+                        <div>
+                            <h4 className="text-red-800 dark:text-red-200 font-bold text-lg mb-2">⚠️ CERTIFICADO DIGITAL OBRIGATÓRIO</h4>
+                            <p className="text-sm text-red-700 dark:text-red-300 mb-2">
+                                O <strong>Certificado Digital A1</strong> é <strong>OBRIGATÓRIO</strong> para emitir notas fiscais com validade legal.
+                            </p>
+                            <p className="text-xs text-red-600 dark:text-red-400">
+                                ❌ Sem certificado = Não é possível emitir notas fiscais<br/>
+                                ✅ Com certificado = Notas fiscais oficiais e com valor jurídico
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Fiscal Data Form */}
                 <form onSubmit={handleSaveProfile} className="space-y-6">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Dados da Empresa</h3>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 ipad-air:grid-cols-2 md:grid-cols-2 gap-6 ipad-air:gap-7">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                                 {t('settings.cpf_cnpj')}
@@ -663,7 +682,7 @@ const Settings = () => {
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                {formData.taxRegime === 'mei' ? 'Inscrição Municipal (CCM)' : 'Inscrição Municipal'} <span className="text-xs text-gray-500 font-normal">(Opcional para testes)</span>
+                                {formData.taxRegime === 'mei' ? 'Inscrição Municipal (CCM)' : 'Inscrição Municipal'} <span className="text-xs text-gray-500 font-normal">(Opcional)</span>
                             </label>
                             <input
                                 type="text"
@@ -692,7 +711,7 @@ const Settings = () => {
                             onClick={handleFillTestData}
                             className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-colors text-sm font-medium"
                         >
-                            Preencher c/ Dados de Teste
+                            Preencher Exemplo
                         </button>
                         <button
                             type="submit"
@@ -833,7 +852,6 @@ const Settings = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Link
                         to="/terms"
-                        target="_blank"
                         className="group p-6 bg-slate-50 dark:bg-white/5 hover:bg-purple-50 dark:hover:bg-purple-900/20 border border-slate-200 dark:border-white/10 hover:border-purple-300 dark:hover:border-purple-700 rounded-xl transition-all"
                     >
                         <div className="flex items-start justify-between">
@@ -860,7 +878,6 @@ const Settings = () => {
 
                     <Link
                         to="/privacy"
-                        target="_blank"
                         className="group p-6 bg-slate-50 dark:bg-white/5 hover:bg-purple-50 dark:hover:bg-purple-900/20 border border-slate-200 dark:border-white/10 hover:border-purple-300 dark:hover:border-purple-700 rounded-xl transition-all"
                     >
                         <div className="flex items-start justify-between">

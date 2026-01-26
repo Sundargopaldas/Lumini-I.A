@@ -7,14 +7,15 @@ export default {
   ],
   theme: {
     extend: {
-      // 📱 Breakpoints mobile-first
+      // 📱 Breakpoints mobile-first + iPads
       screens: {
-        'xs': '475px',
-        'sm': '640px',
-        'md': '768px',
-        'lg': '1024px',
-        'xl': '1280px',
-        '2xl': '1536px',
+        'xs': '475px',      // Mobile grande
+        'sm': '640px',      // Tablet pequeno
+        'md': '768px',      // iPad Mini (768×1024)
+        'ipad-air': '820px', // iPad Air (820×1180) - ESPECÍFICO
+        'lg': '1024px',     // iPad Pro (1024×1366)
+        'xl': '1280px',     // Desktop
+        '2xl': '1536px',    // Desktop grande
       },
       // 🎨 Cores customizadas
       colors: {

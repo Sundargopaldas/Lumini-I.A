@@ -821,7 +821,7 @@ const AccountantDashboard = () => {
               </div>
               <p className="text-purple-100">Gerencie seus clientes e relatórios financeiros</p>
             </div>
-            <div className="hidden md:flex items-center gap-4">
+            <div className="hidden ipad-air:flex items-center gap-4">
               <Link
                 to="/marketplace"
                 className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors backdrop-blur-sm flex items-center gap-2"
@@ -1291,7 +1291,7 @@ const AccountantDashboard = () => {
             {/* Quick Actions */}
             <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm">
               <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-white">⚡ Ações Rápidas</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 ipad-air:grid-cols-2 md:grid-cols-3 gap-4 ipad-air:gap-5">
                 <button
                   onClick={() => setActiveTab('invites')}
                   className="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
@@ -1328,7 +1328,7 @@ const AccountantDashboard = () => {
             </div>
 
             {/* Additional Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 ipad-air:grid-cols-2 md:grid-cols-3 gap-6 ipad-air:gap-7">
               <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-semibold text-slate-900 dark:text-white">Taxa de Crescimento</h4>
@@ -1396,7 +1396,7 @@ const AccountantDashboard = () => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 ipad-air:grid-cols-2 lg:grid-cols-3 gap-4 ipad-air:gap-5">
                 {clients.map(client => (
                   <div
                     key={client.id}
@@ -1734,7 +1734,7 @@ const AccountantDashboard = () => {
                 <p>Nenhum documento compartilhado ainda.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 ipad-air:grid-cols-2 lg:grid-cols-3 gap-4 ipad-air:gap-5">
                 {documents.map(doc => (
                   <div
                     key={doc.id}
