@@ -434,6 +434,16 @@ const Settings = () => {
         >
             {t('settings.appearance')}
         </button>
+        <button
+            onClick={() => setActiveTab('legal')}
+            className={`py-2 px-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'legal' 
+                ? 'border-purple-500 text-purple-600 dark:text-purple-400' 
+                : 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-white'
+            }`}
+        >
+            Privacidade
+        </button>
       </div>
 
       <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-8 space-y-8 backdrop-blur-md transition-colors shadow-sm dark:shadow-none">
@@ -808,6 +818,133 @@ const Settings = () => {
                     </div>
                 </div>
 
+            </div>
+        )}
+
+        {activeTab === 'legal' && (
+            <div className="space-y-6 animate-fadeIn">
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Documentos Legais</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Acesse nossos documentos de transparência e conformidade legal.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Link
+                        to="/terms"
+                        target="_blank"
+                        className="group p-6 bg-slate-50 dark:bg-white/5 hover:bg-purple-50 dark:hover:bg-purple-900/20 border border-slate-200 dark:border-white/10 hover:border-purple-300 dark:hover:border-purple-700 rounded-xl transition-all"
+                    >
+                        <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg group-hover:bg-purple-200 dark:group-hover:bg-purple-800/40 transition-colors">
+                                    <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+                                        Termos de Uso
+                                    </h4>
+                                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                                        Regras de utilização da plataforma
+                                    </p>
+                                </div>
+                            </div>
+                            <svg className="w-5 h-5 text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </div>
+                    </Link>
+
+                    <Link
+                        to="/privacy"
+                        target="_blank"
+                        className="group p-6 bg-slate-50 dark:bg-white/5 hover:bg-purple-50 dark:hover:bg-purple-900/20 border border-slate-200 dark:border-white/10 hover:border-purple-300 dark:hover:border-purple-700 rounded-xl transition-all"
+                    >
+                        <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg group-hover:bg-purple-200 dark:group-hover:bg-purple-800/40 transition-colors">
+                                    <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+                                        Política de Privacidade
+                                    </h4>
+                                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                                        Como tratamos seus dados (LGPD)
+                                    </p>
+                                </div>
+                            </div>
+                            <svg className="w-5 h-5 text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </div>
+                    </Link>
+                </div>
+
+                <div className="h-px bg-slate-200 dark:bg-white/10 my-8"></div>
+
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Seus Direitos (LGPD)</h3>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 space-y-3">
+                        <p className="text-sm text-blue-900 dark:text-blue-200">
+                            De acordo com a Lei Geral de Proteção de Dados (LGPD), você tem direito a:
+                        </p>
+                        <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-2 list-disc list-inside ml-2">
+                            <li>Acessar e exportar seus dados</li>
+                            <li>Corrigir informações incompletas ou incorretas</li>
+                            <li>Solicitar exclusão de seus dados</li>
+                            <li>Revogar consentimentos a qualquer momento</li>
+                            <li>Se opor ao tratamento de dados</li>
+                        </ul>
+                        <div className="pt-4 border-t border-blue-200 dark:border-blue-800">
+                            <p className="text-sm text-blue-900 dark:text-blue-200 font-medium mb-2">
+                                Entre em contato conosco:
+                            </p>
+                            <a 
+                                href="mailto:privacidade@luminidigital.com.br" 
+                                className="inline-flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                privacidade@luminidigital.com.br
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="h-px bg-slate-200 dark:bg-white/10 my-8"></div>
+
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Certificações e Conformidade</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-center">
+                            <div className="text-2xl mb-2">🔒</div>
+                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">HTTPS/SSL</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Criptografia</p>
+                        </div>
+                        <div className="p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-center">
+                            <div className="text-2xl mb-2">⚖️</div>
+                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">LGPD</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Compliant</p>
+                        </div>
+                        <div className="p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-center">
+                            <div className="text-2xl mb-2">🇧🇷</div>
+                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Dados no Brasil</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Servidores locais</p>
+                        </div>
+                        <div className="p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-center">
+                            <div className="text-2xl mb-2">🔐</div>
+                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Backup</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Automático</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         )}
 
