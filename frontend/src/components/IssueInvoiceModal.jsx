@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { validateCPF, validateCNPJ, validateStateRegistration, validateEmail } from '../utils/validators';
 import { STATE_TAX_RATES, BRAZILIAN_STATES } from '../utils/taxRates';
 
-const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
+const IssueInvoiceModal = ({ isOpen, onClose, onIssue, hasCertificate }) => {
   const [loading, setLoading] = useState(false);
   const initialFormState = {
     clientName: '',
@@ -212,24 +212,35 @@ const IssueInvoiceModal = ({ isOpen, onClose, onIssue }) => {
             </button>
           </div>
 
-          {issueType === 'official' && (
-             <div className={`mb-6 p-3 rounded-lg border flex gap-3 ${
-                 certStatus.taxRegime === 'MEI' 
-                 ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800' 
-                 : 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800'
-             }`}>
-                 <span className="text-xl">{certStatus.taxRegime === 'MEI' ? '⚠️' : 'ℹ️'}</span>
+          {issueType === 'official' && !hasCertificate && (
+             <div className="mb-6 p-4 rounded-lg border-2 border-red-500 bg-red-50 dark:bg-red-900/20 flex gap-3 animate-pulse">
+                 <span className="text-2xl">🚫</span>
+                 <div className="flex-1">
+                     <p className="text-sm font-bold text-red-800 dark:text-red-200 mb-2">
+                         ⚠️ CERTIFICADO DIGITAL NÃO CONFIGURADO
+                     </p>
+                     <p className="text-xs text-red-700 dark:text-red-300 mb-3">
+                         Sem um Certificado Digital A1 válido, <strong>não é possível emitir notas fiscais</strong>. 
+                         O sistema não conseguirá enviar a nota para a Secretaria da Fazenda.
+                     </p>
+                     <a 
+                         href="/settings?tab=fiscal" 
+                         target="_blank"
+                         className="inline-flex items-center gap-2 text-xs font-bold text-red-700 dark:text-red-300 hover:underline"
+                     >
+                         → Configure seu Certificado Digital agora
+                     </a>
+                 </div>
+             </div>
+          )}
+          
+          {issueType === 'official' && hasCertificate && (
+             <div className="mb-6 p-3 rounded-lg border bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 flex gap-3">
+                 <span className="text-xl">✅</span>
                  <div className="text-xs">
-                     {certStatus.taxRegime === 'MEI' ? (
-                         <p className="text-orange-800 dark:text-orange-200">
-                             <strong>Atenção MEI:</strong> Para emitir NFS-e oficial pelo sistema, você precisa ter um Certificado Digital A1 configurado.
-                             Caso não tenha, use a opção <strong>Recibo Simples</strong>.
-                         </p>
-                     ) : (
-                         <p className="text-blue-800 dark:text-blue-200">
-                             Para emitir NFS-e com validade jurídica, certifique-se de ter configurado seu Certificado Digital A1 nas configurações.
-                         </p>
-                     )}
+                     <p className="text-green-800 dark:text-green-200">
+                         <strong>Certificado Digital Ativo!</strong> Sua nota fiscal será transmitida oficialmente para a Secretaria da Fazenda.
+                     </p>
                  </div>
              </div>
           )}

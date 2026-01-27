@@ -30,6 +30,7 @@ import CookieConsent from './components/CookieConsent';
 import AccountantDashboard from './pages/AccountantDashboard';
 import InvoiceTemplate from './components/InvoiceTemplate';
 import Help from './pages/Help';
+import Guide from './pages/Guide';
 
 const PrivateRoute = ({ children }) => {
   try {
@@ -80,6 +81,10 @@ const AccountantRoute = ({ children }) => {
 
 import ErrorBoundary from './components/ErrorBoundary';
 import { getToken, getUser, isAuthenticated } from './utils/storage';
+// import { OnboardingProvider } from './contexts/OnboardingContext';
+// import WelcomeModal from './components/WelcomeModal';
+// import OnboardingTour from './components/OnboardingTour';
+// import HelpButton from './components/HelpButton';
 
 // Component para rastrear mudanças de rota - DESABILITADO (GA4 via HTML)
 function RouteTracker() {
@@ -139,6 +144,7 @@ function App() {
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/help" element={<Help />} />
+                      <Route path="/guide" element={<Guide />} />
                     </Routes>
                 </div>
                 <Footer />

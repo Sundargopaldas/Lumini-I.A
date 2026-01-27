@@ -10,7 +10,7 @@ const Terms = () => {
         <div className="max-w-4xl mx-auto px-4 py-8">
             <button 
                 onClick={() => navigate(-1)}
-                className="mb-6 flex items-center gap-2 text-slate-600 dark:text-gray-400 hover:text-purple-600 transition-colors"
+                className="mb-6 flex items-center gap-2 text-slate-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
