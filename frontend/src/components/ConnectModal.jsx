@@ -106,8 +106,84 @@ const ConnectModal = ({ isOpen, onClose, integration, onConnect }) => {
                     )}
                   </button>
                 </>
+              ) : integration.hasWebhook ? (
+                // WEBHOOK FLOW (Hotmart, etc)
+                <>
+                  <div className="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 p-4 rounded-lg transition-colors mb-4">
+                    <div className="flex gap-3">
+                      <div className="text-orange-500 dark:text-orange-400 text-xl">🔗</div>
+                      <div>
+                        <h4 className="text-orange-800 dark:text-orange-100 font-bold text-sm mb-1">Integração via Webhook</h4>
+                        <p className="text-orange-700/70 dark:text-orange-200/70 text-xs">
+                          Configure esta URL no painel do {integration.name} e suas vendas aparecerão automaticamente!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-gray-300 block">
+                      1️⃣ Copie esta URL:
+                    </label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        value={`https://lumini-i-a.fly.dev/api/webhooks/${integration.id}`}
+                        readOnly
+                        className="flex-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-xs text-slate-900 dark:text-white font-mono"
+                      />
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(`https://lumini-i-a.fly.dev/api/webhooks/${integration.id}`);
+                          alert('✅ URL copiada!');
+                        }}
+                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                      >
+                        📋 Copiar
+                      </button>
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-lg space-y-2">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-gray-300 block">
+                        2️⃣ No painel do {integration.name}:
+                      </label>
+                      <ul className="space-y-1.5 text-sm text-slate-600 dark:text-gray-400">
+                        <li className="flex items-start gap-2">
+                          <span className="text-orange-500 mt-0.5">•</span>
+                          <span>Vá em <strong>Configurações</strong> → <strong>Webhooks</strong></span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-orange-500 mt-0.5">•</span>
+                          <span>Cole a URL acima</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-orange-500 mt-0.5">•</span>
+                          <span>Selecione: <strong>Compra Aprovada</strong></span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={async () => {
+                      setLoading(true);
+                      try {
+                        await onConnect('webhook_configured');
+                        setStep(2);
+                      } catch (error) {
+                        console.error('Webhook registration failed:', error);
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    className="w-full mt-6 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white font-bold py-3 rounded-lg transition-all"
+                  >
+                    {loading ? '⏳ Salvando...' : '✓ Configurei no ' + integration.name}
+                  </button>
+                </>
               ) : (
-                // PLATFORM FLOW (API Key / Webhook)
+                // API KEY FLOW (YouTube, etc)
                 <>
                    <p className="text-slate-600 dark:text-gray-300 text-sm mb-4 transition-colors">
                      To connect <strong>{integration.name}</strong>, please paste your API Key below.
@@ -133,6 +209,7 @@ const ConnectModal = ({ isOpen, onClose, integration, onConnect }) => {
                     {loading ? 'Verifying...' : 'Connect Platform'}
                   </button>
                 </>
+              )}
               )}
             </div>
           )}

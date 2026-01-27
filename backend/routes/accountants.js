@@ -1244,10 +1244,15 @@ router.get('/validate-invite/:token', async (req, res) => {
 
 // POST /api/accountants/invite-client - Invite a client via email
 router.post('/invite-client', authMiddleware, async (req, res) => {
+  console.log('🚀 ===== CONVITE DE CLIENTE INICIADO =====');
+  console.log('📧 Email recebido:', req.body.email);
+  console.log('👤 Usuário logado:', req.user?.id, req.user?.email);
+  
   try {
     const { email } = req.body;
 
     if (!email) {
+      console.log('❌ Email não fornecido');
       return res.status(400).json({ message: 'Email é obrigatório' });
     }
 
@@ -1337,15 +1342,19 @@ router.post('/invite-client', authMiddleware, async (req, res) => {
 
     // Enviar email de convite
     const EmailService = require('../services/EmailService');
+    console.log('📨 Tentando enviar email de convite...');
     try {
       await EmailService.sendClientInviteEmail(accountant, email, token);
+      console.log('✅ Email enviado com sucesso!');
       
       res.json({ 
         success: true, 
         message: `Convite enviado para ${email}! O link é válido por 7 dias.` 
       });
     } catch (emailError) {
-      console.error('Error sending invite email:', emailError);
+      console.error('❌ ERRO ao enviar email de convite:', emailError);
+      console.error('   Tipo:', emailError.name);
+      console.error('   Mensagem:', emailError.message);
       
       // Mesmo se o email falhar, o convite foi criado
       res.json({

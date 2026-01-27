@@ -516,16 +516,7 @@ const sendInviteEmail = async (inviter, email) => {
     const fromAddress = await getFromAddress();
     console.log(`📤 Sending from: ${fromAddress}`);
 
-    const logoPath = getLogoPath();
-    const attachments = [];
-    if (logoPath) {
-        attachments.push({
-            filename: 'logo.png',
-            path: logoPath,
-            cid: 'logo'
-        });
-    }
-
+    const logoUrl = 'https://lumini-i-a.fly.dev/logo.png';
     const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register?role=accountant&ref=${inviter.id}`;
     
     const mailOptions = {
@@ -535,7 +526,7 @@ const sendInviteEmail = async (inviter, email) => {
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                 <div style="background-color: #2563eb; padding: 30px; text-align: center;">
-                    <img src="cid:logo" alt="Lumini I.A" style="width: 50px; height: auto; vertical-align: middle; margin-right: 12px;">
+                    <img src="${logoUrl}" alt="Lumini I.A" style="width: 50px; height: auto; vertical-align: middle; margin-right: 12px;">
                     <span style="color: white; font-size: 26px; font-weight: bold; vertical-align: middle;">Lumini I.A</span>
                     <h1 style="color: white; margin: 25px 0 0 0; font-size: 24px;">Você recebeu um convite!</h1>
                 </div>
@@ -566,8 +557,7 @@ const sendInviteEmail = async (inviter, email) => {
                     <p style="margin: 0; color: #94a3b8; font-size: 12px;">© ${new Date().getFullYear()} Lumini I.A. Todos os direitos reservados.</p>
                 </div>
             </div>
-        `,
-        attachments: attachments
+        `
     };
 
     try {
@@ -603,16 +593,7 @@ const sendNewClientNotification = async (client, accountantEmail) => {
     const fromAddress = await getFromAddress();
     console.log(`📤 Sending notification from: ${fromAddress}`);
 
-    const logoPath = getLogoPath();
-    const attachments = [];
-    if (logoPath) {
-        attachments.push({
-            filename: 'logo.png',
-            path: logoPath,
-            cid: 'logo'
-        });
-    }
-
+    const logoUrl = 'https://lumini-i-a.fly.dev/logo.png';
     const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/accountant-dashboard`;
 
     const mailOptions = {
@@ -622,7 +603,7 @@ const sendNewClientNotification = async (client, accountantEmail) => {
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                 <div style="background-color: #2563eb; padding: 30px; text-align: center;">
-                    <img src="cid:logo" alt="Lumini I.A" style="width: 50px; height: auto; vertical-align: middle; margin-right: 12px;">
+                    <img src="${logoUrl}" alt="Lumini I.A" style="width: 50px; height: auto; vertical-align: middle; margin-right: 12px;">
                     <span style="color: white; font-size: 26px; font-weight: bold; vertical-align: middle;">Lumini I.A</span>
                     <h1 style="color: white; margin: 25px 0 0 0; font-size: 24px;">Novo Cliente Vinculado!</h1>
                 </div>
@@ -649,8 +630,7 @@ const sendNewClientNotification = async (client, accountantEmail) => {
                     <p style="margin: 0; color: #94a3b8; font-size: 12px;">© ${new Date().getFullYear()} Lumini I.A. Todos os direitos reservados.</p>
                 </div>
             </div>
-        `,
-        attachments: attachments
+        `
     };
 
     try {
@@ -730,16 +710,8 @@ const sendClientInviteEmail = async (accountant, email, inviteToken) => {
     const fromAddress = await getFromAddress();
     console.log(`📤 Sending from: ${fromAddress}`);
 
-    const logoPath = getLogoPath();
-    const attachments = [];
-    if (logoPath) {
-        attachments.push({
-            filename: 'logo.png',
-            path: logoPath,
-            cid: 'logo'
-        });
-    }
-
+    // Usar URL absoluta ao invés de attachment para melhor compatibilidade
+    const logoUrl = 'https://lumini-i-a.fly.dev/logo.png';
     const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register?invite=${inviteToken}`;
     
     const mailOptions = {
@@ -749,7 +721,7 @@ const sendClientInviteEmail = async (accountant, email, inviteToken) => {
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                 <div style="background: linear-gradient(135deg, #6d28d9 0%, #4f46e5 100%); padding: 30px; text-align: center;">
-                    ${logoPath ? '<img src="cid:logo" alt="Lumini I.A" style="width: 60px; height: 60px; background-color: white; padding: 8px; border-radius: 8px; margin-bottom: 15px;">' : ''}
+                    <img src="${logoUrl}" alt="Lumini I.A" style="width: 60px; height: 60px; background-color: white; padding: 8px; border-radius: 8px; margin-bottom: 15px;">
                     <h1 style="color: white; margin: 0; font-size: 26px;">Você foi convidado!</h1>
                 </div>
                 
@@ -791,8 +763,7 @@ const sendClientInviteEmail = async (accountant, email, inviteToken) => {
                     <p style="margin: 0; color: #94a3b8; font-size: 12px;">© ${new Date().getFullYear()} Lumini I.A. Todos os direitos reservados.</p>
                 </div>
             </div>
-        `,
-        attachments: attachments
+        `
     };
 
     try {

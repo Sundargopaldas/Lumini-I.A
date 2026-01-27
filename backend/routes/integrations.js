@@ -269,10 +269,20 @@ router.post('/sync', auth, async (req, res) => {
 // HOTMART - OAuth & Sincronização
 // ============================================================================
 
-// Hotmart OAuth - Iniciar fluxo de autenticação
+// Hotmart OAuth - Iniciar fluxo de autenticação (DESABILITADO - USE WEBHOOK)
 router.get('/hotmart/auth', auth, async (req, res) => {
   try {
     const authUrl = HotmartService.getAuthUrl(req.user.id);
+    
+    if (!authUrl) {
+      // OAuth não configurado - orientar para usar webhook
+      return res.status(200).json({ 
+        useWebhook: true,
+        webhookUrl: `${process.env.FRONTEND_URL || 'https://lumini-i-a.fly.dev'}/api/webhooks/hotmart`,
+        message: 'Use webhook para integração simplificada' 
+      });
+    }
+    
     console.log('[Hotmart OAuth] URL de autenticação gerada para usuário:', req.user.id);
     res.json({ authUrl });
   } catch (error) {

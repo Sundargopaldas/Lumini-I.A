@@ -56,6 +56,9 @@ COPY backend/ ./
 # Copiar frontend buildado para pasta public do backend
 COPY --from=frontend-builder /app/frontend/dist ./public
 
+# Copiar landing page (website)
+COPY website/ ./website
+
 # DEBUG: Verificar se os arquivos foram copiados
 RUN echo "=== VERIFICANDO ARQUIVOS DO FRONTEND ===" && \
     ls -la ./public/ && \

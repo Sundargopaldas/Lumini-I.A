@@ -15,7 +15,8 @@ class HotmartService {
       const redirectUri = process.env.HOTMART_REDIRECT_URI || 'https://www.luminiiadigital.com.br/api/integrations/hotmart/callback';
       
       if (!clientId) {
-        throw new Error('HOTMART_CLIENT_ID não configurado');
+        console.warn('⚠️ HOTMART_CLIENT_ID não configurado - OAuth desabilitado. Use webhook: /api/webhooks/hotmart');
+        return null; // Retorna null ao invés de erro
       }
 
       const authUrl = `https://api-sec-vlc.hotmart.com/security/oauth/authorize?` +

@@ -1453,7 +1453,7 @@ const AccountantDashboard = () => {
                   <span className="text-2xl">✅</span>
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-green-900 dark:text-green-100 mb-2">
-                      Sistema de Consentimento Implementado
+                      Sistema de Consentimento
                     </p>
                     <p className="text-xs text-green-700 dark:text-green-300 leading-relaxed">
                       Seus clientes agora receberão um <strong>termo de consentimento claro e transparente</strong> antes de 
