@@ -66,19 +66,7 @@ const Integrations = () => {
   ];
 
   const roadmapItems = [
-
-    {
-      id: 'mobile',
-      name: t('integrations.mobile_app'),
-      description: t('integrations.mobile_app_desc'),
-      type: 'Available',
-      path: '/mobile-app',
-      icon: (
-        <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-        </svg>
-      )
-    }
+    // 🚫 PWA removido - mantendo apenas web por enquanto
   ];
 
   // Fetch initial data
@@ -536,14 +524,15 @@ const Integrations = () => {
         ))}
       </div>
 
-      {/* Roadmap Section */}
-      <div className="mt-16 pt-8 border-t border-gray-200 dark:border-white/10">
-        <div className="flex items-center gap-3 mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('integrations.roadmap_title') || "Expansão & Acesso"}</h2>
-        </div>
+      {/* Roadmap Section - Only show if there are items */}
+      {roadmapItems.length > 0 && (
+        <div className="mt-16 pt-8 border-t border-gray-200 dark:border-white/10">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('integrations.roadmap_title') || "Expansão & Acesso"}</h2>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {roadmapItems.map((item) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {roadmapItems.map((item) => (
             item.path ? (
               <Link
                 key={item.id}
@@ -591,8 +580,9 @@ const Integrations = () => {
               </div>
             )
           ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Welcome Modal - First Visit */}
       {showWelcomeModal && (
