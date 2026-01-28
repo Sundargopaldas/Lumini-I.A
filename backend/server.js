@@ -242,7 +242,37 @@ if (process.env.NODE_ENV === 'production') {
   console.log(`>>> [STARTUP] Website path: ${websitePath}`);
 
   // 🚨 FORÇAR Rotas do React App (Prioridade Máxima)
-  const reactRoutes = ['/login', '/register', '/dashboard', '/forgot-password', '/mobile-app'];
+  const reactRoutes = [
+    '/login',
+    '/register',
+    '/check-email',
+    '/verify-email',
+    '/verify-email/:token',
+    '/forgot-password',
+    '/reset-password',
+    '/reset-password/:token',
+    '/dashboard',
+    '/transactions',
+    '/reports',
+    '/plans',
+    '/checkout',
+    '/invoices',
+    '/invoices/:id',
+    '/meus-documentos',
+    '/integrations',
+    '/marketplace',
+    '/mobile-app',
+    '/diferenciais',
+    '/settings',
+    '/help',
+    '/guide',
+    '/admin',
+    '/admin/accountants',
+    '/accountant-dashboard',
+    '/terms',
+    '/privacy'
+  ];
+  
   reactRoutes.forEach(route => {
     app.get(route, (req, res) => {
       console.log(`>>> [ROUTER] Forcing React App for route: ${route}`);
@@ -258,41 +288,39 @@ if (process.env.NODE_ENV === 'production') {
   if (fs.existsSync(websitePath)) {
     console.log('>>> [STARTUP] Serving Landing Page from website folder');
 
+    // 🏠 Rota explícita para a Landing Page (raiz)
+    app.get('/', (req, res) => {
+      console.log('>>> [ROUTER] Serving Landing Page (root)');
+      res.sendFile(path.join(websitePath, 'index.html'));
+    });
+
     // Rota explícita para documentação
     app.get('/docs', (req, res) => {
       res.sendFile(path.join(websitePath, 'docs.html'));
     });
 
+    // Servir outros arquivos estáticos do website (CSS, JS, imagens)
     app.use(express.static(websitePath, {
-      index: 'index.html',
-      maxAge: '1h' // Cache menor para o site institucional
+      index: false, // NÃO servir index.html automaticamente (já tratamos na rota acima)
+      maxAge: '1h'
     }));
   }
 
-  // Servir arquivos estáticos do React
+  // Servir arquivos estáticos do React (JS, CSS, imagens)
   app.use(express.static(publicPath, {
-    index: false, // Não servir index.html automaticamente (deixa catch-all tratar rotas do app)
-    maxAge: '1d'
+    index: false,
+    maxAge: '1d',
+    setHeaders: (res, filepath) => {
+      // Cache agressivo para assets com hash
+      if (filepath.match(/\.(js|css)$/) && filepath.includes('-')) {
+        res.set('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    }
   }));
 
-  // The "catchall" handler: para qualquer rota que não seja /api/* ou /uploads/*, servir o React
-  app.get('*', (req, res, next) => {
-    // Se for rota de API, uploads, ou arquivo estático (com extensão), pular para próximo handler
-    if (req.path.startsWith('/api/') ||
-      req.path.startsWith('/uploads/') ||
-      req.path.match(/\.(png|jpg|jpeg|gif|svg|ico|css|js|json|txt|xml|webmanifest)$/)) {
-      return next();
-    }
-
-    console.log(`>>> [FRONTEND] Serving index.html for route: ${req.path}`);
-    const indexPath = path.join(publicPath, 'index.html');
-
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      res.status(404).send(`Frontend not found. Looking for: ${indexPath}`);
-    }
-  });
+  // ⚠️ Sem catch-all! Todas as rotas são explícitas acima.
+  // Landing Page: /
+  // React App: /login, /register, /dashboard, etc.
 }
 
 // Error handling middleware

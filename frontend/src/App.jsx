@@ -99,6 +99,7 @@ function App() {
       <RouteTracker />
       <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-white transition-colors">
         <Routes>
+          {/* Rotas públicas */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/check-email" element={<CheckEmail />} />
@@ -106,50 +107,302 @@ function App() {
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
           
-          <Route path="/*" element={
+          {/* Rotas protegidas - TODAS explícitas */}
+          <Route path="/dashboard" element={
             <PrivateRoute>
               <ErrorBoundary>
                 <Navbar />
                 <div className="container mx-auto px-4 py-8">
-                    <Routes>
-                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/meus-documentos" element={<MeusDocumentos />} />
-                      <Route path="/transactions" element={<Transactions />} />
-                      <Route path="/reports" element={<Reports />} />
-                      <Route path="/invoices" element={<Invoices />} />
-                      <Route path="/invoices/:id" element={<InvoiceTemplate />} />
-                      <Route path="/plans" element={<Plans />} />
-                      <Route path="/checkout" element={<Checkout />} />
-                      <Route path="/integrations" element={<Integrations />} />
-                      <Route path="/marketplace" element={<Marketplace />} />
-                      <Route path="/accountant-dashboard" element={
-                        <AccountantRoute>
-                          <AccountantDashboard />
-                        </AccountantRoute>
-                      } />
-                      <Route path="/mobile-app" element={<MobileApp />} />
-                      <Route path="/diferenciais" element={<Diferenciais />} />
-                      <Route path="/admin" element={
-                        <AdminRoute>
-                          <Admin />
-                        </AdminRoute>
-                      } />
-                      <Route path="/admin/accountants" element={
-                        <AdminRoute>
-                          <AdminAccountants />
-                        </AdminRoute>
-                      } />
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="/terms" element={<Terms />} />
-                      <Route path="/privacy" element={<Privacy />} />
-                      <Route path="/help" element={<Help />} />
-                      <Route path="/guide" element={<Guide />} />
-                    </Routes>
+                  <Dashboard />
                 </div>
                 <Footer />
                 <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
-                    <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/meus-documentos" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <MeusDocumentos />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/transactions" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <Transactions />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/reports" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <Reports />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/invoices" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <Invoices />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/invoices/:id" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <InvoiceTemplate />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/plans" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <Plans />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/checkout" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <Checkout />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/integrations" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <Integrations />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/marketplace" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <Marketplace />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/accountant-dashboard" element={
+            <AccountantRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <AccountantDashboard />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </AccountantRoute>
+          } />
+          
+          <Route path="/mobile-app" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <MobileApp />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/diferenciais" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <Diferenciais />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/admin" element={
+            <AdminRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <Admin />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </AdminRoute>
+          } />
+          
+          <Route path="/admin/accountants" element={
+            <AdminRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <AdminAccountants />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </AdminRoute>
+          } />
+          
+          <Route path="/settings" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <Settings />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/terms" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <Terms />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/privacy" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <Privacy />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/help" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <Help />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/guide" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <Guide />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
                 </div>
               </ErrorBoundary>
             </PrivateRoute>
