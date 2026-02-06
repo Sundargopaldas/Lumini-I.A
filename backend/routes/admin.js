@@ -537,4 +537,32 @@ router.delete('/users/:email', authMiddleware, adminMiddleware, async (req, res)
     }
 });
 
+// GET /api/admin/users - Listar usuários (com filtro opcional por plano)
+router.get('/users', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { plan } = req.query;
+        const where = {};
+        
+        if (plan && plan !== 'all') {
+            if (plan === 'paying') {
+                const { Op } = require('sequelize');
+                where.plan = { [Op.ne]: 'free' };
+            } else {
+                where.plan = plan;
+            }
+        }
+
+        const users = await User.findAll({
+            where,
+            attributes: ['id', 'name', 'email', 'plan', 'createdAt'],
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.json(users);
+    } catch (error) {
+        console.error('Erro ao listar usuários:', error);
+        res.status(500).json({ message: 'Erro ao listar usuários' });
+    }
+});
+
 module.exports = router;

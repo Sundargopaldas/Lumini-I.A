@@ -8,6 +8,7 @@ const Admin = () => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('accountants');
   const [accountants, setAccountants] = useState([]);
+  const [users, setUsers] = useState([]);
   const [smtpConfig, setSmtpConfig] = useState({
       SMTP_HOST: '',
       SMTP_PORT: '587',
@@ -42,6 +43,8 @@ const Admin = () => {
         fetchAccountants();
     } else if (activeTab === 'settings') {
         fetchSmtpConfig();
+    } else if (activeTab === 'users') {
+        fetchUsers();
     }
   }, [activeTab]);
 
@@ -61,6 +64,20 @@ const Admin = () => {
             'Erro ao carregar configurações. Verifique se você é administrador e se o servidor está online.', 
             'error'
         );
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+        console.log('Fetching paying users...');
+        setLoading(true);
+        const response = await api.get('/admin/users?plan=paying');
+        setUsers(response.data);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        showAlert('Erro ao carregar lista de usuários', 'error');
     } finally {
         setLoading(false);
     }
@@ -179,6 +196,16 @@ const Admin = () => {
                 Contadores
             </button>
             <button
+                onClick={() => setActiveTab('users')}
+                className={`pb-3 px-2 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'users'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                }`}
+            >
+                Usuários Pagantes
+            </button>
+            <button
                 onClick={() => setActiveTab('settings')}
                 className={`pb-3 px-2 text-sm font-medium border-b-2 transition-colors ${
                     activeTab === 'settings'
@@ -289,6 +316,57 @@ const Admin = () => {
                     <tr>
                       <td colSpan="5" className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
                         Nenhum escritório cadastrado.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : activeTab === 'users' ? (
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 dark:bg-slate-700/50">
+                  <tr>
+                    <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Nome</th>
+                    <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Email</th>
+                    <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Plano</th>
+                    <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Data Cadastro</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                  {users.map((user) => (
+                    <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                              <span className="text-blue-600 dark:text-blue-400 text-xs font-semibold">
+                                {(user.name || '?').charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          <span className="font-medium text-slate-800 dark:text-white">{user.name || 'N/A'}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{user.email}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            user.plan === 'premium' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' :
+                            user.plan === 'pro' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                            'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400'
+                        }`}>
+                            {user.plan}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
+                        {new Date(user.createdAt).toLocaleDateString('pt-BR')}
+                      </td>
+                    </tr>
+                  ))}
+                  {users.length === 0 && (
+                    <tr>
+                      <td colSpan="4" className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                        Nenhum usuário pagante encontrado.
                       </td>
                     </tr>
                   )}
