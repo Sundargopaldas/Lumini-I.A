@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { PluggyConnect } from 'pluggy-connect-sdk';
 import api from '../services/api';
 import ConnectModal from '../components/ConnectModal';
 import CustomAlert from '../components/CustomAlert';
@@ -40,20 +41,10 @@ const Integrations = () => {
       logo: 'https://docs.pluggy.ai/img/logo.png',
       color: 'bg-blue-600',
       description: t('integrations.pluggy_desc'),
-      tooltip: 'Conecte qualquer banco brasileiro (Itaú, Bradesco, Santander, etc). Suas transações são importadas automaticamente via Open Finance do Banco Central. 100% seguro!',
+      tooltip: 'Conecte qualquer banco brasileiro (Nubank, Itaú, Bradesco, Santander, etc). Suas transações são importadas automaticamente via Open Finance do Banco Central. 100% seguro!',
       isNew: true
     },
-    // Existing
-    {
-      id: 'nubank',
-      name: 'Nubank',
-      type: 'Bank',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Nubank_logo_2021.svg/2560px-Nubank_logo_2021.svg.png',
-      color: 'bg-purple-800',
-      description: t('integrations.nubank_desc'),
-      tooltip: 'Todas as suas compras no cartão de crédito e débito Nubank são sincronizadas automaticamente. Nunca mais digite uma transação manualmente!'
-    },
-
+    // Nubank removido - usar Open Finance
     {
       id: 'youtube',
       name: 'YouTube',
@@ -73,7 +64,7 @@ const Integrations = () => {
   useEffect(() => {
     fetchIntegrations();
     fetchUserData();
-
+    
     // Check if it's the user's first visit to the Integrations page
     const hasVisitedIntegrations = localStorage.getItem('lumini_integrations_visited');
     if (!hasVisitedIntegrations) {
@@ -151,37 +142,22 @@ const Integrations = () => {
 
     // Open Finance (Pluggy) - abre widget de conexão
     if (integration.id === 'pluggy') {
-      // Verificar se o script Pluggy está carregado
-      if (!window.PluggyConnect) {
-        console.warn('[Pluggy] Widget não disponível. Usando modo simulado.');
-        showAlert(
-          "🧪 Modo Sandbox",
-          "Open Finance está em modo de desenvolvimento (sandbox). Configure as credenciais Pluggy para usar bancos reais.\n\nPor enquanto, você pode clicar em 'Sincronizar Agora' para ver dados simulados!",
-          "info"
-        );
-
-        // Simular conexão bem-sucedida em modo sandbox
-        try {
-          await api.post('/integrations/openfinance/save-connection', {
-            itemId: 'sandbox-item-' + Date.now(),
-            accountId: 'sandbox-account-' + Date.now()
-          });
-          fetchIntegrations();
-        } catch (err) {
-          console.error('[Pluggy Sandbox] Erro:', err);
-        }
-        return;
-      }
-
       try {
+        setLoading(prev => ({ ...prev, [integration.id]: true }));
         // Gerar connect token
         const response = await api.get('/integrations/openfinance/connect-token');
         if (response.data.connectToken) {
-          openPluggyConnect(response.data.connectToken);
+          await openPluggyConnect(response.data.connectToken);
+        } else {
+            throw new Error('Token de conexão vazio recebido do servidor.');
         }
       } catch (error) {
         console.error('Error starting Open Finance:', error);
-        showAlert("Erro", "Falha ao iniciar conexão Open Finance. Verifique sua conexão e tente novamente.", "error");
+        const errorMsg = error.response?.data?.message || error.message || "Erro desconhecido";
+        const errorDetails = error.response?.data?.details ? JSON.stringify(error.response.data.details) : "";
+        showAlert("Erro na Conexão", `Falha ao iniciar conexão Open Finance: ${errorMsg} ${errorDetails}`, "error");
+      } finally {
+        setLoading(prev => ({ ...prev, [integration.id]: false }));
       }
       return;
     }
@@ -191,47 +167,42 @@ const Integrations = () => {
   };
 
   // Pluggy Connect Widget
-  const openPluggyConnect = (connectToken) => {
-    if (!window.PluggyConnect) {
-      console.error('[Pluggy] Widget não disponível');
-      showAlert("Erro", "Widget do Pluggy não carregou. Verifique sua conexão com a internet.", "error");
-      return;
-    }
-
+  const openPluggyConnect = async (connectToken) => {
     try {
-      const pluggyConnect = window.PluggyConnect.init({
-        connectToken: connectToken,
-        includeSandbox: process.env.REACT_APP_OPEN_FINANCE_USE_SANDBOX !== 'false',
+      const opts = {
+        connectToken,
+        // Default to FALSE (Production) if not specified
+        includeSandbox: import.meta.env.VITE_OPEN_FINANCE_USE_SANDBOX === 'true',
         onSuccess: async (itemData) => {
-          console.log('[Pluggy] Conexão bem-sucedida:', itemData);
-
           try {
-            // Salvar conexão no backend
             await api.post('/integrations/openfinance/save-connection', {
               itemId: itemData.item.id,
               accountId: itemData.accounts?.[0]?.id || null
             });
-
             showAlert("✅ Banco Conectado!", "Sua conta bancária foi conectada com sucesso! Agora você pode sincronizar suas transações.", "success");
-            fetchIntegrations(); // Atualizar lista de integrações
+            fetchIntegrations();
           } catch (error) {
-            console.error('[Pluggy] Erro ao salvar conexão:', error);
             showAlert("Erro", "Falha ao salvar conexão bancária", "error");
           }
         },
         onError: (error) => {
-          console.error('[Pluggy] Erro:', error);
-          showAlert("Erro", "Não foi possível conectar ao banco. Tente novamente.", "error");
+          console.error('[Pluggy Widget Error]', error);
+          showAlert("Erro na Conexão", "O banco recusou a conexão ou houve um erro. Tente novamente.", "error");
         },
         onClose: () => {
-          console.log('[Pluggy] Widget fechado');
+          console.log('[Pluggy] Widget fechado pelo usuário');
         }
-      });
+      };
 
-      pluggyConnect.open();
+      console.log('[Pluggy] Inicializando widget com opções:', { ...opts, connectToken: '***' });
+
+      // Instancia e inicializa o widget usando a SDK oficial
+      const pluggy = new PluggyConnect(opts);
+      pluggy.init();
+
     } catch (error) {
-      console.error('[Pluggy] Erro ao inicializar widget:', error);
-      showAlert("Erro", "Erro ao abrir widget do Pluggy. Tente novamente mais tarde.", "error");
+      console.error('[Pluggy] Erro ao abrir widget:', error);
+      showAlert("Erro no Widget", `Erro ao abrir widget do Pluggy: ${error.message || JSON.stringify(error)}`, "error");
     }
   };
 
@@ -442,6 +413,9 @@ const Integrations = () => {
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-2">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white">{integration.name}</h3>
+                  {loading[integration.id] && (
+                    <span className="animate-spin h-4 w-4 border-2 border-purple-500 rounded-full border-t-transparent"></span>
+                  )}
                   {integration.isNew && (
                     <span className="text-xs font-bold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800">
                       Novo

@@ -90,13 +90,17 @@
     
     <!-- Pluggy Connect Widget (Open Finance / Open Banking) - Load async and handle errors gracefully -->
     <script>
-      // Load Pluggy widget asynchronously and handle failures gracefully
       (function() {
         var script = document.createElement('script');
-        script.src = 'https://cdn.pluggy.ai/pluggy-connect/latest/pluggy-connect.js';
+        script.src = 'https://cdn.pluggy.ai/pluggy-connect/v2.7.0/pluggy-connect.js?cb=20260206';
         script.async = true;
         script.onerror = function() {
           console.warn('[Pluggy] Widget script failed to load. Open Finance will work in sandbox mode.');
+        };
+        script.onload = function() {
+          if (!window.PluggyConnect) {
+            console.warn('[Pluggy] Widget loaded but PluggyConnect is undefined.');
+          }
         };
         document.head.appendChild(script);
       })();

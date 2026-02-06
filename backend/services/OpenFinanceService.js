@@ -18,8 +18,9 @@ class OpenFinanceService {
     const clientSecret = process.env.PLUGGY_CLIENT_SECRET;
     
     if (!clientId || !clientSecret) {
-      console.warn('[OpenFinance] Credenciais não configuradas. Usando modo SANDBOX.');
-      return null;
+      console.warn('[OpenFinance] Credenciais não configuradas.');
+      // Throw error to prevent widget from hanging with invalid token
+      throw new Error('Credenciais do Pluggy não configuradas no servidor.');
     }
 
     return {
@@ -34,17 +35,17 @@ class OpenFinanceService {
   /**
    * Gera API Key temporário para autenticação do Pluggy Connect
    */
-  static async generateConnectToken() {
+  static async generateConnectToken(clientUserId = null, itemId = null) {
     const client = this.getPluggyClient();
     
-    // Se não tiver credenciais, retornar token sandbox
+    // Se não tiver credenciais, erro explícito
     if (!client) {
-      console.log('[OpenFinance] Retornando token SANDBOX (sem credenciais)');
-      return 'sandbox-token-' + Date.now();
+      console.error('[OpenFinance] Tentativa de gerar token sem credenciais');
+      throw new Error('Credenciais do Open Finance não encontradas. Verifique as variáveis de ambiente.');
     }
 
     try {
-      const response = await axios.post(
+      const authResponse = await axios.post(
         `${client.baseUrl}/auth`,
         {
           clientId: client.clientId,
@@ -57,11 +58,40 @@ class OpenFinanceService {
         }
       );
 
-      return response.data.apiKey;
+      const apiKey = authResponse.data.apiKey;
+
+      const payload = {};
+      if (itemId) {
+        payload.itemId = itemId;
+      }
+
+      if (clientUserId) {
+        // Garantir que clientUserId seja uma string para satisfazer a API do Pluggy
+        payload.options = { 
+          clientUserId: String(clientUserId) 
+        };
+      }
+
+      const connectResponse = await axios.post(
+        `${client.baseUrl}/connect_token`,
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-KEY': apiKey
+          }
+        }
+      );
+
+      return connectResponse.data.accessToken;
     } catch (error) {
-      console.error('[OpenFinance] Erro ao gerar token:', error.response?.data || error.message);
-      console.log('[OpenFinance] Fallback para modo SANDBOX');
-      return 'sandbox-token-' + Date.now();
+      const errorMsg = error.response?.data || error.message;
+      console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+      console.error('[OpenFinance] CRITICAL ERROR GENERATING TOKEN:', errorMsg);
+      console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+      
+      // NAO retornar token falso se falhar a autenticação real, pois isso quebra o widget silenciosamente
+      throw new Error('Falha ao gerar token de conexão com o banco: ' + JSON.stringify(errorMsg));
     }
   }
 

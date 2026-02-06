@@ -413,11 +413,15 @@ router.post('/hotmart/sync', auth, async (req, res) => {
 // Open Finance - Gerar token de conexão
 router.get('/openfinance/connect-token', auth, async (req, res) => {
   try {
-    const connectToken = await OpenFinanceService.generateConnectToken();
+    const connectToken = await OpenFinanceService.generateConnectToken(req.user.id);
     res.json({ connectToken });
   } catch (error) {
     console.error('[Open Finance] Erro ao gerar token:', error);
-    res.status(500).json({ message: 'Erro ao gerar token de conexão' });
+    // Retornar a mensagem de erro original do serviço para ajudar no debug
+    res.status(500).json({ 
+      message: error.message || 'Erro ao gerar token de conexão',
+      details: error.response?.data || null
+    });
   }
 });
 

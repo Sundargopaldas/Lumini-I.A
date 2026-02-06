@@ -210,7 +210,6 @@ const ConnectModal = ({ isOpen, onClose, integration, onConnect }) => {
                   </button>
                 </>
               )}
-              )}
             </div>
           )}
 

@@ -81,7 +81,7 @@ const Reports = () => {
   const { t, i18n } = useTranslation();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedMonth, setSelectedMonth] = useState('all');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isPlanningModalOpen, setIsPlanningModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null); // 🎯 Dados do usuário logado (com logo do Settings)
@@ -158,7 +158,7 @@ const Reports = () => {
   }, []);
 
   // Process data for charts
-  const { incomeData, expenseData, monthlyData, summary, filteredTransactions } = useMemo(() => {
+  const { incomeData, expenseData, monthlyData, summary, filteredTransactions, hasOtherExpenses } = useMemo(() => {
     const incomeMap = {};
     const expenseMap = {};
     const monthlyMap = {};
@@ -166,6 +166,7 @@ const Reports = () => {
     
     let totalIncome = 0;
     let totalExpense = 0;
+    let totalExpenseAll = 0;
 
     transactions.forEach(t => {
       const amount = parseFloat(t.amount);
@@ -211,6 +212,10 @@ const Reports = () => {
             expenseMap[source] = (expenseMap[source] || 0) + Math.abs(amount);
           }
       }
+
+      if (t.type !== 'income') {
+        totalExpenseAll += Math.abs(amount);
+      }
     });
 
     return {
@@ -220,6 +225,7 @@ const Reports = () => {
           expense: totalExpense,
           balance: totalIncome - totalExpense
       },
+      hasOtherExpenses: totalExpenseAll > 0 && totalExpense === 0,
       incomeData: {
         labels: Object.keys(incomeMap),
         datasets: [{
@@ -1175,6 +1181,12 @@ const Reports = () => {
                 <span>📄</span> <span className="truncate">{t('reports.export_pdf')} {!isPro && '🔒'}</span>
             </button>
         </div>
+        
+        {hasOtherExpenses && (
+          <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800 rounded-lg px-4 py-3">
+            Existem despesas fora do período selecionado. Altere o mês para visualizar.
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}

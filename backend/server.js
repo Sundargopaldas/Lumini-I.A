@@ -29,8 +29,8 @@ const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
-// Force rebuild - Hotmart + Open Finance + CSP Fix - 2026-01-19
-const CACHEBUST = '2026-01-19-13:30:00'; // Force Docker cache invalidation
+// Force rebuild - Hotmart + Open Finance + CSP Fix - 2026-02-06 15:30
+const CACHEBUST = '2026-02-06-15:30:00'; // Force Docker cache invalidation (Fix CSP for Pluggy)
 const PORT = process.env.PORT || 8080;
 
 // Middleware - CSP configurado para permitir integrações (Stripe, Umami, Pluggy/Open Finance, Landing Page Assets)
@@ -52,6 +52,8 @@ app.use(helmet({
         "https://js.stripe.com",
         "https://cloud.umami.is",
         "https://cdn.pluggy.ai",
+        "https://connect.pluggy.ai",
+        "https://*.pluggy.ai",
         "https://cdn.tailwindcss.com" // Landing Page - Tailwind
       ],
       scriptSrcElem: [
@@ -60,15 +62,19 @@ app.use(helmet({
         "https://js.stripe.com",
         "https://cloud.umami.is",
         "https://cdn.pluggy.ai",
+        "https://connect.pluggy.ai",
+        "https://*.pluggy.ai",
         "https://cdn.tailwindcss.com" // Landing Page - Tailwind
       ],
-      frameSrc: ["'self'", "https://js.stripe.com", "https://cdn.pluggy.ai"],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://cdn.pluggy.ai", "https://connect.pluggy.ai", "https://*.pluggy.ai"],
       connectSrc: [
         "'self'",
         "https://api.stripe.com",
         "https://cloud.umami.is",
         "https://api-gateway.umami.dev",
         "https://api.pluggy.ai",
+        "https://connect.pluggy.ai",
+        "https://*.pluggy.ai",
         "https://cdn.tailwindcss.com" // Tailwind pode fazer fetch de config
       ],
     },
