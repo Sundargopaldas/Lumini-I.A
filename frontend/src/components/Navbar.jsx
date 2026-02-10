@@ -4,25 +4,41 @@ import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import Logo from './Logo';
 import CustomAlert from './CustomAlert';
-import { getUser, removeToken, removeUser, clearAuth } from '../utils/storage';
+import { getUser, setUser, removeToken, removeUser, clearAuth } from '../utils/storage';
 
 const Navbar = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState(getUser() || {});
+  const [user, setUserState] = useState(getUser() || {});
   
   // Listen to storage changes to update user state
   useEffect(() => {
     const handleStorageChange = () => {
         const storedUser = getUser();
         if (storedUser) {
-            setUser(storedUser);
+            setUserState(storedUser);
         } else {
-            setUser({});
+            setUserState({});
         }
     };
+
+    // Force refresh user data from API to sync with DB (Fix caching issues)
+    const refreshUserData = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        if (response.data) {
+          const freshUser = response.data;
+          setUser(freshUser); // Update localStorage
+          handleStorageChange(); // Update local state immediately
+        }
+      } catch (error) {
+        console.error('Failed to refresh user data:', error);
+      }
+    };
+
+    refreshUserData();
     
     // Listen for storage events (triggered by other tabs or components)
     window.addEventListener('storage', handleStorageChange);
@@ -117,8 +133,8 @@ const Navbar = () => {
           
           {/* User Info & Actions - Direita */}
           <div className="hidden md:flex items-center gap-3 flex-shrink-0">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              {user.username}
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 max-w-[150px] truncate" title={user.name || user.username}>
+              {user.name || user.username}
             </span>
 
             <Link 

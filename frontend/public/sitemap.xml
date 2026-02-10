@@ -3,7 +3,7 @@
   <!-- Página Principal -->
   <url>
     <loc>https://www.luminiiadigital.com.br/</loc>
-    <lastmod>2026-01-21</lastmod>
+    <lastmod>2026-02-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -11,7 +11,7 @@
   <!-- Seção de Features -->
   <url>
     <loc>https://www.luminiiadigital.com.br/#features</loc>
-    <lastmod>2026-01-21</lastmod>
+    <lastmod>2026-02-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -19,7 +19,7 @@
   <!-- Seção de Preços -->
   <url>
     <loc>https://www.luminiiadigital.com.br/#pricing</loc>
-    <lastmod>2026-01-21</lastmod>
+    <lastmod>2026-02-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -27,7 +27,7 @@
   <!-- Seção de Contato -->
   <url>
     <loc>https://www.luminiiadigital.com.br/#contact</loc>
-    <lastmod>2026-01-21</lastmod>
+    <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -35,7 +35,7 @@
   <!-- Página de Login -->
   <url>
     <loc>https://www.luminiiadigital.com.br/login</loc>
-    <lastmod>2026-01-21</lastmod>
+    <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -43,7 +43,7 @@
   <!-- Página de Registro -->
   <url>
     <loc>https://www.luminiiadigital.com.br/register</loc>
-    <lastmod>2026-01-21</lastmod>
+    <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
