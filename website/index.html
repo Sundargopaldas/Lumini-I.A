@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumini I.A - Gestão Financeira Inteligente com Inteligência Artificial</title>
+    <meta name="description"
+        content="Transforme sua gestão financeira com inteligência artificial. O Lumini conecta seus bancos, automatiza relatórios e te ajuda a crescer.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+        }
+
+        .glass {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-hover:hover {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(139, 92, 246, 0.5);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px 0 rgba(139, 92, 246, 0.3);
+        }
+
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .glass-hover:hover {
+                transform: translateY(-2px);
+            }
+        }
+
+        /* Prevent horizontal scroll */
+        body {
+            overflow-x: hidden;
+        }
+    </style>
+    <!-- Meta Pixel Code (Facebook/Instagram Ads) -->
+    <script>
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '2973905862794164');
+        fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+        src="https://www.facebook.com/tr?id=2973905862794164&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Meta Pixel Code -->
+</head>
+
+<body class="bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 text-white relative overflow-x-hidden">
+    <!-- 🚨 EMERGENCY CACHE CLEAR: Remove Old Service Workers -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                for (let registration of registrations) {
+                    registration.unregister().then(function (success) {
+                        if (success) console.log('✅ Old Service Worker unregistered to fix login routes.');
+                    });
+                }
+            });
+            // Force reload clean if query param present (optional mechanism)
+            if (!sessionStorage.getItem('cache_cleared')) {
+                sessionStorage.setItem('cache_cleared', 'true');
+                // caches.keys().then(names => { for (let name of names) caches.delete(name); });
+            }
+        }
+    </script>
+
+    <!-- Navbar -->
+    <nav class="fixed w-full top-0 z-50 bg-black/95 backdrop-blur-sm border-b border-white/10 transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-2">
+                    <span class="text-3xl">✨</span>
+                    <span class="text-xl font-bold">Lumini I.A</span>
+                    <span class="px-2 py-0.5 text-xs font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/50 rounded-full">BETA</span>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex gap-8 items-center">
+                    <a href="#features"
+                        class="hover:text-purple-400 transition-colors text-sm font-medium">Funcionalidades</a>
+                    <a href="/docs" class="hover:text-purple-400 transition-colors text-sm font-medium">Documentação</a>
+                    <a href="#pricing" class="hover:text-purple-400 transition-colors text-sm font-medium">Preços</a>
+                    <a href="#faq" class="hover:text-purple-400 transition-colors text-sm font-medium">FAQ</a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-white hover:text-purple-400 focus:outline-none p-2">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Panel -->
+        <div id="mobile-menu"
+            class="hidden md:hidden bg-slate-900/95 backdrop-blur-lg border-t border-purple-500/30 absolute w-full left-0 top-16 shadow-2xl z-50">
+            <div class="px-6 pt-6 pb-8 space-y-3 flex flex-col">
+                <a href="#features"
+                    class="block px-4 py-3 rounded-lg text-base font-semibold text-white hover:bg-purple-500/20 hover:text-purple-300 transition-all mobile-link border border-transparent hover:border-purple-500/50">
+                    <i class="fas fa-star text-purple-400 mr-3"></i>Funcionalidades
+                </a>
+                <a href="/docs"
+                    class="block px-4 py-3 rounded-lg text-base font-semibold text-white hover:bg-purple-500/20 hover:text-purple-300 transition-all mobile-link border border-transparent hover:border-purple-500/50">
+                    <i class="fas fa-book text-purple-400 mr-3"></i>Documentação
+                </a>
+                <a href="#pricing"
+                    class="block px-4 py-3 rounded-lg text-base font-semibold text-white hover:bg-purple-500/20 hover:text-purple-300 transition-all mobile-link border border-transparent hover:border-purple-500/50">
+                    <i class="fas fa-tag text-purple-400 mr-3"></i>Preços
+                </a>
+                <a href="#faq"
+                    class="block px-4 py-3 rounded-lg text-base font-semibold text-white hover:bg-purple-500/20 hover:text-purple-300 transition-all mobile-link border border-transparent hover:border-purple-500/50">
+                    <i class="fas fa-question-circle text-purple-400 mr-3"></i>FAQ
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="min-h-screen flex items-center justify-center pt-24 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <!-- Animated Background Elements -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div
+                class="absolute w-64 h-64 md:w-96 md:h-96 bg-purple-500/20 rounded-full blur-3xl -top-20 -left-20 animate-float opacity-50">
+            </div>
+            <div class="absolute w-64 h-64 md:w-96 md:h-96 bg-blue-500/20 rounded-full blur-3xl -bottom-20 -right-20 animate-float opacity-50"
+                style="animation-delay: 2s"></div>
+        </div>
+
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center relative z-10">
+            <!-- Left Content -->
+            <div class="animate-fade-in text-center lg:text-left">
+                <div class="inline-block px-4 py-2 glass rounded-full mb-6 mx-auto lg:mx-0">
+                    <span class="text-xs md:text-sm font-semibold tracking-wide">🚀 Gestão Financeira Inteligente</span>
+                </div>
+
+                <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black leading-tight mb-4 sm:mb-6">
+                    Seu Escritório<br />
+                    <span class="gradient-text">no Seu Bolso</span>
+                </h1>
+
+                <p class="text-base sm:text-lg md:text-xl text-gray-300 mb-6 sm:mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                    Conecte seus bancos, automatize relatórios e gerencie suas finanças com inteligência artificial.
+                    Tudo em um único lugar, seguro e intuitivo.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
+                    <a href="/register"
+                        class="group relative gradient-bg px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg hover:shadow-2xl hover:shadow-purple-500/50 transition-all text-center w-full sm:w-auto overflow-hidden">
+                        <span class="relative z-10">Começar Gratuitamente</span>
+                        <div class="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    </a>
+                    <a href="/docs"
+                        class="group glass px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg hover:bg-white/20 transition-all text-center w-full sm:w-auto border-2 border-white/10 hover:border-purple-500/50">
+                        <i class="fas fa-book mr-2 group-hover:scale-110 inline-block transition-transform"></i>
+                        Ver Documentação
+                    </a>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-3 gap-3 sm:gap-6 mt-8 sm:mt-12">
+                    <div>
+                        <div class="text-2xl sm:text-3xl font-bold gradient-text">100%</div>
+                        <div class="text-xs sm:text-sm text-gray-400">Seguro</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl sm:text-3xl font-bold gradient-text">300+</div>
+                        <div class="text-xs sm:text-sm text-gray-400">Bancos</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl sm:text-3xl font-bold gradient-text">5+</div>
+                        <div class="text-xs sm:text-sm text-gray-400">Integrações</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Image/Mockup -->
+            <div class="relative animate-fade-in mt-8 lg:mt-0" style="animation-delay: 0.3s">
+                <div class="glass p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-2xl backdrop-blur-2xl border-2 border-white/10 relative overflow-hidden">
+                    <!-- Glow effects -->
+                    <div class="absolute -top-20 -right-20 w-40 h-40 bg-purple-500/30 rounded-full blur-3xl"></div>
+                    <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-500/30 rounded-full blur-3xl"></div>
+                    
+                    <div class="relative bg-gradient-to-br from-purple-600 via-purple-500 to-blue-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-6 shadow-xl shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-300">
+                        <div class="flex justify-between items-center mb-4 sm:mb-6">
+                            <div>
+                                <span class="text-xs sm:text-sm opacity-90 font-medium">Saldo Total</span>
+                                <div class="h-1 w-8 sm:w-12 bg-white/30 rounded-full mt-1 sm:mt-2"></div>
+                            </div>
+                            <span class="text-2xl sm:text-3xl">💰</span>
+                        </div>
+                        <div class="text-3xl sm:text-4xl md:text-5xl font-black mb-2 sm:mb-3 tracking-tight">R$ 45.280</div>
+                        <div class="flex items-center gap-2 text-xs sm:text-sm font-medium">
+                            <span class="bg-green-400/20 text-green-300 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">+12,5%</span>
+                            <span class="opacity-80">este mês</span>
+                        </div>
+                    </div>
+
+                    <div class="relative space-y-3 sm:space-y-4">
+                        <div class="glass p-3 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl flex items-center gap-2 sm:gap-3 md:gap-4 hover:bg-white/10 transition-all duration-300 border border-white/5">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-green-500/30 to-green-600/20 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/20">
+                                <i class="fas fa-arrow-up text-green-400 text-base sm:text-lg md:text-xl"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-bold text-sm sm:text-base md:text-lg">Receita</div>
+                                <div class="text-xs sm:text-sm text-gray-400 truncate">Pagamento Cliente</div>
+                            </div>
+                            <div class="text-green-400 font-black text-sm sm:text-base md:text-xl whitespace-nowrap">+R$ 2.5k</div>
+                        </div>
+
+                        <div class="glass p-3 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl flex items-center gap-2 sm:gap-3 md:gap-4 hover:bg-white/10 transition-all duration-300 border border-white/5">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-red-500/30 to-red-600/20 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/20">
+                                <i class="fas fa-arrow-down text-red-400 text-base sm:text-lg md:text-xl"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-bold text-sm sm:text-base md:text-lg">Despesa</div>
+                                <div class="text-xs sm:text-sm text-gray-400 truncate">Fornecedor XYZ</div>
+                            </div>
+                            <div class="text-red-400 font-black text-sm sm:text-base md:text-xl whitespace-nowrap">-R$ 850</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-black/60">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-10 sm:mb-12 md:mb-16">
+                <h2 class="text-3xl sm:text-4xl md:text-5xl font-black mb-3 sm:mb-4">
+                    Funcionalidades <span class="gradient-text">Poderosas</span>
+                </h2>
+                <p class="text-base sm:text-lg md:text-xl text-gray-400">Tudo que você precisa para gerenciar suas finanças</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+                <!-- Feature 1 -->
+                <div class="glass glass-hover p-5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl cursor-pointer group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-all"></div>
+                    <div
+                        class="relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 gradient-bg rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-5 md:mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-purple-500/50">
+                        <i class="fas fa-university text-xl sm:text-2xl md:text-3xl"></i>
+                    </div>
+                    <h3 class="relative text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 group-hover:text-purple-300 transition-colors">Integração Bancária</h3>
+                    <p class="relative text-sm sm:text-base text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                        Conecte Nubank, Itaú, Bradesco e mais de 300 bancos via Open Finance.
+                        Suas transações aparecem automaticamente.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="glass glass-hover p-5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl cursor-pointer group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all"></div>
+                    <div
+                        class="relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 gradient-bg rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-5 md:mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-blue-500/50">
+                        <i class="fas fa-robot text-xl sm:text-2xl md:text-3xl"></i>
+                    </div>
+                    <h3 class="relative text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 group-hover:text-purple-300 transition-colors">Inteligência Artificial</h3>
+                    <p class="relative text-sm sm:text-base text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                        IA analisa seus gastos, sugere economias e prevê tendências financeiras.
+                        Como ter um CFO pessoal.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="glass glass-hover p-5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl cursor-pointer group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl group-hover:bg-green-500/20 transition-all"></div>
+                    <div
+                        class="relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 gradient-bg rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-5 md:mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-green-500/50">
+                        <i class="fas fa-file-invoice text-xl sm:text-2xl md:text-3xl"></i>
+                    </div>
+                    <h3 class="relative text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 group-hover:text-purple-300 transition-colors">Notas Fiscais</h3>
+                    <p class="relative text-sm sm:text-base text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                        Emita NF-e diretamente pelo sistema. Certificado digital integrado e
+                        validação automática pela SEFAZ.
+                    </p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="glass glass-hover p-5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl cursor-pointer group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl group-hover:bg-pink-500/20 transition-all"></div>
+                    <div
+                        class="relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 gradient-bg rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-5 md:mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-pink-500/50">
+                        <i class="fas fa-chart-line text-xl sm:text-2xl md:text-3xl"></i>
+                    </div>
+                    <h3 class="relative text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 group-hover:text-purple-300 transition-colors">Relatórios Automáticos</h3>
+                    <p class="relative text-sm sm:text-base text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                        Gráficos interativos, DRE, balanços e exportação em PDF.
+                        Relatórios profissionais em segundos.
+                    </p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="glass glass-hover p-5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl cursor-pointer group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-all"></div>
+                    <div
+                        class="relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 gradient-bg rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-5 md:mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-indigo-500/50">
+                        <i class="fas fa-user-tie text-xl sm:text-2xl md:text-3xl"></i>
+                    </div>
+                    <h3 class="relative text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 group-hover:text-purple-300 transition-colors">Marketplace de Contadores</h3>
+                    <p class="relative text-sm sm:text-base text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                        Encontre contadores verificados ou cadastre seu escritório.
+                        Conexão direta com clientes.
+                    </p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="glass glass-hover p-5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl cursor-pointer group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-500/20 transition-all"></div>
+                    <div
+                        class="relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 gradient-bg rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-5 md:mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-cyan-500/50">
+                        <i class="fas fa-shield-alt text-xl sm:text-2xl md:text-3xl"></i>
+                    </div>
+                    <h3 class="relative text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 group-hover:text-purple-300 transition-colors">Segurança Total</h3>
+                    <p class="relative text-sm sm:text-base text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                        Criptografia de ponta a ponta, autenticação JWT e Open Finance certificado pelo Banco Central. Seus dados sempre protegidos.
+                    </p>
+                </div>
+            </div>
+
+            <div class="text-center mt-8 sm:mt-10 md:mt-12">
+                <a href="/docs"
+                    class="inline-block gradient-bg px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg hover:shadow-2xl hover:scale-105 transition-all">
+                    Ver Documentação Completa
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-10 sm:mb-12 md:mb-16">
+                <h2 class="text-3xl sm:text-4xl md:text-5xl font-black mb-3 sm:mb-4">
+                    Planos <span class="gradient-text">Transparentes</span>
+                </h2>
+                <p class="text-base sm:text-lg md:text-xl text-gray-400">Escolha o plano ideal para você</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 max-w-7xl mx-auto">
+                <!-- Free Plan -->
+                <div class="glass glass-hover p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl flex flex-col relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-slate-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative text-center mb-6 sm:mb-8">
+                        <div class="text-4xl sm:text-5xl md:text-6xl mb-4 sm:mb-6 transform group-hover:scale-110 transition-transform">🆓</div>
+                        <h3 class="text-2xl sm:text-3xl font-bold mb-2 sm:mb-3 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Gratuito</h3>
+                        <div class="text-4xl sm:text-5xl font-black mb-3 sm:mb-4">
+                            R$ 0<span class="text-lg sm:text-xl font-normal text-gray-400">/mês</span>
+                        </div>
+                        <p class="text-gray-400 text-xs sm:text-sm">Perfeito para começar</p>
+                    </div>
+
+                    <ul class="space-y-3 sm:space-y-4 mb-6 sm:mb-8 flex-1">
+                        <li class="flex items-center gap-2 sm:gap-3">
+                            <i class="fas fa-check-circle text-green-400 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base">Até 50 transações/mês</span>
+                        </li>
+                        <li class="flex items-center gap-2 sm:gap-3">
+                            <i class="fas fa-check-circle text-green-400 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base">Dashboard básico</span>
+                        </li>
+                        <li class="flex items-center gap-2 sm:gap-3">
+                            <i class="fas fa-check-circle text-green-400 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base">1 integração bancária</span>
+                        </li>
+                        <li class="flex items-center gap-2 sm:gap-3 opacity-50">
+                            <i class="fas fa-times-circle text-gray-500 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base">Relatórios avançados</span>
+                        </li>
+                        <li class="flex items-center gap-2 sm:gap-3 opacity-50">
+                            <i class="fas fa-times-circle text-gray-500 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base">Notas fiscais</span>
+                        </li>
+                    </ul>
+
+                    <a href="/register"
+                        class="block text-center glass px-4 sm:px-6 py-3 sm:py-4 rounded-full font-bold text-sm sm:text-base hover:bg-white/20 transition-all mt-auto">
+                        Começar Grátis
+                    </a>
+                </div>
+
+                <!-- Pro Plan (Former Premium) -->
+                <div
+                    class="relative glass glass-hover p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl border-2 border-purple-500/40 flex flex-col overflow-hidden group shadow-lg shadow-purple-500/10">
+                    <div class="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="absolute top-0 right-0 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"></div>
+                    <div class="relative text-center mb-6 sm:mb-8">
+                        <div class="text-4xl sm:text-5xl md:text-6xl mb-4 sm:mb-6 transform group-hover:scale-110 transition-transform">⭐</div>
+                        <h3 class="text-2xl sm:text-3xl font-bold mb-2 sm:mb-3 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Pro</h3>
+                        <div class="text-4xl sm:text-5xl font-black mb-3 sm:mb-4">
+                            R$ 49<span class="text-lg sm:text-xl font-normal text-gray-400">/mês</span>
+                        </div>
+                        <p class="text-gray-400 text-xs sm:text-sm">Para quem está crescendo</p>
+                    </div>
+
+                    <ul class="space-y-3 sm:space-y-4 mb-6 sm:mb-8 flex-1">
+                        <li class="flex items-center gap-2 sm:gap-3">
+                            <i class="fas fa-check-circle text-purple-400 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base"><strong>Ilimitado</strong> transações</span>
+                        </li>
+                        <li class="flex items-center gap-2 sm:gap-3">
+                            <i class="fas fa-check-circle text-purple-400 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base">Dashboard completo</span>
+                        </li>
+                        <li class="flex items-center gap-2 sm:gap-3">
+                            <i class="fas fa-check-circle text-purple-400 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base">Até 3 integrações</span>
+                        </li>
+                        <li class="flex items-center gap-2 sm:gap-3">
+                            <i class="fas fa-check-circle text-purple-400 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base">Relatórios em PDF</span>
+                        </li>
+                        <li class="flex items-center gap-2 sm:gap-3 opacity-50">
+                            <i class="fas fa-times-circle text-gray-500 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base">Emissão de NF-e</span>
+                        </li>
+                    </ul>
+
+                    <a href="/register"
+                        class="block text-center glass px-4 sm:px-6 py-3 sm:py-4 rounded-full font-bold text-sm sm:text-base hover:bg-white/20 transition-all mt-auto border border-purple-500/50">
+                        Assinar Pro
+                    </a>
+                </div>
+
+                <!-- Premium Plan (New) -->
+                <div
+                    class="relative glass glass-hover p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl border-2 border-purple-500/40 flex flex-col overflow-hidden group shadow-lg shadow-purple-500/10">
+                    <div class="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="absolute top-0 right-0 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"></div>
+                    <div class="relative text-center mb-6 sm:mb-8">
+                        <div class="text-4xl sm:text-5xl md:text-6xl mb-4 sm:mb-6 transform group-hover:scale-110 transition-transform">🚀</div>
+                        <h3 class="text-2xl sm:text-3xl font-bold mb-2 sm:mb-3 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Premium</h3>
+                        <div class="text-4xl sm:text-5xl font-black mb-3 sm:mb-4">
+                            R$ 99<span class="text-lg sm:text-xl font-normal text-gray-400">/mês</span>
+                        </div>
+                        <p class="text-gray-400 text-xs sm:text-sm">Gestão completa e ilimitada</p>
+                    </div>
+
+                    <ul class="space-y-3 sm:space-y-4 mb-6 sm:mb-8 flex-1">
+                        <li class="flex items-center gap-2 sm:gap-3">
+                            <i class="fas fa-check-circle text-purple-400 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base"><strong>Tudo do plano Pro</strong></span>
+                        </li>
+                        <li class="flex items-center gap-2 sm:gap-3">
+                            <i class="fas fa-check-circle text-purple-400 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base"><strong>IA Financeira Avançada</strong></span>
+                        </li>
+                        <li class="flex items-center gap-2 sm:gap-3">
+                            <i class="fas fa-check-circle text-purple-400 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base">Integrações <strong>Ilimitadas</strong></span>
+                        </li>
+                        <li class="flex items-center gap-2 sm:gap-3">
+                            <i class="fas fa-check-circle text-purple-400 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base">Emissão de <strong>NF-e Ilimitada</strong></span>
+                        </li>
+                        <li class="flex items-center gap-2 sm:gap-3">
+                            <i class="fas fa-check-circle text-purple-400 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base">Suporte Prioritário VIP</span>
+                        </li>
+                        <li class="flex items-center gap-2 sm:gap-3">
+                            <i class="fas fa-check-circle text-purple-400 text-sm sm:text-base"></i>
+                            <span class="text-sm sm:text-base">Gestão Multi-CNPJ</span>
+                        </li>
+                    </ul>
+
+                    <a href="/register"
+                        class="block text-center glass px-4 sm:px-6 py-3 sm:py-4 rounded-full font-bold text-sm sm:text-base hover:bg-white/20 transition-all mt-auto border border-purple-500/50">
+                        Assinar Premium
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-black/60">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-10 sm:mb-12 md:mb-16">
+                <h2 class="text-3xl sm:text-4xl md:text-5xl font-black mb-3 sm:mb-4">
+                    Perguntas <span class="gradient-text">Frequentes</span>
+                </h2>
+            </div>
+
+            <div class="space-y-3 sm:space-y-4">
+                <details class="glass p-4 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl group">
+                    <summary class="font-bold text-base sm:text-lg cursor-pointer list-none flex justify-between items-center">
+                        Como funciona a integração bancária?
+                        <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <p class="text-sm sm:text-base text-gray-400 mt-3 sm:mt-4 leading-relaxed">
+                        Utilizamos o Open Finance (padrão do Banco Central) para conectar seu banco de forma 100%
+                        segura.
+                        Você autoriza o acesso uma vez, e suas transações são sincronizadas automaticamente.
+                        Nunca armazenamos senhas bancárias!
+                    </p>
+                </details>
+
+                <details class="glass p-4 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl group">
+                    <summary class="font-bold text-base sm:text-lg cursor-pointer list-none flex justify-between items-center">
+                        Meus dados estão seguros?
+                        <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <p class="text-sm sm:text-base text-gray-400 mt-3 sm:mt-4 leading-relaxed">
+                        Totalmente! Usamos criptografia de ponta a ponta (HTTPS), autenticação com tokens JWT,
+                        Open Finance certificado pelo Banco Central e nunca armazenamos senhas bancárias.
+                        Seus dados estão mais seguros que em um cofre digital.
+                    </p>
+                </details>
+
+                <details class="glass p-4 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl group">
+                    <summary class="font-bold text-base sm:text-lg cursor-pointer list-none flex justify-between items-center">
+                        Quais bancos são suportados?
+                        <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <p class="text-sm sm:text-base text-gray-400 mt-3 sm:mt-4 leading-relaxed">
+                        Suportamos mais de 300 bancos brasileiros via Open Finance, incluindo: Nubank, Itaú, Bradesco,
+                        Santander, Caixa, Banco do Brasil, Inter, C6 Bank e muitos outros.
+                    </p>
+                </details>
+
+                <details class="glass p-4 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl group">
+                    <summary class="font-bold text-base sm:text-lg cursor-pointer list-none flex justify-between items-center">
+                        Posso emitir NF-e?
+                        <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <p class="text-sm sm:text-base text-gray-400 mt-3 sm:mt-4 leading-relaxed">
+                        Sim! O plano Premium inclui emissão de Notas Fiscais Eletrônicas (NF-e) com certificado digital
+                        integrado
+                        e validação automática pela SEFAZ. Configure uma vez e emita quantas notas precisar.
+                    </p>
+                </details>
+
+                <details class="glass p-4 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl group">
+                    <summary class="font-bold text-base sm:text-lg cursor-pointer list-none flex justify-between items-center">
+                        Como funciona o Marketplace de Contadores?
+                        <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <p class="text-sm sm:text-base text-gray-400 mt-3 sm:mt-4 leading-relaxed">
+                        Contadores podem cadastrar seus escritórios no Marketplace e receber convites de clientes.
+                        Clientes podem buscar e convidar contadores verificados. A conexão é direta e segura pelo
+                        Lumini.
+                    </p>
+                </details>
+
+                <details class="glass p-4 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl group">
+                    <summary class="font-bold text-base sm:text-lg cursor-pointer list-none flex justify-between items-center">
+                        É seguro?
+                        <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <p class="text-sm sm:text-base text-gray-400 mt-3 sm:mt-4 leading-relaxed">
+                        Totalmente! Usamos criptografia de ponta a ponta (HTTPS), autenticação com tokens JWT,
+                        Open Finance certificado pelo Banco Central e nunca armazenamos senhas bancárias.
+                        Seus dados estão mais seguros que em um cofre digital.
+                    </p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Final -->
+    <section class="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="bg-black/95 backdrop-blur-sm border border-white/10 p-6 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl shadow-2xl">
+                <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-4 sm:mb-6">
+                    Pronto para Transformar<br />
+                    Sua Gestão Financeira?
+                </h2>
+                <p class="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 opacity-90">
+                    Junte-se a centenas de empreendedores que já automatizaram suas finanças.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+                    <a href="/register"
+                        class="bg-white text-purple-600 px-8 py-4 rounded-full font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all">
+                        Começar Gratuitamente
+                    </a>
+                    <a href="/docs"
+                        class="glass px-8 py-4 rounded-full font-bold text-lg hover:bg-white/20 transition-all">
+                        Ver Documentação
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-black/30 py-8 sm:py-10 md:py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-3xl">✨</span>
+                        <span class="text-xl font-bold">Lumini I.A</span>
+                    </div>
+                    <p class="text-gray-400 text-sm">
+                        Gestão financeira inteligente com inteligência artificial.
+                    </p>
+                </div>
+
+                <div>
+                    <h4 class="font-bold mb-4">Produto</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#features" class="hover:text-white transition-colors">Funcionalidades</a></li>
+                        <li><a href="#pricing" class="hover:text-white transition-colors">Preços</a></li>
+                        <li><a href="/docs" class="hover:text-white transition-colors">Documentação</a></li>
+                        <li><a href="#faq" class="hover:text-white transition-colors">FAQ</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-bold mb-4">Empresa</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Sobre Nós</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Blog</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Carreiras</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Contato</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-bold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Termos de Uso</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Política de Privacidade</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Segurança</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-white/10 pt-6 sm:pt-8 text-center text-xs sm:text-sm text-gray-400 space-y-2">
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <span class="px-3 py-1 bg-yellow-500/20 text-yellow-300 border border-yellow-500/50 rounded-full text-xs font-bold">
+                        VERSÃO BETA
+                    </span>
+                    <span class="text-xs">Produto em desenvolvimento ativo</span>
+                </div>
+                <p>&copy; 2026 Lumini I.A. Todos os direitos reservados. Feito com ❤️ e ☕</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Mobile Menu Logic
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const navbar = document.getElementById('navbar');
+        let isMenuOpen = false;
+
+        if (mobileMenuBtn) {
+            // Toggle menu
+            mobileMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                isMenuOpen = !isMenuOpen;
+                
+                if (isMenuOpen) {
+                    mobileMenu.classList.remove('hidden');
+                    // Change icon to X
+                    mobileMenuBtn.innerHTML = '<i class="fas fa-times text-2xl"></i>';
+                } else {
+                    mobileMenu.classList.add('hidden');
+                    // Change icon back to bars
+                    mobileMenuBtn.innerHTML = '<i class="fas fa-bars text-2xl"></i>';
+                }
+            });
+
+            // Close menu when clicking a link
+            document.querySelectorAll('.mobile-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    isMenuOpen = false;
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuBtn.innerHTML = '<i class="fas fa-bars text-2xl"></i>';
+                });
+            });
+
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (isMenuOpen && !mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+                    isMenuOpen = false;
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuBtn.innerHTML = '<i class="fas fa-bars text-2xl"></i>';
+                }
+            });
+
+            // Prevent body scroll when menu is open
+            const observer = new MutationObserver(() => {
+                if (!mobileMenu.classList.contains('hidden')) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = 'auto';
+                }
+            });
+            
+            observer.observe(mobileMenu, { attributes: true, attributeFilter: ['class'] });
+        }
+
+        // Navbar glass effect on scroll
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 10) {
+                navbar.classList.add('shadow-lg', 'bg-black/40');
+            } else {
+                navbar.classList.remove('shadow-lg', 'bg-black/40');
+            }
+        });
+    </script>
+
+</body>
+
+</html>

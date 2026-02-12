@@ -40,4 +40,4 @@ debug_payments.log
 *.sw?
 
 # Website (repositório separado)
-website/
+# website/
