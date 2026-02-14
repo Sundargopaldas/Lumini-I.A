@@ -98,33 +98,36 @@ const Navbar = () => {
           </div>
 
           {/* Links de Navegação - Centro */}
-          <div className="hidden md:flex flex-1 justify-center">
-            <div className="flex space-x-6">
-            <Link to="/dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
+          <div className="hidden md:flex flex-1 justify-center overflow-x-auto whitespace-nowrap px-2">
+            <div className="flex space-x-4">
+            <Link to="/dashboard" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-[15px] font-medium">
               {t('sidebar.dashboard')}
             </Link>
-            <Link to="/transactions" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
+            <Link to="/transactions" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-[15px] font-medium">
               {t('sidebar.transactions')}
             </Link>
-            <Link to="/reports" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
+            <Link to="/reports" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-[15px] font-medium">
               {t('sidebar.reports')}
             </Link>
-            <Link to="/marketplace" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
+            <Link to="/calendar" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-[15px] font-medium">
+              {t('sidebar.calendar')}
+            </Link>
+            <Link to="/marketplace" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-[15px] font-medium">
               {t('sidebar.marketplace')}
             </Link>
             {(user.isAccountant || user.isAdmin) && (
-              <Link to="/accountant-dashboard" className="accountant-link text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
-                {t('sidebar.accountant_area')}
+              <Link to="/accountant-dashboard" className="accountant-link text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-[15px] font-medium">
+                {t('sidebar.accountant_area_short')}
               </Link>
             )}
-            <Link to="/invoices" className="invoice-button text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
-              {t('sidebar.invoices')}
+            <Link to="/invoices" className="invoice-button text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-[15px] font-medium">
+              {t('sidebar.invoices_short')}
             </Link>
-            <Link to="/integrations" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-base font-medium">
+            <Link to="/integrations" className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap text-[15px] font-medium">
               {t('sidebar.integrations')}
             </Link>
             {user.isAdmin && (
-              <Link to="/admin" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap font-semibold text-base">
+              <Link to="/admin" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-purple-500 transition-colors whitespace-nowrap font-semibold text-[15px]">
                 {t('sidebar.admin')}
               </Link>
             )}
@@ -203,6 +206,13 @@ const Navbar = () => {
               {t('sidebar.reports')}
             </Link>
             <Link 
+              to="/calendar" 
+              className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              {t('sidebar.calendar')}
+            </Link>
+            <Link 
               to="/marketplace" 
               className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
               onClick={() => setIsMenuOpen(false)}
@@ -215,7 +225,7 @@ const Navbar = () => {
                 className="accountant-link text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                {t('sidebar.accountant_area')}
+                {t('sidebar.accountant_area_short')}
               </Link>
             )}
             <Link 
@@ -223,7 +233,7 @@ const Navbar = () => {
               className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
-              {t('sidebar.invoices')}
+              {t('sidebar.invoices_short')}
             </Link>
             <Link 
               to="/integrations" 

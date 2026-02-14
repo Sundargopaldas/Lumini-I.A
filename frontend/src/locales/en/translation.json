@@ -9,8 +9,11 @@
     "transactions": "Transactions",
     "integrations": "Integrations",
     "reports": "Reports",
+    "calendar": "Calendar",
     "profile": "Profile",
     "accountant": "Accountant",
+    "invoices_short": "Invoices",
+    "accountant_area_short": "Accountant",
     "marketplace": "Marketplace",
     "accountant_area": "Accountant Area",
     "admin": "Admin"

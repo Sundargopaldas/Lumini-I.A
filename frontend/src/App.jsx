@@ -20,6 +20,7 @@ import MobileApp from './pages/MobileApp';
 import Diferenciais from './pages/Diferenciais';
 import Admin from './pages/Admin';
 import AdminAccountants from './pages/AdminAccountants';
+import ModernCalendar from './pages/ModernCalendar';
 import Settings from './pages/Settings';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
@@ -159,6 +160,21 @@ function App() {
                 <Navbar />
                 <div className="container mx-auto px-4 py-8">
                   <Reports />
+                </div>
+                <Footer />
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+                  <div className="pointer-events-auto"><WhatsAppWidget /></div>
+                </div>
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/calendar" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                  <ModernCalendar />
                 </div>
                 <Footer />
                 <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">

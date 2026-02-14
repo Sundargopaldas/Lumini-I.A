@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentação Completa - Lumini I.A</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        code {
+            font-family: 'Fira Code', monospace;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-container {
+            position: sticky;
+            top: 100px;
+            max-height: calc(100vh - 120px);
+        }
+
+        .sidebar {
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.5);
+            border-radius: 3px;
+        }
+
+        /* Mobile Sidebar Overlay */
+        @media (max-width: 1023px) {
+            .sidebar-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100vh;
+                max-height: 100vh;
+                background: rgba(0, 0, 0, 0.8);
+                backdrop-filter: blur(4px);
+                z-index: 40;
+                display: flex;
+                align-items: flex-start;
+                padding-top: 64px;
+                transition: opacity 0.3s, visibility 0.3s;
+            }
+
+            .sidebar-container.hidden {
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
+
+            .sidebar {
+                width: 85%;
+                max-width: 320px;
+                max-height: calc(100vh - 80px);
+                margin: 0 auto;
+                animation: slideIn 0.3s ease-out;
+            }
+
+            @keyframes slideIn {
+                from {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body>* {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 text-white relative overflow-x-hidden">
+
+    <!-- Navbar -->
+    <nav class="fixed w-full top-0 z-50 bg-black/95 backdrop-blur-sm border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-3">
+                    <!-- Mobile Menu Button -->
+                    <button id="sidebar-toggle" class="lg:hidden text-white hover:text-purple-400 focus:outline-none p-2">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                    
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl sm:text-3xl">✨</span>
+                        <span class="text-lg sm:text-xl font-bold">Lumini I.A</span>
+                        <span class="hidden sm:inline px-2 py-0.5 text-xs font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/50 rounded-full">BETA</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <a href="/" class="hidden sm:block hover:text-purple-400 transition-colors text-sm">← Voltar</a>
+                    <a href="/login"
+                        class="gradient-bg px-4 sm:px-6 py-2 rounded-full font-bold hover:shadow-2xl hover:scale-105 transition-all text-sm">
+                        Acessar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-8 sm:pb-12">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
+
+            <!-- Sidebar -->
+            <aside class="lg:col-span-1">
+                <div id="sidebar-overlay" class="sidebar-container hidden lg:block">
+                    <div class="glass p-4 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl sidebar">
+                        <!-- Close button for mobile -->
+                        <div class="flex justify-between items-center mb-3 sm:mb-4 lg:block">
+                            <h3 class="font-bold text-base sm:text-lg">📚 Índice</h3>
+                            <button id="sidebar-close" class="lg:hidden text-white hover:text-purple-400 p-2">
+                                <i class="fas fa-times text-lg sm:text-xl"></i>
+                            </button>
+                        </div>
+                        <nav class="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+                        <a href="#intro"
+                            class="sidebar-link block px-3 py-2 hover:bg-white/10 rounded-lg transition-colors">Introdução</a>
+                        <a href="#dashboard"
+                            class="sidebar-link block px-3 py-2 hover:bg-white/10 rounded-lg transition-colors">Dashboard</a>
+                        <a href="#transactions"
+                            class="sidebar-link block px-3 py-2 hover:bg-white/10 rounded-lg transition-colors">Transações</a>
+                        <a href="#integrations"
+                            class="sidebar-link block px-3 py-2 hover:bg-white/10 rounded-lg transition-colors">Integrações</a>
+                        <a href="#reports"
+                            class="sidebar-link block px-3 py-2 hover:bg-white/10 rounded-lg transition-colors">Relatórios</a>
+                        <a href="#invoices" class="sidebar-link block px-3 py-2 hover:bg-white/10 rounded-lg transition-colors">Notas
+                            Fiscais</a>
+                        <a href="#marketplace"
+                            class="sidebar-link block px-3 py-2 hover:bg-white/10 rounded-lg transition-colors">Marketplace</a>
+                        <a href="#mobile" class="sidebar-link block px-3 py-2 hover:bg-white/10 rounded-lg transition-colors">App
+                            Mobile</a>
+                        <a href="#settings"
+                            class="sidebar-link block px-3 py-2 hover:bg-white/10 rounded-lg transition-colors">Configurações</a>
+                        <a href="#security"
+                            class="sidebar-link block px-3 py-2 hover:bg-white/10 rounded-lg transition-colors">Segurança</a>
+                        <a href="#api" class="sidebar-link block px-3 py-2 hover:bg-white/10 rounded-lg transition-colors">API</a>
+                        <a href="#faq" class="sidebar-link block px-3 py-2 hover:bg-white/10 rounded-lg transition-colors">FAQ
+                            Técnico</a>
+                        </nav>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Documentation -->
+            <main class="lg:col-span-3 space-y-8 sm:space-y-10 md:space-y-12">
+
+                <!-- Introduction -->
+                <section id="intro" class="glass p-5 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl">
+                    <h1 class="text-2xl sm:text-3xl md:text-4xl font-black mb-4 sm:mb-6">
+                        📖 Documentação <span class="gradient-text">Completa</span>
+                    </h1>
+                    <p class="text-sm sm:text-base text-gray-300 leading-relaxed mb-4 sm:mb-6">
+                        Bem-vindo à documentação completa do Lumini I.A! Este guia contém tudo que você precisa
+                        para aproveitar ao máximo nossa plataforma de gestão financeira inteligente.
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mt-6 sm:mt-8">
+                        <div class="bg-purple-500/10 border border-purple-500/20 p-3 sm:p-4 rounded-lg sm:rounded-xl">
+                            <div class="text-2xl sm:text-3xl mb-1 sm:mb-2">🚀</div>
+                            <div class="font-bold text-sm sm:text-base">Início Rápido</div>
+                            <div class="text-xs sm:text-sm text-gray-400">Comece em 5 minutos</div>
+                        </div>
+                        <div class="bg-blue-500/10 border border-blue-500/20 p-3 sm:p-4 rounded-lg sm:rounded-xl">
+                            <div class="text-2xl sm:text-3xl mb-1 sm:mb-2">💡</div>
+                            <div class="font-bold text-sm sm:text-base">Tutoriais</div>
+                            <div class="text-xs sm:text-sm text-gray-400">Aprenda passo a passo</div>
+                        </div>
+                        <div class="bg-green-500/10 border border-green-500/20 p-3 sm:p-4 rounded-lg sm:rounded-xl">
+                            <div class="text-2xl sm:text-3xl mb-1 sm:mb-2">🔧</div>
+                            <div class="font-bold text-sm sm:text-base">API</div>
+                            <div class="text-xs sm:text-sm text-gray-400">Integre com seus sistemas</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!--Dashboard -->
+                <section id="dashboard" class="glass p-5 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl">
+                    <h2 class="text-2xl sm:text-3xl font-black mb-4 sm:mb-6">
+                        📊 Dashboard
+                    </h2>
+
+                    <p class="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
+                        O Dashboard é o coração do Lumini. Aqui você visualiza todas as suas métricas financeiras
+                        em tempo real com gráficos interativos e insights gerados por IA.
+                    </p>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Métricas Principais</h3>
+                    <div class="space-y-4 mb-6">
+                        <div class="bg-white/5 p-3 sm:p-4 rounded-lg border-l-4 border-green-500">
+                            <h4 class="text-sm sm:text-base font-bold mb-1 sm:mb-2">💰 Saldo Total</h4>
+                            <p class="text-xs sm:text-sm text-gray-400">
+                                Soma de todas as suas receitas menos despesas. Atualizado em tempo real conforme
+                                você adiciona transações ou sincroniza com seus bancos.
+                            </p>
+                        </div>
+
+                        <div class="bg-white/5 p-3 sm:p-4 rounded-lg border-l-4 border-blue-500">
+                            <h4 class="text-sm sm:text-base font-bold mb-1 sm:mb-2">📈 Receitas do Mês</h4>
+                            <p class="text-xs sm:text-sm text-gray-400">
+                                Total de entradas do mês atual. Inclui vendas, recebimentos, PIX e qualquer outra
+                                transação marcada como "receita". Mostra também sua principal fonte de renda.
+                            </p>
+                        </div>
+
+                        <div class="bg-white/5 p-3 sm:p-4 rounded-lg border-l-4 border-red-500">
+                            <h4 class="text-sm sm:text-base font-bold mb-1 sm:mb-2">💸 Despesas do Mês</h4>
+                            <p class="text-xs sm:text-sm text-gray-400">
+                                Total de saídas do mês atual. Despesas fixas, variáveis, compras e pagamentos.
+                                Exibe a categoria que mais consome seu dinheiro.
+                            </p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Limite MEI</h3>
+                    <p class="text-gray-300 mb-4">
+                        Widget exclusivo que monitora seu faturamento anual e compara com o limite do MEI (R$ 81.000).
+                        Barra de progresso visual com alertas quando você ultrapassa 80% do limite.
+                    </p>
+                    <div class="bg-purple-500/10 border border-purple-500/20 p-4 rounded-lg">
+                        <p class="text-sm">
+                            <strong>💡 Dica:</strong> Se você ultrapassar o limite MEI, o Lumini te alerta
+                            automaticamente
+                            e sugere ações, como migrar para Microempresa ou Simples Nacional.
+                        </p>
+                    </div>
+
+                    <h3 class="text-2xl font-bold mb-4 mt-6 gradient-text">Gráficos Interativos</h3>
+                    <ul class="space-y-3 list-disc list-inside text-gray-300">
+                        <li><strong>Evolução do Saldo:</strong> Linha do tempo mostrando como seu saldo evoluiu nos
+                            últimos 6 meses</li>
+                        <li><strong>Fontes de Receita:</strong> Pizza chart com distribuição de onde vem seu dinheiro
+                        </li>
+                        <li><strong>Categorias de Despesas:</strong> Barras horizontais com gastos por categoria</li>
+                        <li><strong>Tendências:</strong> IA analisa e mostra previsões para os próximos meses</li>
+                    </ul>
+                </section>
+
+                <!-- Transactions -->
+                <section id="transactions" class="glass p-8 rounded-2xl">
+                    <h2 class="text-3xl font-black mb-6">
+                        💳 Transações
+                    </h2>
+
+                    <p class="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
+                        Gerencie todas as suas movimentações financeiras em um único lugar. Adicione manualmente,
+                        sincronize com bancos ou importe via planilha.
+                    </p>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Adicionar Transação Manual</h3>
+                    <ol class="space-y-3 list-decimal list-inside text-gray-300 mb-6">
+                        <li>Clique no botão <strong>"+ Nova Transação"</strong></li>
+                        <li>Preencha:
+                            <ul class="ml-6 mt-2 space-y-1 list-disc list-inside">
+                                <li><strong>Descrição:</strong> Ex: "Pagamento Cliente X"</li>
+                                <li><strong>Valor:</strong> Em reais (R$)</li>
+                                <li><strong>Tipo:</strong> Receita ou Despesa</li>
+                                <li><strong>Categoria:</strong> Vendas, Compras, Serviços, etc</li>
+                                <li><strong>Data:</strong> Quando ocorreu</li>
+                            </ul>
+                        </li>
+                        <li>Clique em <strong>"Salvar"</strong></li>
+                    </ol>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Campos Avançados</h3>
+                    <div class="bg-white/5 p-4 rounded-lg mb-6">
+                        <p class="text-gray-300 mb-3"><strong>Observações:</strong> Espaço livre para notas (ex: "Nota
+                            fiscal #1234")</p>
+                        <p class="text-gray-300 mb-3"><strong>Recorrente:</strong> Marque se a transação se repete
+                            mensalmente</p>
+                        <p class="text-gray-300"><strong>Anexos:</strong> Upload de comprovantes, boletos, contratos</p>
+                    </div>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Filtros e Busca</h3>
+                    <ul class="space-y-2 text-gray-300 list-disc list-inside">
+                        <li>Busca por descrição, valor ou categoria</li>
+                        <li>Filtro por período (últimos 7 dias, 30 dias, mês atual, personalizado)</li>
+                        <li>Filtro por tipo (receitas, despesas ou ambos)</li>
+                        <li>Filtro por fonte (Manual, Nubank, Open Finance, etc)</li>
+                        <li>Ordenação por data, valor ou categoria</li>
+                    </ul>
+                </section>
+
+                <!-- Integrations -->
+                <section id="integrations" class="glass p-8 rounded-2xl">
+                    <h2 class="text-3xl font-black mb-6">
+                        🔗 Integrações
+                    </h2>
+
+                    <p class="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
+                        Conecte seus bancos, plataformas de pagamento e marketplaces. Suas transações são
+                        importadas automaticamente - nunca mais digite manualmente!
+                    </p>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Bancos (via Open Finance)</h3>
+                    <div class="bg-blue-500/10 border border-blue-500/20 p-6 rounded-xl mb-6">
+                        <h4 class="font-bold text-lg mb-3">🏦 Como Conectar</h4>
+                        <ol class="space-y-2 list-decimal list-inside text-gray-300">
+                            <li>Vá em <strong>Integrações</strong> → <strong>Open Finance</strong></li>
+                            <li>Clique em <strong>"Conectar"</strong></li>
+                            <li>Você será redirecionado para a tela do seu banco</li>
+                            <li>Faça login com suas credenciais bancárias</li>
+                            <li>Autorize o Lumini a acessar suas transações (somente leitura)</li>
+                            <li>Pronto! Volte ao Lumini e clique em <strong>"Sincronizar Agora"</strong></li>
+                        </ol>
+
+                        <div class="mt-4 p-3 bg-green-500/20 rounded-lg">
+                            <p class="text-sm">
+                                <strong>🔒 Segurança:</strong> O Lumini NUNCA armazena suas senhas bancárias.
+                                Usamos o Open Finance (padrão do Banco Central) que gera um token temporário de acesso.
+                            </p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Bancos Suportados</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+                        <div class="bg-white/5 p-3 rounded-lg text-center">✅ Nubank</div>
+                        <div class="bg-white/5 p-3 rounded-lg text-center">✅ Itaú</div>
+                        <div class="bg-white/5 p-3 rounded-lg text-center">✅ Bradesco</div>
+                        <div class="bg-white/5 p-3 rounded-lg text-center">✅ Santander</div>
+                        <div class="bg-white/5 p-3 rounded-lg text-center">✅ Banco do Brasil</div>
+                        <div class="bg-white/5 p-3 rounded-lg text-center">✅ Caixa</div>
+                        <div class="bg-white/5 p-3 rounded-lg text-center">✅ Inter</div>
+                        <div class="bg-white/5 p-3 rounded-lg text-center">✅ C6 Bank</div>
+                        <div class="bg-white/5 p-3 rounded-lg text-center">+ 292 outros</div>
+                    </div>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Outras Integrações</h3>
+
+                    <div class="space-y-4">
+                        <div class="bg-white/5 p-4 rounded-lg">
+                            <h4 class="text-sm sm:text-base font-bold mb-1 sm:mb-2">💰 Stripe</h4>
+                            <p class="text-sm text-gray-400 mb-2">Plataforma de pagamentos online</p>
+                            <p class="text-sm text-gray-300">
+                                Sincronize suas vendas do Stripe automaticamente. Perfeito para e-commerce e SaaS.
+                            </p>
+                        </div>
+
+                        <div class="bg-white/5 p-4 rounded-lg">
+                            <h4 class="text-sm sm:text-base font-bold mb-1 sm:mb-2">🎥 YouTube AdSense</h4>
+                            <p class="text-sm text-gray-400 mb-2">Monetização de vídeos</p>
+                            <p class="text-sm text-gray-300">
+                                Creators podem sincronizar ganhos do YouTube e acompanhar receitas mensais.
+                            </p>
+                        </div>
+
+                        <div class="bg-white/5 p-4 rounded-lg">
+                            <h4 class="text-sm sm:text-base font-bold mb-1 sm:mb-2">📱 Hotmart</h4>
+                            <p class="text-sm text-gray-400 mb-2">Marketplace de produtos digitais</p>
+                            <p class="text-sm text-gray-300">
+                                Vende cursos ou infoprodutos? Configure o webhook e receba vendas em tempo real.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Reports -->
+                <section id="reports" class="glass p-8 rounded-2xl">
+                    <h2 class="text-3xl font-black mb-6">
+                        📄 Relatórios
+                    </h2>
+
+                    <p class="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
+                        Gere relatórios profissionais em segundos. Exportação em PDF, Excel e envio por email.
+                    </p>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Tipos de Relatórios</h3>
+
+                    <div class="space-y-6">
+                        <div
+                            class="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 p-6 rounded-xl">
+                            <h4 class="font-bold text-lg mb-3">📊 Demonstrativo de Resultados (DRE)</h4>
+                            <p class="text-gray-300 mb-3">
+                                Relatório contábil que mostra receitas, despesas e resultado líquido do período.
+                            </p>
+                            <ul class="space-y-1 text-sm text-gray-400 list-disc list-inside">
+                                <li>Receitas brutas por categoria</li>
+                                <li>Despesas operacionais detalhadas</li>
+                                <li>Lucro/prejuízo do período</li>
+                                <li>Comparação com meses anteriores</li>
+                            </ul>
+                        </div>
+
+                        <div
+                            class="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 p-6 rounded-xl">
+                            <h4 class="font-bold text-lg mb-3">💰 Fluxo de Caixa</h4>
+                            <p class="text-gray-300 mb-3">
+                                Movimentação de dinheiro entrando e saindo, dia a dia.
+                            </p>
+                            <ul class="space-y-1 text-sm text-gray-400 list-disc list-inside">
+                                <li>Saldo inicial e final</li>
+                                <li>Entradas e saídas diárias</li>
+                                <li>Projeção para os próximos 30 dias</li>
+                                <li>Alertas de baixo caixa</li>
+                            </ul>
+                        </div>
+
+                        <div
+                            class="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/20 p-6 rounded-xl">
+                            <h4 class="font-bold text-lg mb-3">📈 Análise de Categorias</h4>
+                            <p class="text-gray-300 mb-3">
+                                Entenda onde você gasta e ganha mais.
+                            </p>
+                            <ul class="space-y-1 text-sm text-gray-400 list-disc list-inside">
+                                <li>Top 10 categorias de despesas</li>
+                                <li>Top 5 fontes de receita</li>
+                                <li>Comparação mês a mês</li>
+                                <li>Sugestões de economia (IA)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h3 class="text-2xl font-bold mb-4 mt-8 gradient-text">Exportação</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white/5 p-4 rounded-lg text-center">
+                            <div class="text-3xl mb-2">📄</div>
+                            <div class="font-bold">PDF</div>
+                            <div class="text-xs text-gray-400">Profissional e imprimível</div>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded-lg text-center">
+                            <div class="text-3xl mb-2">📊</div>
+                            <div class="font-bold">Excel</div>
+                            <div class="text-xs text-gray-400">Editável e analisável</div>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded-lg text-center">
+                            <div class="text-3xl mb-2">📧</div>
+                            <div class="font-bold">Email</div>
+                            <div class="text-xs text-gray-400">Envio direto ao contador</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Invoices -->
+                <section id="invoices" class="glass p-8 rounded-2xl">
+                    <h2 class="text-3xl font-black mb-6">
+                        🧾 Notas Fiscais (NF-e)
+                    </h2>
+
+                    <div class="bg-amber-500/10 border border-amber-500/20 p-4 rounded-lg mb-6">
+                        <p class="text-sm">
+                            <strong>⭐ Recurso Premium:</strong> Emissão de NF-e disponível apenas no plano Premium.
+                        </p>
+                    </div>
+
+                    <p class="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
+                        Emita Notas Fiscais Eletrônicas (NF-e) diretamente pelo Lumini. Certificado digital integrado
+                        e validação automática pela SEFAZ.
+                    </p>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Configuração Inicial</h3>
+                    <ol class="space-y-3 list-decimal list-inside text-gray-300 mb-6">
+                        <li>Vá em <strong>Notas Fiscais</strong> → <strong>Configurações</strong></li>
+                        <li>Faça upload do seu <strong>Certificado Digital A1</strong> (.pfx)</li>
+                        <li>Digite a <strong>senha do certificado</strong></li>
+                        <li>Insira suas credenciais da SEFAZ</li>
+                        <li>Teste a conexão clicando em <strong>"Validar"</strong></li>
+                        <li>Pronto! Você já pode emitir notas</li>
+                    </ol>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Emitir Nova NF-e</h3>
+                    <div class="bg-white/5 p-6 rounded-lg mb-6">
+                        <ol class="space-y-2 list-decimal list-inside text-gray-300">
+                            <li>Clique em <strong>"+ Nova Nota Fiscal"</strong></li>
+                            <li>Preencha dados do cliente (nome, CPF/CNPJ, endereço)</li>
+                            <li>Adicione produtos/serviços e valores</li>
+                            <li>Revise impostos calculados automaticamente</li>
+                            <li>Clique em <strong>"Emitir"</strong></li>
+                            <li>Aguarde validação da SEFAZ (5-10 segundos)</li>
+                            <li>Download do XML e DANFE em PDF</li>
+                            <li>Envio automático por email ao cliente</li>
+                        </ol>
+                    </div>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Recursos Avançados</h3>
+                    <ul class="space-y-2 text-gray-300 list-disc list-inside">
+                        <li><strong>Cálculo automático de impostos:</strong> ICMS, PIS, COFINS, IPI</li>
+                        <li><strong>Validação de CPF/CNPJ:</strong> Verificação na Receita Federal</li>
+                        <li><strong>Numeração sequencial:</strong> Controle automático de série e número</li>
+                        <li><strong>Cancelamento:</strong> Cancele notas com justificativa (até 24h)</li>
+                        <li><strong>Carta de Correção:</strong> Corrija erros sem cancelar</li>
+                        <li><strong>Histórico completo:</strong> Todas as notas emitidas, consultáveis</li>
+                    </ul>
+                </section>
+
+                <!-- Marketplace -->
+                <section id="marketplace" class="glass p-8 rounded-2xl">
+                    <h2 class="text-3xl font-black mb-6">
+                        🤝 Marketplace de Contadores
+                    </h2>
+
+                    <p class="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
+                        Conecte clientes e contadores. Se você é cliente, encontre um contador verificado.
+                        Se você é contador, cadastre seu escritório e receba convites.
+                    </p>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Para Clientes</h3>
+                    <div class="bg-blue-500/10 border border-blue-500/20 p-6 rounded-xl mb-6">
+                        <h4 class="font-bold mb-3">Como Encontrar um Contador</h4>
+                        <ol class="space-y-2 list-decimal list-inside text-gray-300">
+                            <li>Vá em <strong>Marketplace</strong></li>
+                            <li>Navegue pelos escritórios cadastrados</li>
+                            <li>Veja avaliações, especialidades e CRC</li>
+                            <li>Clique em <strong>"Convidar"</strong> no contador desejado</li>
+                            <li>Digite o email do contador</li>
+                            <li>Aguarde aceitação (contador recebe email)</li>
+                            <li>Após aceitar, ele terá acesso aos seus dados financeiros</li>
+                        </ol>
+                    </div>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Para Contadores</h3>
+                    <div class="bg-purple-500/10 border border-purple-500/20 p-6 rounded-xl mb-6">
+                        <h4 class="font-bold mb-3">Como Cadastrar seu Escritório</h4>
+                        <ol class="space-y-2 list-decimal list-inside text-gray-300">
+                            <li>Vá em <strong>Marketplace</strong> → <strong>"Cadastrar Escritório"</strong></li>
+                            <li>Preencha dados do escritório (nome, CRC, telefone)</li>
+                            <li>Faça upload do logo</li>
+                            <li>Descreva suas especialidades e diferenciais</li>
+                            <li>Clique em <strong>"Publicar"</strong></li>
+                            <li>Seu perfil fica visível para clientes</li>
+                            <li>Receba convites por email</li>
+                        </ol>
+                    </div>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Área do Contador</h3>
+                    <p class="text-gray-300 mb-3">
+                        Contadores vinculados têm acesso a uma <strong>Área do Contador</strong> especial com:
+                    </p>
+                    <ul class="space-y-2 text-gray-300 list-disc list-inside">
+                        <li>Lista de todos os clientes vinculados</li>
+                        <li>Acesso aos dados financeiros de cada cliente</li>
+                        <li>Exportação de relatórios em lote</li>
+                        <li>Dashboard consolidado (soma de todos os clientes)</li>
+                        <li>Chat direto com clientes (em breve)</li>
+                    </ul>
+                </section>
+
+                <!-- Mobile App -->
+                <section id="mobile" class="glass p-8 rounded-2xl">
+                    <h2 class="text-3xl font-black mb-6">
+                        📱 App Mobile (PWA)
+                    </h2>
+
+                    <p class="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
+                        O Lumini funciona como um aplicativo nativo no seu celular, mas sem ocupar espaço.
+                        Graças à tecnologia PWA (Progressive Web App), você instala direto do navegador.
+                    </p>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Como Instalar</h3>
+
+                    <div class="space-y-4 mb-6">
+                        <div class="bg-green-500/10 border border-green-500/20 p-6 rounded-xl">
+                            <h4 class="font-bold mb-3">📱 Android (Chrome)</h4>
+                            <ol class="space-y-2 list-decimal list-inside text-gray-300">
+                                <li>Abra <code class="bg-black/30 px-2 py-1 rounded">lumini-i-a.fly.dev</code> no Chrome
+                                </li>
+                                <li>Toque nos <strong>3 pontinhos</strong> (⋮) no canto superior</li>
+                                <li>Selecione <strong>"Adicionar à tela inicial"</strong></li>
+                                <li>Confirme tocando em <strong>"Adicionar"</strong></li>
+                                <li>Pronto! Ícone aparece na tela inicial</li>
+                            </ol>
+                        </div>
+
+                        <div class="bg-blue-500/10 border border-blue-500/20 p-6 rounded-xl">
+                            <h4 class="font-bold mb-3">🍎 iPhone (Safari)</h4>
+                            <ol class="space-y-2 list-decimal list-inside text-gray-300">
+                                <li>Abra <code class="bg-black/30 px-2 py-1 rounded">lumini-i-a.fly.dev</code> no Safari
+                                </li>
+                                <li>Toque no botão <strong>Compartilhar</strong> (⎋) na barra inferior</li>
+                                <li>Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong></li>
+                                <li>Toque em <strong>"Adicionar"</strong></li>
+                                <li>Pronto! Ícone aparece na tela inicial</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Vantagens do PWA</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white/5 p-4 rounded-lg">
+                            <div class="text-2xl mb-2">⚡</div>
+                            <div class="font-bold mb-1">Rápido</div>
+                            <div class="text-sm text-gray-400">Abre instantaneamente, como app nativo</div>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded-lg">
+                            <div class="text-2xl mb-2">💾</div>
+                            <div class="font-bold mb-1">Leve</div>
+                            <div class="text-sm text-gray-400">Menos de 2MB vs 50-100MB de apps tradicionais</div>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded-lg">
+                            <div class="text-2xl mb-2">📡</div>
+                            <div class="font-bold mb-1">Offline</div>
+                            <div class="text-sm text-gray-400">Funciona sem internet, sincroniza depois</div>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded-lg">
+                            <div class="text-2xl mb-2">🔄</div>
+                            <div class="font-bold mb-1">Auto-Update</div>
+                            <div class="text-sm text-gray-400">Atualiza sozinho, sem downloads manuais</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings -->
+                <section id="settings" class="glass p-8 rounded-2xl">
+                    <h2 class="text-3xl font-black mb-6">
+                        ⚙️ Configurações
+                    </h2>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Perfil</h3>
+                    <ul class="space-y-2 text-gray-300 list-disc list-inside mb-6">
+                        <li>Alterar nome, email e foto</li>
+                        <li>Mudar senha com confirmação</li>
+                        <li>Ativar autenticação em dois fatores (2FA)</li>
+                    </ul>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Idioma</h3>
+                    <p class="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
+                        Lumini está disponível em <strong>Português</strong> e <strong>Inglês</strong>.
+                        Troque o idioma em Configurações → Idioma.
+                    </p>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Tema</h3>
+                    <p class="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
+                        Escolha entre <strong>Modo Claro</strong> e <strong>Modo Escuro</strong>.
+                        Ou deixe em "Automático" para seguir o sistema operacional.
+                    </p>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Plano e Assinatura</h3>
+                    <ul class="space-y-2 text-gray-300 list-disc list-inside">
+                        <li>Ver plano atual (Gratuito ou Premium)</li>
+                        <li>Upgrade para Premium com cartão de crédito (via Stripe)</li>
+                        <li>Downgrade para Gratuito (a qualquer momento)</li>
+                        <li>Histórico de pagamentos e faturas</li>
+                    </ul>
+                </section>
+
+                <!-- Security -->
+                <section id="security" class="glass p-8 rounded-2xl">
+                    <h2 class="text-3xl font-black mb-6">
+                        🔒 Segurança
+                    </h2>
+
+                    <p class="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
+                        A segurança dos seus dados é nossa prioridade máxima. Usamos as melhores práticas
+                        da indústria para proteger suas informações.
+                    </p>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Tecnologias de Segurança</h3>
+                    <div class="space-y-4 mb-6">
+                        <div class="bg-white/5 p-3 sm:p-4 rounded-lg border-l-4 border-green-500">
+                            <h4 class="text-sm sm:text-base font-bold mb-1 sm:mb-2">🔐 HTTPS / TLS 1.3</h4>
+                            <p class="text-xs sm:text-sm text-gray-400">
+                                Todas as comunicações são criptografadas de ponta a ponta. Impossível interceptar dados.
+                            </p>
+                        </div>
+
+                        <div class="bg-white/5 p-3 sm:p-4 rounded-lg border-l-4 border-blue-500">
+                            <h4 class="text-sm sm:text-base font-bold mb-1 sm:mb-2">🎫 JWT (JSON Web Tokens)</h4>
+                            <p class="text-xs sm:text-sm text-gray-400">
+                                Autenticação stateless com tokens que expiram. Renovação automática e segura.
+                            </p>
+                        </div>
+
+                        <div class="bg-white/5 p-3 sm:p-4 rounded-lg border-l-4 border-purple-500">
+                            <h4 class="text-sm sm:text-base font-bold mb-1 sm:mb-2">🏦 Open Finance Certificado</h4>
+                            <p class="text-xs sm:text-sm text-gray-400">
+                                Integrações bancárias via Open Finance (padrão do Banco Central). NUNCA armazenamos
+                                senhas bancárias.
+                            </p>
+                        </div>
+
+                        <div class="bg-white/5 p-3 sm:p-4 rounded-lg border-l-4 border-orange-500">
+                            <h4 class="text-sm sm:text-base font-bold mb-1 sm:mb-2">🔒 Criptografia AES-256</h4>
+                            <p class="text-xs sm:text-sm text-gray-400">
+                                Dados sensíveis (certificados, API keys) armazenados com criptografia militar.
+                            </p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Práticas Recomendadas</h3>
+                    <ul class="space-y-2 text-gray-300 list-disc list-inside">
+                        <li>Use uma senha forte (mínimo 8 caracteres, letras e números)</li>
+                        <li>Ative autenticação em dois fatores (2FA)</li>
+                        <li>Não compartilhe sua senha com ninguém</li>
+                        <li>Faça logout em computadores públicos</li>
+                        <li>Revise acessos de contadores periodicamente</li>
+                    </ul>
+                </section>
+
+                <!-- API -->
+                <section id="api" class="glass p-8 rounded-2xl">
+                    <h2 class="text-3xl font-black mb-6">
+                        🔧 API
+                    </h2>
+
+                    <p class="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
+                        Desenvolvedores podem integrar o Lumini com sistemas externos via API REST.
+                    </p>
+
+                    <div class="bg-amber-500/10 border border-amber-500/20 p-4 rounded-lg mb-6">
+                        <p class="text-sm">
+                            <strong>🚧 Em Desenvolvimento:</strong> API pública será lançada em breve.
+                            Entre em contato se tiver interesse em beta testar.
+                        </p>
+                    </div>
+
+                    <h3 class="text-2xl font-bold mb-4 gradient-text">Endpoints Planejados</h3>
+                    <div class="bg-black/30 p-4 rounded-lg mb-4">
+                        <code class="text-green-400">GET /api/v1/transactions</code>
+                        <p class="text-sm text-gray-400 mt-2">Listar todas as transações</p>
+                    </div>
+
+                    <div class="bg-black/30 p-4 rounded-lg mb-4">
+                        <code class="text-blue-400">POST /api/v1/transactions</code>
+                        <p class="text-sm text-gray-400 mt-2">Criar nova transação</p>
+                    </div>
+
+                    <div class="bg-black/30 p-4 rounded-lg mb-4">
+                        <code class="text-purple-400">GET /api/v1/reports/dre</code>
+                        <p class="text-sm text-gray-400 mt-2">Gerar DRE em JSON</p>
+                    </div>
+                </section>
+
+                <!-- Technical FAQ -->
+                <section id="faq" class="glass p-8 rounded-2xl">
+                    <h2 class="text-3xl font-black mb-6">
+                        ❓ FAQ Técnico
+                    </h2>
+
+                    <div class="space-y-4">
+                        <details class="bg-white/5 p-6 rounded-xl group">
+                            <summary class="font-bold cursor-pointer list-none flex justify-between items-center">
+                                Qual é a stack tecnológica do Lumini?
+                                <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="mt-4 text-gray-300 space-y-2">
+                                <p><strong>Frontend:</strong> React, Tailwind CSS, Vite, React Router, i18next</p>
+                                <p><strong>Backend:</strong> Node.js, Express, Sequelize, PostgreSQL</p>
+                                <p><strong>Infraestrutura:</strong> Fly.io, Docker, HTTPS/TLS</p>
+                                <p><strong>Integrações:</strong> Pluggy (Open Finance), Stripe, Hotmart, YouTube API</p>
+                            </div>
+                        </details>
+
+                        <details class="bg-white/5 p-6 rounded-xl group">
+                            <summary class="font-bold cursor-pointer list-none flex justify-between items-center">
+                                Onde os dados são armazenados?
+                                <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <p class="mt-4 text-gray-300">
+                                Todos os dados são armazenados em servidores na nuvem com criptografia.
+                                Backups diários automáticos e replicação para disaster recovery.
+                                Infraestrutura hospedada no Fly.io com datacenter na América do Sul (baixa latência).
+                            </p>
+                        </details>
+
+                        <details class="bg-white/5 p-6 rounded-xl group">
+                            <summary class="font-bold cursor-pointer list-none flex justify-between items-center">
+                                O Lumini funciona em dispositivos antigos?
+                                <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <p class="mt-4 text-gray-300">
+                                Sim! O Lumini é otimizado para funcionar em qualquer dispositivo com navegador moderno.
+                                Recomendamos: Chrome 80+, Safari 13+, Edge 80+, Firefox 75+.
+                                Funciona perfeitamente em celulares Android 8+ e iOS 13+.
+                            </p>
+                        </details>
+
+                        <details class="bg-white/5 p-6 rounded-xl group">
+                            <summary class="font-bold cursor-pointer list-none flex justify-between items-center">
+                                Posso exportar todos os meus dados?
+                                <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <p class="mt-4 text-gray-300">
+                                Sim! Você é dono dos seus dados. A qualquer momento, vá em Configurações → Exportar
+                                Dados
+                                e baixe um arquivo JSON com todas as suas transações, relatórios e configurações.
+                                Também é possível exportar para Excel/CSV.
+                            </p>
+                        </details>
+                    </div>
+                </section>
+
+                <!-- Contact -->
+                <section class="glass p-8 rounded-2xl text-center">
+                    <h2 class="text-3xl font-black mb-4">
+                        💬 Precisa de Ajuda?
+                    </h2>
+                    <p class="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
+                        Não encontrou o que procurava? Nossa equipe está pronta para ajudar!
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a href="mailto:contato@luminiiadigital.com.br"
+                            class="gradient-bg px-8 py-4 rounded-full font-bold hover:shadow-2xl hover:scale-105 transition-all">
+                            <i class="fas fa-envelope mr-2"></i>
+                            Enviar Email
+                        </a>
+                        <a href="https://wa.me/5511999999999" target="_blank"
+                            class="glass px-8 py-4 rounded-full font-bold hover:bg-white/20 transition-all">
+                            <i class="fab fa-whatsapp mr-2"></i>
+                            WhatsApp
+                        </a>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-black/30 py-8 px-4 mt-12">
+        <div class="max-w-7xl mx-auto text-center">
+            <p class="text-gray-400">&copy; 2026 Lumini I.A. Documentação completa e atualizada.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Mobile Sidebar Toggle
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebarClose = document.getElementById('sidebar-close');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        let isSidebarOpen = false;
+
+        if (sidebarToggle && sidebarOverlay) {
+            // Open sidebar
+            sidebarToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                isSidebarOpen = true;
+                sidebarOverlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            });
+
+            // Close sidebar with X button
+            if (sidebarClose) {
+                sidebarClose.addEventListener('click', () => {
+                    isSidebarOpen = false;
+                    sidebarOverlay.classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                });
+            }
+
+            // Close sidebar when clicking on overlay background
+            sidebarOverlay.addEventListener('click', (e) => {
+                if (e.target === sidebarOverlay) {
+                    isSidebarOpen = false;
+                    sidebarOverlay.classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                }
+            });
+
+            // Close sidebar when clicking any link
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < 1024) { // Only on mobile
+                        isSidebarOpen = false;
+                        sidebarOverlay.classList.add('hidden');
+                        document.body.style.overflow = 'auto';
+                    }
+                });
+            });
+
+            // Close sidebar on window resize to desktop
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 1024 && isSidebarOpen) {
+                    isSidebarOpen = false;
+                    sidebarOverlay.classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        }
+    </script>
+
+</body>
+
+</html>

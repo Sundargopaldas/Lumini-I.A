@@ -9,8 +9,11 @@
     "transactions": "Transações",
     "integrations": "Integrações",
     "reports": "Relatórios",
+    "calendar": "Calendário",
     "profile": "Perfil",
     "accountant": "Contador",
+    "invoices_short": "NF-e",
+    "accountant_area_short": "Contador",
     "marketplace": "Marketplace",
     "accountant_area": "Área do Contador",
     "admin": "Admin"

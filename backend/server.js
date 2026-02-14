@@ -258,6 +258,7 @@ if (process.env.NODE_ENV === 'production') {
     '/reset-password',
     '/reset-password/:token',
     '/dashboard',
+    '/calendar',
     '/transactions',
     '/reports',
     '/plans',
@@ -324,9 +325,25 @@ if (process.env.NODE_ENV === 'production') {
     }
   }));
 
-  // ⚠️ Sem catch-all! Todas as rotas são explícitas acima.
-  // Landing Page: /
-  // React App: /login, /register, /dashboard, etc.
+  // ✅ Fallback SPA: qualquer rota GET (exceto API, root da Landing e docs) entrega o index do React
+  app.get('*', (req, res, next) => {
+    const p = req.path || '';
+    if (
+      p === '/' ||
+      p.startsWith('/api') ||
+      p.startsWith('/docs') ||
+      p.startsWith('/uploads')
+    ) {
+      return next();
+    }
+    const accept = req.headers.accept || '';
+    if (!accept.includes('text/html')) return next();
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.set("Pragma", "no-cache");
+    res.set("Expires", "0");
+    res.set("Surrogate-Control", "no-store");
+    res.sendFile(path.join(publicPath, 'index.html'));
+  });
 }
 
 // Error handling middleware
