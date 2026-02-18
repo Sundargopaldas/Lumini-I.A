@@ -23,7 +23,7 @@ export default function ModernCalendar() {
   const [weekAnchor, setWeekAnchor] = useState(new Date());
   const [view, setView] = useState('agenda');
   const [showDrawer, setShowDrawer] = useState(false);
-  const [form, setForm] = useState({ date: '', title: '' });
+  const [form, setForm] = useState({ date: '', title: '', time: '', location: '' });
   const [mode, setMode] = useState('create');
   const [editIndex, setEditIndex] = useState(null);
   const [editDateKey, setEditDateKey] = useState(null);
@@ -74,7 +74,7 @@ export default function ModernCalendar() {
     setMode('create');
     setEditIndex(null);
     setEditDateKey(null);
-    setForm({ date: toKey(date), title: '' });
+    setForm({ date: toKey(date), title: '', time: '', location: '' });
     setShowDrawer(true);
   };
   const openNewToday = () => {
@@ -82,14 +82,15 @@ export default function ModernCalendar() {
     setMode('create');
     setEditIndex(null);
     setEditDateKey(null);
-    setForm({ date: toKey(d), title: '' });
+    setForm({ date: toKey(d), title: '', time: '', location: '' });
     setShowDrawer(true);
   };
   const openEdit = (dateKey, idx, title) => {
     setMode('edit');
     setEditIndex(idx);
     setEditDateKey(dateKey);
-    setForm({ date: dateKey, title });
+    const item = (events[dateKey] || [])[idx] || {};
+    setForm({ date: dateKey, title, time: item.time || '', location: item.location || '' });
     setShowDrawer(true);
   };
 
@@ -108,7 +109,7 @@ export default function ModernCalendar() {
       if (oldList.length) data[editDateKey] = oldList; else delete data[editDateKey];
       const newKey = form.date;
       const newList = data[newKey] ? [...data[newKey]] : [];
-      newList.push({ ...item, title: form.title.trim() });
+      newList.push({ ...item, title: form.title.trim(), time: form.time || '', location: form.location || '' });
       data[newKey] = newList;
       save(data);
       setShowDrawer(false);
@@ -116,7 +117,7 @@ export default function ModernCalendar() {
     } else {
       const data = { ...events };
       const list = data[form.date] ? [...data[form.date]] : [];
-      list.push({ title: form.title.trim(), createdAt: Date.now(), status: 'active' });
+      list.push({ title: form.title.trim(), time: form.time || '', location: form.location || '', createdAt: Date.now(), status: 'active' });
       data[form.date] = list;
       save(data);
       setShowDrawer(false);
@@ -309,7 +310,7 @@ export default function ModernCalendar() {
                 <div key={w} className="py-2">{w}</div>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-px bg-slate-200/60 dark:bg-white/10 rounded-xl overflow-hidden">
+            <div className="grid grid-cols-7 gap-2 rounded-xl">
               {days.map(({ date, outside }, idx) => {
                 const key = toKey(date);
                 const dayEvents = events[key] || [];
@@ -317,10 +318,10 @@ export default function ModernCalendar() {
                 return (
                   <div
                     key={idx}
-                    className={`relative p-3 min-h-[120px] ${
-                      outside ? 'bg-slate-50 dark:bg-slate-800/40 opacity-70' :
-                      weekend ? 'bg-purple-50/30 dark:bg-purple-900/5' :
-                      'bg-white dark:bg-slate-900'
+                    className={`relative p-3 min-h-[120px] rounded-xl border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-lg transition ${
+                      outside ? 'bg-sky-500/20 dark:bg-sky-900/40 opacity-80' :
+                      weekend ? 'bg-sky-500/40 dark:bg-sky-900/60' :
+                      'bg-sky-500/30 dark:bg-sky-900/50'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -349,9 +350,11 @@ export default function ModernCalendar() {
                               ? 'text-rose-400 line-through'
                               : 'text-slate-700 dark:text-slate-200';
                         return (
-                          <button onClick={() => openEdit(key, i, ev.title)} key={i} className="flex items-center gap-2 text-[13px] px-2 py-1.5 rounded bg-purple-50 dark:bg-purple-900/10 w-full text-left">
+                          <button onClick={() => openEdit(key, i, ev.title)} key={i} className="flex items-center gap-2 text-[13px] px-2 py-1.5 rounded bg-white/70 hover:bg-white dark:bg-slate-800/40 dark:hover:bg-slate-800 w-full text-left transition">
                             <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
-                            <span className={`truncate ${textCls}`}>{ev.title}</span>
+                            <span className={`truncate ${textCls}`}>
+                              {ev.time ? `${ev.time} • ` : ''}{ev.title}{ev.location ? ` — ${ev.location}` : ''}
+                            </span>
                           </button>
                         );
                       })}
@@ -359,9 +362,14 @@ export default function ModernCalendar() {
                     {!outside && (
                       <button
                         onClick={() => openAdd(date)}
-                        className="mt-2 w-full text-xs text-purple-600 dark:text-purple-400 hover:underline text-left"
+                        className="absolute bottom-2 right-2 inline-flex items-center justify-center w-8 h-8 rounded-lg border border-purple-400/70 text-purple-300 hover:bg-purple-600/10 hover:border-purple-300 transition"
+                        title="Novo evento"
+                        aria-label="Novo evento"
                       >
-                        + Adicionar
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
+                          <path d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v3H3V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1z"></path>
+                          <path d="M3 10h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8zm9 2a1 1 0 0 0-1 1v2H9a1 1 0 1 0 0 2h2v2a1 1 0 1 0 2 0v-2h2a1 1 0 1 0 0-2h-2v-2a1 1 0 0 0-1-1z"></path>
+                        </svg>
                       </button>
                     )}
                   </div>
@@ -384,10 +392,20 @@ export default function ModernCalendar() {
                 const key = toKey(d);
                 const dayEvents = events[key] || [];
                 return (
-                  <div key={idx} className="rounded-xl border border-slate-200 dark:border-white/10 p-3 bg-white dark:bg-slate-900 min-h-[180px]">
+                  <div key={idx} className="rounded-xl border border-slate-200 dark:border-white/10 p-3 bg-sky-500/30 dark:bg-sky-900/50 min-h-[180px] shadow-sm hover:shadow-lg transition">
                     <div className="flex items-center justify-between mb-2">
                       <div className={`text-sm ${isToday(d) ? 'font-semibold text-purple-700 dark:text-purple-300' : 'text-slate-600 dark:text-slate-400'}`}>{d.getDate()}</div>
-                      <button onClick={() => openAdd(d)} className="text-xs text-purple-600 dark:text-purple-400 hover:underline">+ Adicionar</button>
+                      <button
+                        onClick={() => openAdd(d)}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-purple-400/70 text-purple-300 hover:bg-purple-600/10 hover:border-purple-300 transition"
+                        title="Novo evento"
+                        aria-label="Novo evento"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
+                          <path d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v3H3V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1z"></path>
+                          <path d="M3 10h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8zm9 2a1 1 0 0 0-1 1v2H9a1 1 0 1 0 0 2h2v2a1 1 0 1 0 2 0v-2h2a1 1 0 1 0 0-2h-2v-2a1 1 0 0 0-1-1z"></path>
+                        </svg>
+                      </button>
                     </div>
                     <div className="space-y-2">
                       {dayEvents.length === 0 && <div className="text-xs text-slate-400">Sem eventos</div>}
@@ -399,7 +417,7 @@ export default function ModernCalendar() {
                           <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
                             <button onClick={() => openEdit(key, i, ev.title)} className={`flex items-center gap-2 min-w-0 text-left ${textCls}`}>
                               <span className={`w-2 h-2 rounded-full ${dot}`} />
-                              <span className="truncate">{ev.title}</span>
+                              <span className="truncate">{ev.time ? `${ev.time} • ` : ''}{ev.title}{ev.location ? ` — ${ev.location}` : ''}</span>
                             </button>
                             <div className="flex items-center gap-1">
                               {status === 'active' && (
@@ -423,12 +441,14 @@ export default function ModernCalendar() {
       </div>
 
       {showDrawer && (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowDrawer(false)} />
-          <div className="absolute top-0 right-0 h-full w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-white/10 shadow-xl transform transition-transform translate-x-0">
+          <div className="relative w-full max-w-lg mx-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl">
             <div className="p-6 flex items-center justify-between border-b border-slate-200 dark:border-white/10">
               <div className="text-lg font-bold text-slate-900 dark:text-white">{mode === 'edit' ? 'Editar Evento' : 'Novo Evento'}</div>
-              <button onClick={() => setShowDrawer(false)} className="w-9 h-9 rounded bg-slate-100 dark:bg-white/10">✕</button>
+              <button onClick={() => setShowDrawer(false)} className="w-9 h-9 rounded-full bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 flex items-center justify-center">
+                ✕
+              </button>
             </div>
             <form onSubmit={addEvent} className="p-6 space-y-4">
               <div>
@@ -441,6 +461,27 @@ export default function ModernCalendar() {
                   required
                 />
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Hora</div>
+                  <input
+                    type="time"
+                    value={form.time}
+                    onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Local</div>
+                  <input
+                    type="text"
+                    value={form.location}
+                    onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+                    placeholder="Ex: Escritório, Google Meet..."
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
               <div>
                 <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Título</div>
                 <input
@@ -452,7 +493,7 @@ export default function ModernCalendar() {
                   required
                 />
               </div>
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowDrawer(false)}
@@ -478,7 +519,10 @@ export default function ModernCalendar() {
         title="Novo evento"
         aria-label="Novo evento"
       >
-        +
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor" aria-hidden="true">
+          <path d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v3H3V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1z"></path>
+          <path d="M3 10h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8zm9 2a1 1 0 0 0-1 1v2H9a1 1 0 1 0 0 2h2v2a1 1 0 1 0 2 0v-2h2a1 1 0 1 0 0-2h-2v-2a1 1 0 0 0-1-1z"></path>
+        </svg>
       </button>
     </div>
   );

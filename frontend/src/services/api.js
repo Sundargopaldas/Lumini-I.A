@@ -5,7 +5,7 @@ import { getToken, clearAuth } from '../utils/storage';
 const IS_DEV = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const FORCED_LOCAL_URL = 'http://localhost:8080/api';
 // ✅ USAR CAMINHO RELATIVO EM PRODUÇÃO (funciona com lumini-i-a.fly.dev E luminiiadigital.com.br)
-const PROD_URL = import.meta.env.VITE_API_URL || '/api';
+const PROD_URL = '/api';
 
 const baseURL = IS_DEV ? FORCED_LOCAL_URL : PROD_URL;
 
